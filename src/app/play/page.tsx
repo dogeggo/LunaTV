@@ -17,6 +17,7 @@ import {
   deleteFavorite,
   deletePlayRecord,
   generateStorageKey,
+  getAllFavorites,
   getAllPlayRecords,
   isFavorited,
   saveFavorite,
@@ -70,6 +71,10 @@ function PlayPageClient() {
   // bangumi详情状态
   const [bangumiDetails, setBangumiDetails] = useState<any>(null);
   const [loadingBangumiDetails, setLoadingBangumiDetails] = useState(false);
+
+  // 短剧详情状态（用于显示简介等信息）
+  const [shortdramaDetails, setShortdramaDetails] = useState<any>(null);
+  const [loadingShortdramaDetails, setLoadingShortdramaDetails] = useState(false);
 
   // 网盘搜索状态
   const [netdiskResults, setNetdiskResults] = useState<{ [key: string]: any[] } | null>(null);
@@ -128,6 +133,9 @@ function PlayPageClient() {
     searchParams.get('source') || ''
   );
   const [currentId, setCurrentId] = useState(searchParams.get('id') || '');
+
+  // 短剧ID（用于获取详情显示，不影响源搜索）
+  const [shortdramaId] = useState(searchParams.get('shortdrama_id') || '');
 
   // 搜索所需信息
   const [searchTitle] = useState(searchParams.get('stitle') || '');
@@ -224,6 +232,30 @@ function PlayPageClient() {
 
     loadMovieDetails();
   }, [videoDoubanId, loadingMovieDetails, movieDetails, loadingBangumiDetails, bangumiDetails]);
+
+  // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
+  useEffect(() => {
+    const loadShortdramaDetails = async () => {
+      if (!shortdramaId || loadingShortdramaDetails || shortdramaDetails) {
+        return;
+      }
+
+      setLoadingShortdramaDetails(true);
+      try {
+        const response = await fetch(`/api/shortdrama/detail?id=${shortdramaId}&episode=1`);
+        if (response.ok) {
+          const data = await response.json();
+          setShortdramaDetails(data);
+        }
+      } catch (error) {
+        console.error('Failed to load shortdrama details:', error);
+      } finally {
+        setLoadingShortdramaDetails(false);
+      }
+    };
+
+    loadShortdramaDetails();
+  }, [shortdramaId, loadingShortdramaDetails, shortdramaDetails]);
 
   // 自动网盘搜索：当有视频标题时可以随时搜索
   useEffect(() => {
@@ -1761,8 +1793,9 @@ function PlayPageClient() {
       if (currentSource === 'shortdrama' && currentId) {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
       } else {
-        // 其他情况先搜索
+        // 其他情况先搜索所有视频源
         sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+
         if (
           currentSource &&
           currentId &&
@@ -1771,6 +1804,26 @@ function PlayPageClient() {
           )
         ) {
           sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+        }
+
+        // 如果有 shortdrama_id，额外添加短剧源到可用源列表
+        if (shortdramaId) {
+          try {
+            const shortdramaSource = await fetchSourceDetail('shortdrama', shortdramaId);
+            if (shortdramaSource.length > 0) {
+              // 检查是否已存在相同的短剧源，避免重复
+              const existingShortdrama = sourcesInfo.find(
+                (s) => s.source === 'shortdrama' && s.id === shortdramaId
+              );
+              if (!existingShortdrama) {
+                sourcesInfo.push(...shortdramaSource);
+                // 重新设置 availableSources 以包含短剧源
+                setAvailableSources(sourcesInfo);
+              }
+            }
+          } catch (error) {
+            console.error('添加短剧源失败:', error);
+          }
         }
       }
       if (sourcesInfo.length === 0) {
@@ -2374,6 +2427,41 @@ function PlayPageClient() {
 
     return unsubscribe;
   }, [currentSource, currentId]);
+
+  // 自动更新收藏的集数信息（解决即将上映占位符数据问题）
+  useEffect(() => {
+    if (!detail || !favorited || !currentSource || !currentId) return;
+
+    const updateFavoriteEpisodes = async () => {
+      try {
+        const realEpisodes = detail.episodes.length || 1;
+
+        // 获取当前收藏的数据
+        const favorites = await getAllFavorites();
+        const key = `${currentSource}+${currentId}`;
+        const currentFavorite = favorites[key];
+
+        // 如果收藏的集数是占位符（99）或与真实集数不同，则更新
+        if (currentFavorite && (currentFavorite.total_episodes === 99 || currentFavorite.total_episodes !== realEpisodes)) {
+          console.log(`🔄 更新收藏集数: ${currentFavorite.total_episodes} → ${realEpisodes}`);
+
+          await saveFavorite(currentSource, currentId, {
+            title: videoTitleRef.current || detail.title,
+            source_name: detail.source_name || currentFavorite.source_name || '',
+            year: detail.year || currentFavorite.year || '',
+            cover: detail.poster || currentFavorite.cover || '',
+            total_episodes: realEpisodes, // 更新为真实集数
+            save_time: currentFavorite.save_time || Date.now(), // 保持原收藏时间
+            search_title: currentFavorite.search_title || searchTitle,
+          });
+        }
+      } catch (err) {
+        console.error('自动更新收藏集数失败:', err);
+      }
+    };
+
+    updateFavoriteEpisodes();
+  }, [detail, favorited, currentSource, currentId, searchTitle]);
 
   // 切换收藏
   const handleToggleFavorite = async () => {
@@ -3725,10 +3813,12 @@ function PlayPageClient() {
         setCurrentPlayTime(currentTime);
         setVideoDuration(duration);
 
-        // 保存播放进度逻辑 - 优化所有存储类型的保存间隔
+        // 保存播放进度逻辑 - 优化保存间隔以减少网络开销
         const saveNow = Date.now();
-        // upstash需要更长间隔避免频率限制，其他存储类型也适当降低频率减少性能开销
-        const interval = process.env.NEXT_PUBLIC_STORAGE_TYPE === 'upstash' ? 20000 : 10000; // 统一提高到10秒
+        // 🔧 优化：增加播放中的保存间隔，依赖暂停时保存作为主要保存时机
+        // upstash: 60秒兜底保存，其他存储: 30秒兜底保存
+        // 用户暂停、切换集数、页面卸载时会立即保存，因此较长间隔不影响体验
+        const interval = process.env.NEXT_PUBLIC_STORAGE_TYPE === 'upstash' ? 60000 : 30000;
 
         // 🔥 关键修复：如果当前播放位置接近视频结尾（最后3分钟），不保存进度
         // 这是为了避免自动跳过片尾时保存了片尾位置的进度，导致"继续观看"从错误位置开始
@@ -4201,7 +4291,22 @@ function PlayPageClient() {
                 currentSource={currentSource}
                 currentId={currentId}
                 videoTitle={searchTitle || videoTitle}
-                availableSources={availableSources}
+                availableSources={availableSources.filter(source => {
+                  // 必须有集数数据
+                  if (!source.episodes || source.episodes.length < 1) return false;
+
+                  // 如果当前有 detail，只显示集数相近的源（允许 ±30% 的差异）
+                  if (detail && detail.episodes && detail.episodes.length > 0) {
+                    const currentEpisodes = detail.episodes.length;
+                    const sourceEpisodes = source.episodes.length;
+                    const tolerance = Math.max(5, Math.ceil(currentEpisodes * 0.3)); // 至少5集的容差
+
+                    // 在合理范围内
+                    return Math.abs(sourceEpisodes - currentEpisodes) <= tolerance;
+                  }
+
+                  return true;
+                })}
                 sourceSearchLoading={sourceSearchLoading}
                 sourceSearchError={sourceSearchError}
                 precomputedVideoInfo={precomputedVideoInfo}
@@ -4275,7 +4380,7 @@ function PlayPageClient() {
 
               {/* 关键信息行 */}
               <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
-                {detail?.class && (
+                {detail?.class && String(detail.class) !== '0' && (
                   <span className='text-green-600 font-semibold'>
                     {detail.class}
                   </span>
@@ -4292,7 +4397,7 @@ function PlayPageClient() {
               </div>
 
               {/* 详细信息（豆瓣或bangumi） */}
-              {currentSource !== 'shortdrama' && videoDoubanId && videoDoubanId !== 0 && detail && detail.source !== 'shortdrama' && (
+              {currentSource !== 'shortdrama' && videoDoubanId !== 0 && detail && detail.source !== 'shortdrama' && (
                 <div className='mb-4 flex-shrink-0'>
                   {/* 加载状态 */}
                   {(loadingMovieDetails || loadingBangumiDetails) && !movieDetails && !bangumiDetails && (
@@ -4496,15 +4601,16 @@ function PlayPageClient() {
               )}
 
               {/* 短剧详细信息 */}
-              {detail?.source === 'shortdrama' && (
+              {(detail?.source === 'shortdrama' || shortdramaDetails) && (
                 <div className='mb-4 flex-shrink-0'>
                   <div className='space-y-2 text-sm'>
                     {/* 集数信息 */}
-                    {detail?.episodes && detail.episodes.length > 0 && (
+                    {((detail?.source === 'shortdrama' && detail?.episodes && detail.episodes.length > 0) ||
+                      (shortdramaDetails?.episodes && shortdramaDetails.episodes.length > 0)) && (
                       <div className='flex flex-wrap gap-2'>
                         <span className='relative group bg-gradient-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
                           <span className='absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                          <span className='relative'>共{detail.episodes.length}集</span>
+                          <span className='relative'>共{(shortdramaDetails?.episodes || detail?.episodes)?.length}集</span>
                         </span>
                         <span className='relative group bg-gradient-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
                           <span className='absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
@@ -4512,7 +4618,7 @@ function PlayPageClient() {
                         </span>
                         <span className='relative group bg-gradient-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'>
                           <span className='absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                          <span className='relative'>{detail.year}年</span>
+                          <span className='relative'>{shortdramaDetails?.year || detail?.year}年</span>
                         </span>
                       </div>
                     )}
@@ -4521,12 +4627,12 @@ function PlayPageClient() {
               )}
 
               {/* 剧情简介 */}
-              {(detail?.desc || bangumiDetails?.summary) && (
+              {(shortdramaDetails?.desc || detail?.desc || bangumiDetails?.summary) && (
                 <div
                   className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
                   style={{ whiteSpace: 'pre-line' }}
                 >
-                  {bangumiDetails?.summary || detail?.desc}
+                  {shortdramaDetails?.desc || bangumiDetails?.summary || detail?.desc}
                 </div>
               )}
               
@@ -4641,12 +4747,17 @@ function PlayPageClient() {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-6 right-6 z-[500] w-12 h-12 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group relative overflow-hidden ${
+        className={`fixed z-[500] w-12 h-12 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group relative overflow-hidden ${
           showBackToTop
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
-        style={{ position: 'fixed', right: '1.5rem', bottom: '1.5rem', left: 'auto' }}
+        style={{
+          position: 'fixed',
+          right: '1.5rem',
+          bottom: typeof window !== 'undefined' && window.innerWidth < 768 ? '5rem' : '1.5rem',
+          left: 'auto'
+        }}
         aria-label='返回顶部'
       >
         {/* 渐变背景 */}
