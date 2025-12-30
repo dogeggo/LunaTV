@@ -48,6 +48,10 @@ export function useWatchRoomSync({
   const isHandlingRemoteCommandRef = useRef(false);
   const lastSyncTimeRef = useRef(0);
 
+  // 源切换确认对话框状态
+  const [showSourceSwitchDialog, setShowSourceSwitchDialog] = useState(false);
+  const [pendingOwnerState, setPendingOwnerState] = useState<OwnerPlayState | null>(null);
+
   // 同步暂停状态（成员自己切换集数后暂停同步）
   const [syncPaused, setSyncPaused] = useState(false);
 
@@ -85,6 +89,15 @@ export function useWatchRoomSync({
     const stateSource = 'source' in state ? state.source : '';
 
     return stateVideoId === videoId && stateSource === currentSource;
+  }, [videoId, currentSource]);
+
+  // 检查是否是相同视频但不同源
+  const isSameVideoButDifferentSource = useCallback((state: OwnerPlayState | PlayState | null) => {
+    if (!state) return false;
+    const stateVideoId = 'videoId' in state ? state.videoId : '';
+    const stateSource = 'source' in state ? state.source : '';
+
+    return stateVideoId === videoId && stateSource !== currentSource;
   }, [videoId, currentSource]);
 
   // 跳转到指定状态（智能切换：同剧切集数，异剧用路由）
@@ -131,6 +144,25 @@ export function useWatchRoomSync({
     }
   }, [videoId, currentSource, episodeIndex, setCurrentEpisodeIndex, artPlayerRef, router]);
 
+  // 确认切换源
+  const handleConfirmSourceSwitch = useCallback(() => {
+    if (pendingOwnerState) {
+      console.log('[PlaySync] User confirmed source switch, navigating to:', pendingOwnerState);
+      navigateToState(pendingOwnerState);
+    }
+    setShowSourceSwitchDialog(false);
+    setPendingOwnerState(null);
+  }, [pendingOwnerState, navigateToState]);
+
+  // 取消切换源，保持当前源
+  const handleCancelSourceSwitch = useCallback(() => {
+    console.log('[PlaySync] User cancelled source switch, keeping current source');
+    setShowSourceSwitchDialog(false);
+    setPendingOwnerState(null);
+    // 暂停同步，避免后续继续提示
+    setSyncPaused(true);
+  }, []);
+
   // 广播播放状态（任何人都可以触发同步）
   const broadcastPlayState = useCallback(() => {
     if (!socket || !watchRoom || !isInRoom) return;
@@ -161,6 +193,15 @@ export function useWatchRoomSync({
     watchRoom.updatePlayState(state);
   }, [socket, watchRoom, artPlayerRef, isInRoom, detail, episodeIndex, videoId, currentSource, videoTitle, videoYear]);
 
+  // === -1. 当 videoId 或 currentSource 变化时，重置初始同步标记 ===
+  useEffect(() => {
+    // 只有成员需要重置，房主不需要
+    if (!isOwner && isInRoom) {
+      console.log('[PlaySync] Video/Source changed, resetting initial sync flag', { videoId, currentSource });
+      initialSyncDoneRef.current = false;
+    }
+  }, [videoId, currentSource, isOwner, isInRoom]);
+
   // === 0. 成员加入房间时，检查房主状态并跳转 ===
   useEffect(() => {
     // 只有成员需要处理，房主不需要
@@ -169,8 +210,13 @@ export function useWatchRoomSync({
       return;
     }
 
+    // 当 videoId 或 currentSource 变化时，重置初始同步标记（允许重新检测）
+    // 这样当成员切换源或视频时，可以重新触发检测逻辑
+    // （注意：不能放在这里直接重置，因为会导致每次 render 都重置）
+
     // 已经处理过初始同步，跳过
     if (initialSyncDoneRef.current) {
+      console.log('[PlaySync] Initial sync already done, skipping');
       return;
     }
 
@@ -211,11 +257,21 @@ export function useWatchRoomSync({
       return;
     }
 
-    // 不是同一视频/集数，需要跳转到房主正在观看的内容
+    // 不是同一视频/集数，检查是否是源不同
+    if (isSameVideoButDifferentSource(roomState)) {
+      // 相同视频但不同源，显示确认对话框
+      console.log('[PlaySync] Same video but different source, showing confirmation dialog');
+      setPendingOwnerState(newOwnerState);
+      setShowSourceSwitchDialog(true);
+      initialSyncDoneRef.current = true;
+      return;
+    }
+
+    // 完全不同的视频，直接跳转
     console.log('[PlaySync] Different video/episode, redirecting to owner content');
     initialSyncDoneRef.current = true;
     navigateToState(newOwnerState);
-  }, [isOwner, isInRoom, currentRoom, playerReady, isSameVideoAndEpisode, navigateToState, artPlayerRef]);
+  }, [isOwner, isInRoom, currentRoom, playerReady, isSameVideoAndEpisode, isSameVideoButDifferentSource, navigateToState, artPlayerRef]);
 
   // === 1. 接收并同步其他成员的播放状态（所有人都监听）===
   useEffect(() => {
@@ -642,5 +698,10 @@ export function useWatchRoomSync({
     confirmFollowOwner,
     rejectFollowOwner,
     clearPendingChange,
+    // 源切换确认对话框
+    showSourceSwitchDialog,
+    pendingOwnerState,
+    handleConfirmSourceSwitch,
+    handleCancelSourceSwitch,
   };
 }
