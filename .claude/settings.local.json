@@ -7,7 +7,8 @@
       "Bash(dir:*)",
       "Bash(pnpm format)",
       "Bash(pnpm build)",
-      "Bash(pnpm lint:fix)"
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm eslint:*)"
     ]
   }
 }

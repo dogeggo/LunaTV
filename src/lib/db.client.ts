@@ -103,6 +103,22 @@ const SEARCH_HISTORY_LIMIT = 20;
 // ---- 内存缓存（用于 Kvrocks/Upstash 模式）----
 const memoryCache: Map<string, UserCacheStore> = new Map();
 
+// ---- 请求去重和节流变量 ----
+// 用于避免在短时间内重复触发后台同步请求，解决 net::ERR_INSUFFICIENT_RESOURCES 问题
+const SYNC_THROTTLE_TIME = 10000; // 10秒内不重复触发后台同步
+
+let pendingPlayRecordsSync: Promise<void> | null = null;
+let lastPlayRecordsSyncTime = 0;
+
+let pendingFavoritesSync: Promise<void> | null = null;
+let lastFavoritesSyncTime = 0;
+
+let pendingSearchHistorySync: Promise<void> | null = null;
+let lastSearchHistorySyncTime = 0;
+
+let pendingSkipConfigsSync: Promise<void> | null = null;
+let lastSkipConfigsSyncTime = 0;
+
 // ---- 缓存管理器 ----
 class HybridCacheManager {
   private static instance: HybridCacheManager;
@@ -852,24 +868,39 @@ export async function getAllPlayRecords(
     const cachedData = cacheManager.getCachedPlayRecords();
 
     if (cachedData) {
-      // 返回缓存数据，同时后台异步更新
-      fetchFromApi<Record<string, PlayRecord>>(`/api/playrecords`)
-        .then((freshData) => {
-          // 只有数据真正不同时才更新缓存
-          if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
-            cacheManager.cachePlayRecords(freshData);
-            // 触发数据更新事件，供组件监听
-            window.dispatchEvent(
-              new CustomEvent('playRecordsUpdated', {
-                detail: freshData,
-              }),
-            );
-          }
-        })
-        .catch((err) => {
-          console.warn('后台同步播放记录失败:', err);
-          triggerGlobalError('后台同步播放记录失败');
-        });
+      // 返回缓存数据，同时后台异步更新（带节流和去重）
+      const now = Date.now();
+
+      // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
+      // 如果距离上次同步时间太短，跳过同步
+      if (
+        !pendingPlayRecordsSync &&
+        now - lastPlayRecordsSyncTime > SYNC_THROTTLE_TIME
+      ) {
+        pendingPlayRecordsSync = fetchFromApi<Record<string, PlayRecord>>(
+          `/api/playrecords`,
+        )
+          .then((freshData) => {
+            // 只有数据真正不同时才更新缓存
+            if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
+              cacheManager.cachePlayRecords(freshData);
+              // 触发数据更新事件，供组件监听
+              window.dispatchEvent(
+                new CustomEvent('playRecordsUpdated', {
+                  detail: freshData,
+                }),
+              );
+            }
+            lastPlayRecordsSyncTime = Date.now();
+          })
+          .catch((err) => {
+            console.warn('后台同步播放记录失败:', err);
+            // 不显示全局错误，以免打扰用户
+          })
+          .finally(() => {
+            pendingPlayRecordsSync = null;
+          });
+      }
 
       return cachedData;
     } else {
@@ -1150,24 +1181,37 @@ export async function getSearchHistory(): Promise<string[]> {
     const cachedData = cacheManager.getCachedSearchHistory();
 
     if (cachedData) {
-      // 返回缓存数据，同时后台异步更新
-      fetchFromApi<string[]>(`/api/searchhistory`)
-        .then((freshData) => {
-          // 只有数据真正不同时才更新缓存
-          if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
-            cacheManager.cacheSearchHistory(freshData);
-            // 触发数据更新事件
-            window.dispatchEvent(
-              new CustomEvent('searchHistoryUpdated', {
-                detail: freshData,
-              }),
-            );
-          }
-        })
-        .catch((err) => {
-          console.warn('后台同步搜索历史失败:', err);
-          triggerGlobalError('后台同步搜索历史失败');
-        });
+      // 返回缓存数据，同时后台异步更新（带节流和去重）
+      const now = Date.now();
+
+      // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
+      // 如果距离上次同步时间太短，跳过同步
+      if (
+        !pendingSearchHistorySync &&
+        now - lastSearchHistorySyncTime > SYNC_THROTTLE_TIME
+      ) {
+        pendingSearchHistorySync = fetchFromApi<string[]>(`/api/searchhistory`)
+          .then((freshData) => {
+            // 只有数据真正不同时才更新缓存
+            if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
+              cacheManager.cacheSearchHistory(freshData);
+              // 触发数据更新事件
+              window.dispatchEvent(
+                new CustomEvent('searchHistoryUpdated', {
+                  detail: freshData,
+                }),
+              );
+            }
+            lastSearchHistorySyncTime = Date.now();
+          })
+          .catch((err) => {
+            console.warn('后台同步搜索历史失败:', err);
+            // 不显示全局错误，以免打扰用户
+          })
+          .finally(() => {
+            pendingSearchHistorySync = null;
+          });
+      }
 
       return cachedData;
     } else {
@@ -1371,27 +1415,42 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
     const cachedData = cacheManager.getCachedFavorites();
 
     if (cachedData) {
-      // 返回缓存数据，同时后台异步更新
-      fetchFromApi<Record<string, Favorite>>(`/api/favorites`)
-        .then((freshData) => {
-          // 只有数据真正不同时才更新缓存
-          if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
-            cacheManager.cacheFavorites(freshData);
-            // 触发数据更新事件
-            window.dispatchEvent(
-              new CustomEvent('favoritesUpdated', {
-                detail: freshData,
-              }),
+      // 返回缓存数据，同时后台异步更新（带节流和去重）
+      const now = Date.now();
+
+      // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
+      // 如果距离上次同步时间太短，跳过同步
+      if (
+        !pendingFavoritesSync &&
+        now - lastFavoritesSyncTime > SYNC_THROTTLE_TIME
+      ) {
+        pendingFavoritesSync = fetchFromApi<Record<string, Favorite>>(
+          `/api/favorites`,
+        )
+          .then((freshData) => {
+            // 只有数据真正不同时才更新缓存
+            if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
+              cacheManager.cacheFavorites(freshData);
+              // 触发数据更新事件
+              window.dispatchEvent(
+                new CustomEvent('favoritesUpdated', {
+                  detail: freshData,
+                }),
+              );
+            }
+            lastFavoritesSyncTime = Date.now();
+          })
+          .catch((err) => {
+            // 后台同步失败不影响用户使用，静默处理
+            console.warn(
+              '[后台同步] 收藏数据同步失败（不影响使用，已使用缓存数据）:',
+              err,
             );
-          }
-        })
-        .catch((err) => {
-          // 后台同步失败不影响用户使用，静默处理
-          console.warn(
-            '[后台同步] 收藏数据同步失败（不影响使用，已使用缓存数据）:',
-            err,
-          );
-        });
+          })
+          .finally(() => {
+            pendingFavoritesSync = null;
+          });
+      }
 
       return cachedData;
     } else {
@@ -2035,24 +2094,39 @@ export async function getAllSkipConfigs(): Promise<
     const cachedData = cacheManager.getCachedSkipConfigs();
 
     if (cachedData) {
-      // 返回缓存数据，同时后台异步更新
-      fetchFromApi<Record<string, EpisodeSkipConfig>>(`/api/skipconfigs`)
-        .then((freshData) => {
-          // 只有数据真正不同时才更新缓存
-          if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
-            cacheManager.cacheSkipConfigs(freshData);
-            // 触发数据更新事件
-            window.dispatchEvent(
-              new CustomEvent('skipConfigsUpdated', {
-                detail: freshData,
-              }),
-            );
-          }
-        })
-        .catch((err) => {
-          console.warn('后台同步跳过片头片尾配置失败:', err);
-          triggerGlobalError('后台同步跳过片头片尾配置失败');
-        });
+      // 返回缓存数据，同时后台异步更新（带节流和去重）
+      const now = Date.now();
+
+      // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
+      // 如果距离上次同步时间太短，跳过同步
+      if (
+        !pendingSkipConfigsSync &&
+        now - lastSkipConfigsSyncTime > SYNC_THROTTLE_TIME
+      ) {
+        pendingSkipConfigsSync = fetchFromApi<
+          Record<string, EpisodeSkipConfig>
+        >(`/api/skipconfigs`)
+          .then((freshData) => {
+            // 只有数据真正不同时才更新缓存
+            if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
+              cacheManager.cacheSkipConfigs(freshData);
+              // 触发数据更新事件
+              window.dispatchEvent(
+                new CustomEvent('skipConfigsUpdated', {
+                  detail: freshData,
+                }),
+              );
+            }
+            lastSkipConfigsSyncTime = Date.now();
+          })
+          .catch((err) => {
+            console.warn('后台同步跳过片头片尾配置失败:', err);
+            // 不显示全局错误
+          })
+          .finally(() => {
+            pendingSkipConfigsSync = null;
+          });
+      }
 
       return cachedData;
     } else {

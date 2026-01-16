@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 import './globals.css';
 
@@ -48,6 +48,7 @@ export default async function RootLayout({
 }) {
   // 🔥 调用 cookies() 强制动态渲染，防止 Docker 环境下的缓存问题
   await cookies();
+  const nonce = (await headers()).get('x-nonce') || '';
 
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
 
@@ -111,6 +112,7 @@ export default async function RootLayout({
         <link rel='apple-touch-icon' href='/icons/icon-192x192.png' />
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `window.RUNTIME_CONFIG = ${JSON.stringify(runtimeConfig)};`,
           }}

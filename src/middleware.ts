@@ -8,7 +8,35 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestId = Math.random().toString(36).substring(7);
 
+  // Generate CSP Nonce
+  const nonce = btoa(crypto.randomUUID());
+
+  // Create CSP header
+  // Note: We allow chrome-extension: scheme for local development extensions
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'wasm-unsafe-eval' chrome-extension:;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data: https:;
+    font-src 'self' data:;
+    connect-src 'self' https:;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    block-all-mixed-content;
+    upgrade-insecure-requests;
+  `
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+
   console.log(`[Middleware ${requestId}] Path:`, pathname);
+
+  let response: NextResponse;
 
   // 处理 /adult/ 路径前缀，重写为实际 API 路径
   if (pathname.startsWith('/adult/')) {
@@ -31,7 +59,17 @@ export async function middleware(request: NextRequest) {
     );
 
     // 重写请求
-    const response = NextResponse.rewrite(url);
+    // We create a rewrite response but we need to ensure request headers are passed if we continue?
+    // Actually rewrite() takes options too? No, only url.
+    // But we can return a rewrite response.
+
+    // For rewrite, we want to modify the request headers sent to the destination?
+    // NextResponse.rewrite(url, { request: { headers } })
+    response = NextResponse.rewrite(url, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
 
     // 设置响应头标识成人内容模式
     response.headers.set('X-Content-Mode', 'adult');
@@ -40,24 +78,38 @@ export async function middleware(request: NextRequest) {
     if (newPathname.startsWith('/api')) {
       // 将重写后的请求传递给认证逻辑
       const modifiedRequest = new NextRequest(url, request);
-      return handleAuthentication(
+      // We pass the response we already created so handleAuthentication can use it or chain from it
+      // But handleAuthentication creates its own response usually.
+      // We need to pass requestHeaders to handleAuthentication
+      response = await handleAuthentication(
         modifiedRequest,
         newPathname,
         requestId,
+        requestHeaders, // Pass headers
         response,
       );
     }
-
-    return response;
-  }
-
-  // 跳过不需要认证的路径
-  if (shouldSkipAuth(pathname)) {
+  } else if (shouldSkipAuth(pathname)) {
+    // 跳过不需要认证的路径
     console.log(`[Middleware ${requestId}] Skipping auth for path:`, pathname);
-    return NextResponse.next();
+    response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  } else {
+    response = await handleAuthentication(
+      request,
+      pathname,
+      requestId,
+      requestHeaders,
+    );
   }
 
-  return handleAuthentication(request, pathname, requestId);
+  // Set CSP header on the response
+  response.headers.set('Content-Security-Policy', cspHeader);
+
+  return response;
 }
 
 // 提取认证处理逻辑为单独的函数
@@ -65,6 +117,7 @@ async function handleAuthentication(
   request: NextRequest,
   pathname: string,
   requestId: string,
+  requestHeaders: Headers,
   response?: NextResponse,
 ) {
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
@@ -112,7 +165,14 @@ async function handleAuthentication(
     if (!authInfo.password || authInfo.password !== process.env.PASSWORD) {
       return handleAuthFailure(request, pathname);
     }
-    return response || NextResponse.next();
+    return (
+      response ||
+      NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
+    );
   }
 
   // 其他模式：只验证签名
@@ -142,7 +202,14 @@ async function handleAuthentication(
     // 签名验证通过即可
     if (isValidSignature) {
       console.log(`[Middleware ${requestId}] Auth successful, allowing access`);
-      return response || NextResponse.next();
+      return (
+        response ||
+        NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        })
+      );
     }
   }
 
