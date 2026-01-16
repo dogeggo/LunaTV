@@ -2,8 +2,8 @@
 
 'use client';
 
-import { Cat, Clover, Film, Globe, Home, MoreHorizontal, PlaySquare, Radio, Search, Sparkles, Star, Tv, X } from 'lucide-react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Cat, Clover, Film, Globe, Home, MoreHorizontal, PlaySquare, Radio, Search, Star, Tv, X } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { FastLink } from './FastLink';
@@ -19,13 +19,7 @@ interface NavItem {
   gradient: string;
 }
 
-interface ModernNavProps {
-  showAIButton?: boolean;
-  onAIButtonClick?: () => void;
-}
-
-export default function ModernNav({ showAIButton = false, onAIButtonClick }: ModernNavProps = {}) {
-  const router = useRouter();
+export default function ModernNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [active, setActive] = useState(pathname);
@@ -200,17 +194,8 @@ export default function ModernNav({ showAIButton = false, onAIButtonClick }: Mod
             })}
             </div>
 
-            {/* Right Side Actions - ✨ AI Button, Theme Toggle & User Menu */}
+            {/* Right Side Actions */}
             <div className='flex items-center gap-2 shrink-0'>
-              {showAIButton && onAIButtonClick && (
-                <button
-                  onClick={onAIButtonClick}
-                  className='relative p-2 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 active:scale-95 transition-all duration-200 shadow-lg shadow-blue-500/30 group'
-                  aria-label='AI 推荐'
-                >
-                  <Sparkles className='h-5 w-5 group-hover:scale-110 transition-transform duration-300' />
-                </button>
-              )}
               <ThemeToggle />
               <UserMenu />
             </div>

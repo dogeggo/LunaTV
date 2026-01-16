@@ -427,17 +427,6 @@ export async function configSelfCheck(adminConfig: AdminConfig): Promise<AdminCo
     };
   }
 
-  // 确保AI推荐配置有默认值
-  if (!adminConfig.AIRecommendConfig) {
-    adminConfig.AIRecommendConfig = {
-      enabled: false,                                   // 默认关闭
-      apiUrl: 'https://api.openai.com/v1',             // 默认OpenAI API
-      apiKey: '',                                       // 默认为空，需要管理员配置
-      model: 'gpt-3.5-turbo',                          // 默认模型
-      temperature: 0.7,                                // 默认温度
-      maxTokens: 3000                                  // 默认最大token数
-    };
-  }
 
   // 确保YouTube配置有默认值
   if (!adminConfig.YouTubeConfig) {
@@ -742,7 +731,7 @@ export async function setCachedConfig(config: AdminConfig) {
 // 特殊功能权限检查
 export async function hasSpecialFeaturePermission(
   username: string,
-  feature: 'ai-recommend' | 'youtube-search',
+  feature: 'youtube-search',
   providedConfig?: AdminConfig
 ): Promise<boolean> {
   try {
