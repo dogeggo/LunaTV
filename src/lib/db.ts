@@ -2,6 +2,7 @@
 
 import { AdminConfig } from './admin.types';
 import { KvrocksStorage } from './kvrocks.db';
+import { MemoryStorage } from './memory.db';
 import { RedisStorage } from './redis.db';
 import {
   ContentStat,
@@ -34,7 +35,7 @@ function createStorage(): IStorage {
       return new KvrocksStorage();
     case 'localstorage':
     default:
-      return null as unknown as IStorage;
+      return new MemoryStorage();
   }
 }
 

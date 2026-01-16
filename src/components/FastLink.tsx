@@ -102,7 +102,7 @@ export function FastLink({
       href={href}
       onClick={handleClick}
       className={className}
-      prefetch={false}
+      prefetch={true}
       aria-label={ariaLabel}
       target={target}
       rel={target === '_blank' ? rel || 'noopener noreferrer' : rel}

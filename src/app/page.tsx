@@ -902,44 +902,6 @@ function HomeClient() {
       <TelegramWelcomeModal />
 
       <div className='overflow-visible -mt-6 md:mt-0'>
-        {/* 欢迎横幅 - 现代化精简设计 */}
-        <div className='mb-6 relative overflow-hidden rounded-xl bg-linear-to-r from-blue-500/90 via-purple-500/90 to-pink-500/90 backdrop-blur-sm shadow-xl border border-white/20'>
-          <div className='relative p-4 sm:p-5'>
-            {/* 动态渐变背景 */}
-            <div className='absolute inset-0 bg-linear-to-br from-white/5 via-transparent to-black/5'></div>
-
-            <div className='relative z-10 flex items-center justify-between gap-4'>
-              <div className='flex-1 min-w-0'>
-                <h2 className='text-lg sm:text-xl font-bold text-white mb-1 flex items-center gap-2 flex-wrap'>
-                  <span>
-                    {(() => {
-                      const hour = new Date().getHours();
-                      if (hour < 12) return '早上好';
-                      if (hour < 18) return '下午好';
-                      return '晚上好';
-                    })()}
-                    {username && '，'}
-                  </span>
-                  {username && (
-                    <span className='text-yellow-300 font-semibold'>
-                      {username}
-                    </span>
-                  )}
-                  <span className='inline-block animate-wave origin-bottom-right'>
-                    👋
-                  </span>
-                </h2>
-                <p className='text-sm text-white/90'>发现更多精彩影视内容 ✨</p>
-              </div>
-
-              {/* 装饰图标 - 更小更精致 */}
-              <div className='hidden md:flex items-center justify-center shrink-0 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20'>
-                <Film className='w-6 h-6 text-white' />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* 顶部 Tab 切换 - AI 按钮已移至右上角导航栏 */}
         <div className='mb-8 flex items-center justify-center'>
           <CapsuleSwitch
@@ -1297,74 +1259,70 @@ function HomeClient() {
             // 首页视图
             <>
               {/* Hero Banner 轮播 */}
-              {!loading &&
-                (hotMovies.length > 0 ||
-                  hotTvShows.length > 0 ||
-                  hotVarietyShows.length > 0 ||
-                  hotShortDramas.length > 0) && (
-                  <section className='mb-8'>
-                    <HeroBanner
-                      items={[
-                        // 豆瓣电影
-                        ...hotMovies.slice(0, 2).map((movie) => ({
-                          id: movie.id,
-                          title: movie.title,
-                          poster: movie.poster,
-                          backdrop: movie.backdrop,
-                          trailerUrl: movie.trailerUrl,
-                          description: movie.plot_summary,
-                          year: movie.year,
-                          rate: movie.rate,
-                          douban_id: Number(movie.id),
-                          type: 'movie',
-                        })),
-                        // 豆瓣电视剧
-                        ...hotTvShows.slice(0, 2).map((show) => ({
-                          id: show.id,
-                          title: show.title,
-                          poster: show.poster,
-                          backdrop: show.backdrop,
-                          trailerUrl: show.trailerUrl,
-                          description: show.plot_summary,
-                          year: show.year,
-                          rate: show.rate,
-                          douban_id: Number(show.id),
-                          type: 'tv',
-                        })),
-                        // 豆瓣综艺
-                        ...hotVarietyShows.slice(0, 1).map((show) => ({
-                          id: show.id,
-                          title: show.title,
-                          poster: show.poster,
-                          backdrop: show.backdrop,
-                          trailerUrl: show.trailerUrl,
-                          description: show.plot_summary,
-                          year: show.year,
-                          rate: show.rate,
-                          douban_id: Number(show.id),
-                          type: 'variety',
-                        })),
-                        // 豆瓣动漫
-                        ...hotAnime.slice(0, 1).map((anime) => ({
-                          id: anime.id,
-                          title: anime.title,
-                          poster: anime.poster,
-                          backdrop: anime.backdrop,
-                          trailerUrl: anime.trailerUrl,
-                          description: anime.plot_summary,
-                          year: anime.year,
-                          rate: anime.rate,
-                          douban_id: Number(anime.id),
-                          type: 'anime',
-                        })),
-                      ]}
-                      autoPlayInterval={8000}
-                      showControls={true}
-                      showIndicators={true}
-                      enableVideo={true}
-                    />
-                  </section>
-                )}
+              {!loading && (hotMovies.length > 0 || hotTvShows.length > 0 || hotVarietyShows.length > 0 || hotShortDramas.length > 0) && (
+                <section className='mb-8'>
+                  <HeroBanner
+                    items={[
+                      // 豆瓣电影
+                      ...hotMovies.slice(0, 2).map((movie) => ({
+                        id: movie.id,
+                        title: movie.title,
+                        poster: movie.poster,
+                        backdrop: movie.backdrop,
+                        trailerUrl: movie.trailerUrl,
+                        description: movie.plot_summary,
+                        year: movie.year,
+                        rate: movie.rate,
+                        douban_id: Number(movie.id),
+                        type: 'movie',
+                      })),
+                      // 豆瓣电视剧
+                      ...hotTvShows.slice(0, 2).map((show) => ({
+                        id: show.id,
+                        title: show.title,
+                        poster: show.poster,
+                        backdrop: show.backdrop,
+                        trailerUrl: show.trailerUrl,
+                        description: show.plot_summary,
+                        year: show.year,
+                        rate: show.rate,
+                        douban_id: Number(show.id),
+                        type: 'tv',
+                      })),
+                      // 豆瓣综艺
+                      ...hotVarietyShows.slice(0, 1).map((show) => ({
+                        id: show.id,
+                        title: show.title,
+                        poster: show.poster,
+                        backdrop: show.backdrop,
+                        trailerUrl: show.trailerUrl,
+                        description: show.plot_summary,
+                        year: show.year,
+                        rate: show.rate,
+                        douban_id: Number(show.id),
+                        type: 'variety',
+                      })),
+                      // 豆瓣动漫
+                      ...hotAnime.slice(0, 1).map((anime) => ({
+                        id: anime.id,
+                        title: anime.title,
+                        poster: anime.poster,
+                        backdrop: anime.backdrop,
+                        trailerUrl: anime.trailerUrl,
+                        description: anime.plot_summary,
+                        year: anime.year,
+                        rate: anime.rate,
+                        douban_id: Number(anime.id),
+                        type: 'anime',
+                      }))
+                    ]}
+                    autoPlayInterval={8000}
+                    showControls={true}
+                    showIndicators={true}
+                    enableVideo={true}
+                  />
+                </section>
+              )}
 
               {/* 继续观看 */}
               <ContinueWatching />

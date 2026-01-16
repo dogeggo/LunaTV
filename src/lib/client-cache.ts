@@ -23,11 +23,11 @@ export class ClientCache {
         body: JSON.stringify({ key, data, expireSeconds }),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.error('设置缓存失败:', response.status);
+        return;
       }
     } catch (error) {
       console.error('设置缓存失败:', error);
-      throw error;
     }
   }
 
