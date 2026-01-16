@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import he from 'he';
 import Hls from 'hls.js';
 import { twMerge } from 'tailwind-merge';
@@ -20,31 +20,37 @@ const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
 // iOS 设备检测 (包括 iPad 的新版本检测)
 const isIOS = /iPad|iPhone|iPod/i.test(userAgent) && !(window as any).MSStream;
-const isIOS13Plus = isIOS || (
-  userAgent.includes('Macintosh') && 
-  typeof navigator !== 'undefined' && 
-  navigator.maxTouchPoints >= 1
-);
+const isIOS13Plus =
+  isIOS ||
+  (userAgent.includes('Macintosh') &&
+    typeof navigator !== 'undefined' &&
+    navigator.maxTouchPoints >= 1);
 
 // iPad 专门检测 (包括新的 iPad Pro)
-const isIPad = /iPad/i.test(userAgent) || (
-  userAgent.includes('Macintosh') && 
-  typeof navigator !== 'undefined' && 
-  navigator.maxTouchPoints > 2
-);
+const isIPad =
+  /iPad/i.test(userAgent) ||
+  (userAgent.includes('Macintosh') &&
+    typeof navigator !== 'undefined' &&
+    navigator.maxTouchPoints > 2);
 
 // Android 设备检测
 const isAndroid = /Android/i.test(userAgent);
 
 // 移动设备检测 (更精确的判断)
-const isMobile = isIOS13Plus || isAndroid || /webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+const isMobile =
+  isIOS13Plus ||
+  isAndroid ||
+  /webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
 // 平板设备检测
-const isTablet = isIPad || (isAndroid && !/Mobile/i.test(userAgent)) || 
+const isTablet =
+  isIPad ||
+  (isAndroid && !/Mobile/i.test(userAgent)) ||
   (typeof screen !== 'undefined' && screen.width >= 768);
 
 // Safari 浏览器检测 (更精确)
-const isSafari = /^(?:(?!chrome|android).)*safari/i.test(userAgent) && !isAndroid;
+const isSafari =
+  /^(?:(?!chrome|android).)*safari/i.test(userAgent) && !isAndroid;
 
 // WebKit 检测
 const isWebKit = /WebKit/i.test(userAgent);
@@ -52,10 +58,10 @@ const isWebKit = /WebKit/i.test(userAgent);
 // 设备性能等级估算
 const getDevicePerformanceLevel = (): 'low' | 'medium' | 'high' => {
   if (typeof navigator === 'undefined') return 'medium';
-  
+
   // 基于硬件并发数判断
   const cores = navigator.hardwareConcurrency || 4;
-  
+
   if (isMobile) {
     return cores >= 6 ? 'medium' : 'low';
   } else {
@@ -67,31 +73,38 @@ const devicePerformance = getDevicePerformanceLevel();
 
 // 导出设备检测结果供其他模块使用
 export {
+  devicePerformance,
+  getDevicePerformanceLevel,
+  isAndroid,
   isIOS,
   isIOS13Plus,
   isIPad,
-  isAndroid,
   isMobile,
-  isTablet,
   isSafari,
+  isTablet,
   isWebKit,
-  devicePerformance,
-  getDevicePerformanceLevel
 };
 
 function getDoubanImageProxyConfig(): {
   proxyType:
-  | 'direct'
-  | 'server'
-  | 'img3'
-  | 'cmliussss-cdn-tencent'
-  | 'cmliussss-cdn-ali'
-  | 'baidu'
-  | 'custom';
+    | 'direct'
+    | 'server'
+    | 'img3'
+    | 'cmliussss-cdn-tencent'
+    | 'cmliussss-cdn-ali'
+    | 'baidu'
+    | 'custom';
   proxyUrl: string;
 } {
   // 安全地访问 localStorage（避免服务端渲染报错）
-  let doubanImageProxyType: 'direct' | 'server' | 'img3' | 'cmliussss-cdn-tencent' | 'cmliussss-cdn-ali' | 'baidu' | 'custom' = 'server'; // 默认值
+  let doubanImageProxyType:
+    | 'direct'
+    | 'server'
+    | 'img3'
+    | 'cmliussss-cdn-tencent'
+    | 'cmliussss-cdn-ali'
+    | 'baidu'
+    | 'custom' = 'server'; // 默认值
   let doubanImageProxy = '';
 
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
@@ -106,9 +119,19 @@ function getDoubanImageProxyConfig(): {
       localStorage.setItem('doubanImageProxyType', 'server');
     }
 
-    const effectiveRuntimeType = (runtimeType === 'direct') ? 'server' : runtimeType;
+    const effectiveRuntimeType =
+      runtimeType === 'direct' ? 'server' : runtimeType;
 
-    doubanImageProxyType = (effectiveStoredType || effectiveRuntimeType || 'server') as 'direct' | 'server' | 'img3' | 'cmliussss-cdn-tencent' | 'cmliussss-cdn-ali' | 'baidu' | 'custom';
+    doubanImageProxyType = (effectiveStoredType ||
+      effectiveRuntimeType ||
+      'server') as
+      | 'direct'
+      | 'server'
+      | 'img3'
+      | 'cmliussss-cdn-tencent'
+      | 'cmliussss-cdn-ali'
+      | 'baidu'
+      | 'custom';
     doubanImageProxy =
       localStorage.getItem('doubanImageProxyUrl') ||
       (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY ||
@@ -146,12 +169,12 @@ export function processImageUrl(originalUrl: string): string {
     case 'cmliussss-cdn-tencent':
       return originalUrl.replace(
         /img\d+\.doubanio\.com/g,
-        'img.doubanio.cmliussss.net'
+        'img.doubanio.cmliussss.net',
       );
     case 'cmliussss-cdn-ali':
       return originalUrl.replace(
         /img\d+\.doubanio\.com/g,
-        'img.doubanio.cmliussss.com'
+        'img.doubanio.cmliussss.com',
       );
     case 'baidu':
       return `https://image.baidu.com/search/down?url=${encodeURIComponent(originalUrl)}`;
@@ -176,40 +199,40 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
   try {
     // 检测是否为iPad（无论什么浏览器）
     const isIPad = /iPad/i.test(userAgent);
-    
+
     if (isIPad) {
       // iPad使用最简单的ping测试，不创建任何video或HLS实例
       console.log('iPad检测，使用简化测速避免崩溃');
-      
+
       const startTime = performance.now();
       try {
-        await fetch(m3u8Url, { 
-          method: 'HEAD', 
+        await fetch(m3u8Url, {
+          method: 'HEAD',
           mode: 'no-cors',
-          signal: AbortSignal.timeout(2000)
+          signal: AbortSignal.timeout(2000),
         });
         const pingTime = Math.round(performance.now() - startTime);
-        
+
         return {
           quality: '未知', // iPad不检测视频质量避免崩溃
           loadSpeed: '未知', // iPad不检测下载速度
-          pingTime
+          pingTime,
         };
-      } catch (error) {
+      } catch (_error) {
         return {
           quality: '未知',
           loadSpeed: '未知',
-          pingTime: 9999
+          pingTime: 9999,
         };
       }
     }
-    
+
     // 非iPad设备使用优化后的测速逻辑
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
       video.muted = true;
       video.preload = 'metadata';
-      
+
       // 移动设备使用更小的视频元素减少内存占用
       if (isMobile) {
         video.width = 32;
@@ -249,21 +272,37 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
         allowAugmentingTimeStamp: true,
 
         // 缓冲管理 - 基于设备性能分级
-        maxBufferLength: devicePerformance === 'low' ? 3 :
-                        devicePerformance === 'medium' ? 8 : 15,
-        maxBufferSize: devicePerformance === 'low' ? 1 * 1024 * 1024 :
-                      devicePerformance === 'medium' ? 5 * 1024 * 1024 : 15 * 1024 * 1024,
+        maxBufferLength:
+          devicePerformance === 'low'
+            ? 3
+            : devicePerformance === 'medium'
+              ? 8
+              : 15,
+        maxBufferSize:
+          devicePerformance === 'low'
+            ? 1 * 1024 * 1024
+            : devicePerformance === 'medium'
+              ? 5 * 1024 * 1024
+              : 15 * 1024 * 1024,
         backBufferLength: isTablet ? 20 : isMobile ? 10 : 30,
-        frontBufferFlushThreshold: devicePerformance === 'low' ? 15 :
-                                  devicePerformance === 'medium' ? 30 : 60,
+        frontBufferFlushThreshold:
+          devicePerformance === 'low'
+            ? 15
+            : devicePerformance === 'medium'
+              ? 30
+              : 60,
 
         // v1.6.13 增强：更智能的缓冲区管理
         maxBufferHole: 0.3, // 允许较小的缓冲区空洞
         appendErrorMaxRetry: 5, // 增加append错误重试次数以利用v1.6.13修复
 
         // 自适应比特率 - 根据设备类型和性能调整
-        abrEwmaDefaultEstimate: devicePerformance === 'low' ? 1500000 :
-                               devicePerformance === 'medium' ? 3000000 : 6000000,
+        abrEwmaDefaultEstimate:
+          devicePerformance === 'low'
+            ? 1500000
+            : devicePerformance === 'medium'
+              ? 3000000
+              : 6000000,
         abrBandWidthFactor: 0.95,
         abrBandWidthUpFactor: isMobile ? 0.6 : 0.7,
         abrMaxWithRealBitrate: true,
@@ -284,7 +323,7 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
           levelLoadingRetryDelay: 2000,
           manifestLoadingMaxRetry: 3,
           levelLoadingMaxRetry: 3,
-        })
+        }),
       };
 
       const hls = new Hls(hlsConfig);
@@ -324,19 +363,28 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
       let fragmentStartTime = 0;
 
       const checkAndResolve = async () => {
-        if (hasMetadataLoaded && (hasSpeedCalculated || actualLoadSpeed !== '未知')) {
+        if (
+          hasMetadataLoaded &&
+          (hasSpeedCalculated || actualLoadSpeed !== '未知')
+        ) {
           await pingPromise;
-          
+
           const width = video.videoWidth;
           let quality = '未知';
-          
+
           if (width && width > 0) {
-            quality = width >= 3840 ? '4K'
-              : width >= 2560 ? '2K'
-              : width >= 1920 ? '1080p'
-              : width >= 1280 ? '720p'
-              : width >= 854 ? '480p'
-              : 'SD';
+            quality =
+              width >= 3840
+                ? '4K'
+                : width >= 2560
+                  ? '2K'
+                  : width >= 1920
+                    ? '1080p'
+                    : width >= 1280
+                      ? '720p'
+                      : width >= 854
+                        ? '480p'
+                        : 'SD';
           }
 
           cleanup();
@@ -356,15 +404,21 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
       });
 
       hls.on(Hls.Events.FRAG_LOADED, (event: any, data: any) => {
-        if (fragmentStartTime > 0 && data && data.payload && !hasSpeedCalculated) {
+        if (
+          fragmentStartTime > 0 &&
+          data &&
+          data.payload &&
+          !hasSpeedCalculated
+        ) {
           const loadTime = performance.now() - fragmentStartTime;
           const size = data.payload.byteLength || 0;
 
           if (loadTime > 0 && size > 0) {
             const speedKBps = size / 1024 / (loadTime / 1000);
-            actualLoadSpeed = speedKBps >= 1024
-              ? `${(speedKBps / 1024).toFixed(2)} MB/s`
-              : `${speedKBps.toFixed(2)} KB/s`;
+            actualLoadSpeed =
+              speedKBps >= 1024
+                ? `${(speedKBps / 1024).toFixed(2)} MB/s`
+                : `${speedKBps.toFixed(2)} KB/s`;
             hasSpeedCalculated = true;
             checkAndResolve();
           }
@@ -388,9 +442,12 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
         }
 
         // v1.6.13 特殊处理：时间戳错误也不应该导致测速失败
-        if (data.details === Hls.ErrorDetails.BUFFER_APPEND_ERROR &&
-            data.err && data.err.message &&
-            data.err.message.includes('timestamp')) {
+        if (
+          data.details === Hls.ErrorDetails.BUFFER_APPEND_ERROR &&
+          data.err &&
+          data.err.message &&
+          data.err.message.includes('timestamp')
+        ) {
           console.log('测速中遇到时间戳错误，v1.6.13已修复，继续测速');
           return;
         }

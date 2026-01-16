@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, no-console */
+/* eslint-disable no-console */
 
 'use client';
 
 import { ChevronUp, Filter, Search } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   getShortDramaCategories,
@@ -172,7 +172,7 @@ export default function ShortDramaPage() {
         top: 0,
         behavior: 'smooth',
       });
-    } catch (error) {
+    } catch (_error) {
       // 如果平滑滚动完全失败，使用立即滚动
       document.body.scrollTop = 0;
     }

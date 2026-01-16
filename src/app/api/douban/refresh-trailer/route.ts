@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 /**
@@ -7,7 +8,10 @@ import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
  */
 
 // 带重试的获取函数
-async function fetchTrailerWithRetry(id: string, retryCount = 0): Promise<string | null> {
+async function fetchTrailerWithRetry(
+  id: string,
+  retryCount = 0,
+): Promise<string | null> {
   const MAX_RETRIES = 2;
   const TIMEOUT = 20000; // 20秒超时
   const RETRY_DELAY = 2000; // 2秒后重试
@@ -18,7 +22,9 @@ async function fetchTrailerWithRetry(id: string, retryCount = 0): Promise<string
     // 先尝试 movie 端点
     let mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
-    console.log(`[refresh-trailer] 开始请求影片 ${id}${retryCount > 0 ? ` (重试 ${retryCount}/${MAX_RETRIES})` : ''}`);
+    console.log(
+      `[refresh-trailer] 开始请求影片 ${id}${retryCount > 0 ? ` (重试 ${retryCount}/${MAX_RETRIES})` : ''}`,
+    );
 
     // 创建 AbortController 用于超时控制
     const controller = new AbortController();
@@ -28,11 +34,11 @@ async function fetchTrailerWithRetry(id: string, retryCount = 0): Promise<string
       signal: controller.signal,
       headers: {
         'User-Agent': DEFAULT_USER_AGENT,
-        'Referer': 'https://movie.douban.com/explore',
-        'Accept': 'application/json, text/plain, */*',
+        Referer: 'https://movie.douban.com/explore',
+        Accept: 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
-        'Origin': 'https://movie.douban.com',
+        Origin: 'https://movie.douban.com',
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
@@ -54,11 +60,11 @@ async function fetchTrailerWithRetry(id: string, retryCount = 0): Promise<string
         signal: tvController.signal,
         headers: {
           'User-Agent': DEFAULT_USER_AGENT,
-          'Referer': 'https://movie.douban.com/explore',
-          'Accept': 'application/json, text/plain, */*',
+          Referer: 'https://movie.douban.com/explore',
+          Accept: 'application/json, text/plain, */*',
           'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
           'Accept-Encoding': 'gzip, deflate, br',
-          'Origin': 'https://movie.douban.com',
+          Origin: 'https://movie.douban.com',
           'Sec-Fetch-Dest': 'empty',
           'Sec-Fetch-Mode': 'cors',
           'Sec-Fetch-Site': 'same-site',
@@ -69,7 +75,9 @@ async function fetchTrailerWithRetry(id: string, retryCount = 0): Promise<string
     }
 
     const fetchTime = Date.now() - startTime;
-    console.log(`[refresh-trailer] 影片 ${id} 请求完成，耗时: ${fetchTime}ms, 状态: ${response.status}`);
+    console.log(
+      `[refresh-trailer] 影片 ${id} 请求完成，耗时: ${fetchTime}ms, 状态: ${response.status}`,
+    );
 
     if (!response.ok) {
       throw new Error(`豆瓣API返回错误: ${response.status}`);
@@ -84,25 +92,39 @@ async function fetchTrailerWithRetry(id: string, retryCount = 0): Promise<string
     }
 
     const totalTime = Date.now() - startTime;
-    console.log(`[refresh-trailer] 影片 ${id} 成功获取trailer URL，总耗时: ${totalTime}ms`);
+    console.log(
+      `[refresh-trailer] 影片 ${id} 成功获取trailer URL，总耗时: ${totalTime}ms`,
+    );
 
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;
 
     // 超时或网络错误，尝试重试
-    if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
-      console.error(`[refresh-trailer] 影片 ${id} 请求失败 (耗时: ${failTime}ms): ${error.name === 'AbortError' ? '超时' : error.message}`);
+    if (
+      error instanceof Error &&
+      (error.name === 'AbortError' || error.message.includes('fetch'))
+    ) {
+      console.error(
+        `[refresh-trailer] 影片 ${id} 请求失败 (耗时: ${failTime}ms): ${error.name === 'AbortError' ? '超时' : error.message}`,
+      );
 
       if (retryCount < MAX_RETRIES) {
-        console.warn(`[refresh-trailer] ${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})...`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        console.warn(
+          `[refresh-trailer] ${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
         return fetchTrailerWithRetry(id, retryCount + 1);
       } else {
-        console.error(`[refresh-trailer] 影片 ${id} 重试次数已达上限，放弃请求`);
+        console.error(
+          `[refresh-trailer] 影片 ${id} 重试次数已达上限，放弃请求`,
+        );
       }
     } else {
-      console.error(`[refresh-trailer] 影片 ${id} 发生错误 (耗时: ${failTime}ms):`, error);
+      console.error(
+        `[refresh-trailer] 影片 ${id} 发生错误 (耗时: ${failTime}ms):`,
+        error,
+      );
     }
 
     throw error;
@@ -120,7 +142,7 @@ export async function GET(request: Request) {
         message: '缺少必要参数: id',
         error: 'MISSING_PARAMETER',
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -139,10 +161,10 @@ export async function GET(request: Request) {
         headers: {
           // 不缓存这个 API 的响应
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
-      }
+      },
     );
   } catch (error) {
     if (error instanceof Error) {
@@ -154,7 +176,7 @@ export async function GET(request: Request) {
             message: '请求超时，豆瓣响应过慢',
             error: 'TIMEOUT',
           },
-          { status: 504 }
+          { status: 504 },
         );
       }
 
@@ -166,7 +188,7 @@ export async function GET(request: Request) {
             message: error.message,
             error: 'NO_TRAILER',
           },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -178,7 +200,7 @@ export async function GET(request: Request) {
           error: 'FETCH_ERROR',
           details: error.message,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -188,7 +210,7 @@ export async function GET(request: Request) {
         message: '刷新 trailer URL 失败',
         error: 'UNKNOWN_ERROR',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

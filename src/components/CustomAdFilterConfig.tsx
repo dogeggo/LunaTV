@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 'use client';
 
 import { AlertCircle, CheckCircle, Code, Info } from 'lucide-react';
@@ -12,9 +10,15 @@ interface CustomAdFilterConfigProps {
   refreshConfig: () => Promise<void>;
 }
 
-const CustomAdFilterConfig = ({ config, refreshConfig }: CustomAdFilterConfigProps) => {
+const CustomAdFilterConfig = ({
+  config,
+  refreshConfig,
+}: CustomAdFilterConfigProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const [filterSettings, setFilterSettings] = useState({
     customAdFilterCode: '',
@@ -52,13 +56,13 @@ const CustomAdFilterConfig = ({ config, refreshConfig }: CustomAdFilterConfigPro
           ...config.SiteConfig,
           CustomAdFilterCode: filterSettings.customAdFilterCode,
           CustomAdFilterVersion: filterSettings.customAdFilterVersion,
-        }
+        },
       };
 
       const response = await fetch('/api/admin/config', {
-        method: 'POST',  // 改为 POST
+        method: 'POST', // 改为 POST
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedConfig)  // 发送完整配置
+        body: JSON.stringify(updatedConfig), // 发送完整配置
       });
 
       if (!response.ok) {
@@ -98,13 +102,13 @@ const CustomAdFilterConfig = ({ config, refreshConfig }: CustomAdFilterConfigPro
           ...config.SiteConfig,
           CustomAdFilterCode: '',
           CustomAdFilterVersion: 1,
-        }
+        },
       };
 
       const response = await fetch('/api/admin/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedConfig)
+        body: JSON.stringify(updatedConfig),
       });
 
       if (!response.ok) {
@@ -196,8 +200,23 @@ function filterAdsFromM3U8(type, m3u8Content) {
           <div className='text-sm text-blue-800 dark:text-blue-200'>
             <p className='font-medium mb-2'>使用说明：</p>
             <ul className='space-y-1 list-disc list-inside'>
-              <li>函数名必须为 <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>filterAdsFromM3U8</code></li>
-              <li>接收两个参数：<code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>type</code>（播放源key）和 <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>m3u8Content</code>（m3u8内容）</li>
+              <li>
+                函数名必须为{' '}
+                <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>
+                  filterAdsFromM3U8
+                </code>
+              </li>
+              <li>
+                接收两个参数：
+                <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>
+                  type
+                </code>
+                （播放源key）和{' '}
+                <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>
+                  m3u8Content
+                </code>
+                （m3u8内容）
+              </li>
               <li>必须返回过滤后的 m3u8 内容字符串</li>
               <li>如果代码执行失败，将自动降级使用默认去广告规则</li>
               <li>修改代码后记得更新版本号，让浏览器刷新缓存</li>
@@ -215,10 +234,12 @@ function filterAdsFromM3U8(type, m3u8Content) {
           type='number'
           min='1'
           value={filterSettings.customAdFilterVersion}
-          onChange={(e) => setFilterSettings({
-            ...filterSettings,
-            customAdFilterVersion: parseInt(e.target.value) || 1
-          })}
+          onChange={(e) =>
+            setFilterSettings({
+              ...filterSettings,
+              customAdFilterVersion: parseInt(e.target.value) || 1,
+            })
+          }
           className='w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent'
           placeholder='1'
         />
@@ -234,7 +255,12 @@ function filterAdsFromM3U8(type, m3u8Content) {
             自定义代码
           </label>
           <button
-            onClick={() => setFilterSettings({ ...filterSettings, customAdFilterCode: defaultExample })}
+            onClick={() =>
+              setFilterSettings({
+                ...filterSettings,
+                customAdFilterCode: defaultExample,
+              })
+            }
             className='text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300'
           >
             载入示例代码
@@ -242,7 +268,12 @@ function filterAdsFromM3U8(type, m3u8Content) {
         </div>
         <textarea
           value={filterSettings.customAdFilterCode}
-          onChange={(e) => setFilterSettings({ ...filterSettings, customAdFilterCode: e.target.value })}
+          onChange={(e) =>
+            setFilterSettings({
+              ...filterSettings,
+              customAdFilterCode: e.target.value,
+            })
+          }
           className='w-full h-96 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none'
           placeholder={defaultExample}
         />
@@ -253,11 +284,13 @@ function filterAdsFromM3U8(type, m3u8Content) {
 
       {/* 消息提示 */}
       {message && (
-        <div className={`flex items-center gap-2 p-4 rounded-lg ${
-          message.type === 'success'
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
-            : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
-        }`}>
+        <div
+          className={`flex items-center gap-2 p-4 rounded-lg ${
+            message.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
+          }`}
+        >
           {message.type === 'success' ? (
             <CheckCircle className='w-5 h-5 shrink-0' />
           ) : (

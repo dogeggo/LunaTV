@@ -7,7 +7,10 @@ export interface TelegramTokenData {
 }
 
 // 存储 token 到数据库
-export async function setTelegramToken(token: string, data: TelegramTokenData): Promise<void> {
+export async function setTelegramToken(
+  token: string,
+  data: TelegramTokenData,
+): Promise<void> {
   const key = `telegram_token:${token}`;
   const now = Date.now();
   const ttlMs = data.expiresAt - now;
@@ -20,11 +23,16 @@ export async function setTelegramToken(token: string, data: TelegramTokenData): 
   console.log('[TelegramToken] TTL (ms):', ttlMs);
   console.log('[TelegramToken] TTL (seconds):', ttl);
   console.log('[TelegramToken] Data:', JSON.stringify(data));
-  console.log('[TelegramToken] Storage type:', process.env.NEXT_PUBLIC_STORAGE_TYPE);
+  console.log(
+    '[TelegramToken] Storage type:',
+    process.env.NEXT_PUBLIC_STORAGE_TYPE,
+  );
 
   // 验证 TTL 是否有效
   if (ttl <= 0) {
-    const error = new Error(`Invalid TTL: ${ttl} seconds (expiresAt: ${data.expiresAt}, now: ${now})`);
+    const error = new Error(
+      `Invalid TTL: ${ttl} seconds (expiresAt: ${data.expiresAt}, now: ${now})`,
+    );
     console.error('[TelegramToken] TTL validation failed:', error.message);
     throw error;
   }
@@ -33,13 +41,23 @@ export async function setTelegramToken(token: string, data: TelegramTokenData): 
   const finalTtl = Math.max(ttl, 1);
 
   if (finalTtl !== ttl) {
-    console.warn('[TelegramToken] TTL adjusted from', ttl, 'to', finalTtl, 'seconds for compatibility');
+    console.warn(
+      '[TelegramToken] TTL adjusted from',
+      ttl,
+      'to',
+      finalTtl,
+      'seconds for compatibility',
+    );
   }
 
   try {
     // 使用通用缓存接口，自动兼容所有存储类型
     await db.setCache(key, data, finalTtl);
-    console.log('[TelegramToken] Token stored successfully with TTL:', finalTtl, 'seconds');
+    console.log(
+      '[TelegramToken] Token stored successfully with TTL:',
+      finalTtl,
+      'seconds',
+    );
   } catch (error) {
     console.error('[TelegramToken] Failed to store token:', error);
     throw error;
@@ -47,13 +65,18 @@ export async function setTelegramToken(token: string, data: TelegramTokenData): 
 }
 
 // 从数据库获取 token（用于 webhook，仅读取不删除）
-export async function getTelegramToken(token: string): Promise<TelegramTokenData | null> {
+export async function getTelegramToken(
+  token: string,
+): Promise<TelegramTokenData | null> {
   const key = `telegram_token:${token}`;
 
   console.log('[TelegramToken] getTelegramToken called');
   console.log('[TelegramToken] Token:', token);
   console.log('[TelegramToken] Key:', key);
-  console.log('[TelegramToken] Storage type:', process.env.NEXT_PUBLIC_STORAGE_TYPE);
+  console.log(
+    '[TelegramToken] Storage type:',
+    process.env.NEXT_PUBLIC_STORAGE_TYPE,
+  );
 
   try {
     console.log('[TelegramToken] Calling db.getCache...');
@@ -69,12 +92,17 @@ export async function getTelegramToken(token: string): Promise<TelegramTokenData
     console.log('[TelegramToken] Data found');
     console.log('[TelegramToken] Current time:', Date.now());
     console.log('[TelegramToken] Expires at:', data.expiresAt);
-    console.log('[TelegramToken] Time difference (ms):', data.expiresAt - Date.now());
+    console.log(
+      '[TelegramToken] Time difference (ms):',
+      data.expiresAt - Date.now(),
+    );
 
     // 仅检查过期但不删除（让 Redis TTL 自动处理过期）
     // 这样 webhook 可以多次读取同一个 token
     if (data.expiresAt < Date.now()) {
-      console.log('[TelegramToken] Token expired (TTL should have handled this)');
+      console.log(
+        '[TelegramToken] Token expired (TTL should have handled this)',
+      );
       return null;
     }
 
@@ -82,13 +110,18 @@ export async function getTelegramToken(token: string): Promise<TelegramTokenData
     return data as TelegramTokenData;
   } catch (error) {
     console.error('[TelegramToken] Failed to get token:', error);
-    console.error('[TelegramToken] Error stack:', error instanceof Error ? error.stack : 'N/A');
+    console.error(
+      '[TelegramToken] Error stack:',
+      error instanceof Error ? error.stack : 'N/A',
+    );
     return null;
   }
 }
 
 // 验证并消费 token（用于 verify，验证后立即删除）
-export async function verifyAndConsumeTelegramToken(token: string): Promise<TelegramTokenData | null> {
+export async function verifyAndConsumeTelegramToken(
+  token: string,
+): Promise<TelegramTokenData | null> {
   const key = `telegram_token:${token}`;
 
   console.log('[TelegramToken] verifyAndConsumeTelegramToken called');

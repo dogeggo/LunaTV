@@ -1,10 +1,10 @@
-/* eslint-disable no-console,react-hooks/exhaustive-deps,@typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 
 'use client';
 
 import { ChevronUp } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -146,7 +146,6 @@ function DoubanPageClient() {
       setCustomCategories(runtimeConfig.CUSTOM_CATEGORIES);
     }
   }, []);
-
 
   // 同步最新参数值到 ref
   useEffect(() => {
@@ -873,7 +872,7 @@ function DoubanPageClient() {
       if (virtualGridRef.current) {
         virtualGridRef.current.scrollToTop();
       }
-    } catch (error) {
+    } catch (_error) {
       // 如果平滑滚动完全失败，使用立即滚动
       document.body.scrollTop = 0;
     }

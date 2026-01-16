@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any,no-console */
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
@@ -19,7 +17,7 @@ export async function GET(request: NextRequest) {
       {
         error: '不支持本地存储进行播放统计查看',
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -39,7 +37,7 @@ export async function GET(request: NextRequest) {
       _operatorRole = 'owner';
     } else {
       const userEntry = config.UserConfig.Users.find(
-        (u) => u.username === username
+        (u) => u.username === username,
       );
       if (!userEntry || userEntry.role !== 'admin' || userEntry.banned) {
         return NextResponse.json({ error: '权限不足' }, { status: 401 });
@@ -69,7 +67,11 @@ export async function GET(request: NextRequest) {
 
     // 用户注册统计
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).getTime();
     let todayNewUsers = 0;
     let totalRegisteredUsers = 0;
     const registrationData: Record<string, number> = {};
@@ -88,9 +90,20 @@ export async function GET(request: NextRequest) {
         // 使用自然日计算，与个人统计保持一致
         const firstDate = new Date(userCreatedAt);
         const currentDate = new Date();
-        const firstDay = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
-        const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-        const registrationDays = Math.floor((currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const firstDay = new Date(
+          firstDate.getFullYear(),
+          firstDate.getMonth(),
+          firstDate.getDate(),
+        );
+        const currentDay = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
+        );
+        const registrationDays =
+          Math.floor(
+            (currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24),
+          ) + 1;
 
         // 统计今日新增用户
         if (userCreatedAt >= todayStart) {
@@ -110,9 +123,13 @@ export async function GET(request: NextRequest) {
         try {
           const userPlayStat = await storage.getUserPlayStat(user.username);
           // 优先使用用户统计中的登入时间，这是真实的登录时间
-          lastLoginTime = userPlayStat.lastLoginTime || userPlayStat.lastLoginDate || userPlayStat.firstLoginTime || 0;
+          lastLoginTime =
+            userPlayStat.lastLoginTime ||
+            userPlayStat.lastLoginDate ||
+            userPlayStat.firstLoginTime ||
+            0;
           loginCount = userPlayStat.loginCount || 0;
-        } catch (err) {
+        } catch (_err) {
           // 获取失败时默认为0
           lastLoginTime = 0;
           loginCount = 0;
@@ -208,7 +225,7 @@ export async function GET(request: NextRequest) {
         // 累计全站统计
         totalWatchTime += userWatchTime;
         totalPlays += records.length;
-      } catch (error) {
+      } catch (_error) {
         // console.error(`获取用户 ${user.username} 播放记录失败:`, error);
         // 出错的用户显示为空统计
         // 设置项目开始时间，2025年9月14日
@@ -218,9 +235,20 @@ export async function GET(request: NextRequest) {
         // 使用自然日计算，与个人统计保持一致
         const firstDate = new Date(userCreatedAt);
         const currentDate = new Date();
-        const firstDay = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
-        const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-        const registrationDays = Math.floor((currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const firstDay = new Date(
+          firstDate.getFullYear(),
+          firstDate.getMonth(),
+          firstDate.getDate(),
+        );
+        const currentDay = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth(),
+          currentDate.getDate(),
+        );
+        const registrationDays =
+          Math.floor(
+            (currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24),
+          ) + 1;
 
         userStats.push({
           username: user.username,
@@ -248,7 +276,11 @@ export async function GET(request: NextRequest) {
       .map(([source, count]) => ({ source, count }));
 
     // 整理近7天数据
-    const dailyStats: Array<{ date: string; watchTime: number; plays: number }> = [];
+    const dailyStats: Array<{
+      date: string;
+      watchTime: number;
+      plays: number;
+    }> = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       const dateKey = date.toISOString().split('T')[0];
@@ -278,16 +310,19 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
 
     const activeUsers = {
-      daily: userStats.filter(user => user.lastLoginTime >= oneDayAgo).length,
-      weekly: userStats.filter(user => user.lastLoginTime >= sevenDaysAgoTime).length,
-      monthly: userStats.filter(user => user.lastLoginTime >= thirtyDaysAgo).length,
+      daily: userStats.filter((user) => user.lastLoginTime >= oneDayAgo).length,
+      weekly: userStats.filter((user) => user.lastLoginTime >= sevenDaysAgoTime)
+        .length,
+      monthly: userStats.filter((user) => user.lastLoginTime >= thirtyDaysAgo)
+        .length,
     };
 
     const result = {
       totalUsers: allUsers.length,
       totalWatchTime,
       totalPlays,
-      avgWatchTimePerUser: allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
+      avgWatchTimePerUser:
+        allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
       avgPlaysPerUser: allUsers.length > 0 ? totalPlays / allUsers.length : 0,
       userStats,
       topSources,
@@ -313,7 +348,7 @@ export async function GET(request: NextRequest) {
         error: '获取播放统计失败',
         details: (error as Error).message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

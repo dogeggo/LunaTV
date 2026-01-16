@@ -53,15 +53,18 @@ export function ConfirmDialog({
   const variantStyles = {
     danger: {
       icon: 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30',
-      button: 'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white',
+      button:
+        'bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white',
     },
     warning: {
       icon: 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30',
-      button: 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white',
+      button:
+        'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white',
     },
     info: {
       icon: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30',
-      button: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white',
+      button:
+        'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white',
     },
   };
 

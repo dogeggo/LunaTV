@@ -319,7 +319,9 @@ div[data-media-provider] video {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
-    transition: opacity 0.15s ease 0.3s, visibility 0s ease 0.45s; /* 0.3s隐藏延迟 */
+    transition:
+      opacity 0.15s ease 0.3s,
+      visibility 0s ease 0.45s; /* 0.3s隐藏延迟 */
   }
 
   /* 面板内部元素在显示时可交互 */
@@ -328,7 +330,7 @@ div[data-media-provider] video {
   }
 
   /* 防止进度条拖拽时弹窗干扰 */
-  .artplayer[data-dragging="true"] .artplayer-plugin-danmuku .apd-config-panel {
+  .artplayer[data-dragging='true'] .artplayer-plugin-danmuku .apd-config-panel {
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
@@ -444,15 +446,15 @@ html:not(.dark) .hover\:bg-slate-50:hover {
 
   /* 处理带有透明度的背景色 + backdrop-blur组合 */
   /* 例如: bg-white/80 backdrop-blur */
-  [class*="bg-white/"] {
+  [class*='bg-white/'] {
     background-color: rgba(255, 255, 255, 0.95) !important;
   }
 
-  [class*="bg-zinc-"][class*="/"] {
+  [class*='bg-zinc-'][class*='/'] {
     background-color: rgba(24, 24, 27, 0.95) !important;
   }
 
-  [class*="bg-gray-"][class*="/"] {
+  [class*='bg-gray-'][class*='/'] {
     background-color: rgba(31, 41, 55, 0.95) !important;
   }
 

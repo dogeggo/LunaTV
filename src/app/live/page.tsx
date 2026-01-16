@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, no-console, @next/next/no-img-element */
 
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
-
+import { Box, Tab, Tabs } from '@mui/material';
 import Hls from 'hls.js';
 import {
+  ChevronDown,
+  ChevronUp,
   Heart,
   Menu,
   Radio,
@@ -13,15 +13,12 @@ import {
   Search,
   Tv,
   X,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Tabs, Tab, Box } from '@mui/material';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
 
 import { debounce } from '@/lib/channel-search';
-import { isMobile, isTablet, isSafari, devicePerformance } from '@/lib/utils';
 import {
   deleteFavorite,
   generateStorageKey,
@@ -30,6 +27,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { parseCustomTimeFormat } from '@/lib/time';
+import { devicePerformance, isMobile, isSafari } from '@/lib/utils';
 
 import PageLayout from '@/components/PageLayout';
 
@@ -685,7 +683,7 @@ function LivePageClient() {
             return supports;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // 缓存读取失败，继续检测
       }
     }
@@ -721,7 +719,7 @@ function LivePageClient() {
               url: url.substring(0, 100), // 保存URL前缀便于调试
             }),
           );
-        } catch (error) {
+        } catch (_error) {
           // localStorage 满了或其他错误，忽略
         }
       }
@@ -1272,7 +1270,7 @@ function LivePageClient() {
             currentSourceRef.current?.key || '',
           );
           context.url = url.toString();
-        } catch (error) {
+        } catch (_error) {
           // ignore
         }
         // 拦截manifest和level请求
@@ -1290,7 +1288,7 @@ function LivePageClient() {
               const url = new URL(context.url);
               url.searchParams.set('allowCORS', 'true');
               context.url = url.toString();
-            } catch (error) {
+            } catch (_error) {
               // 如果 URL 解析失败，回退到字符串拼接
               context.url = context.url + '&allowCORS=true';
             }

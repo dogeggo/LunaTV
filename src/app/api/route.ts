@@ -37,10 +37,16 @@ export async function GET(request: NextRequest) {
   // 设置 CORS 头
   response.headers.set('Access-Control-Allow-Origin', '*');
   response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Content-Mode');
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Content-Type, X-Content-Mode',
+  );
 
   // 设置内容模式响应头
-  response.headers.set('X-Adult-Filter', adultFilterEnabled ? 'enabled' : 'disabled');
+  response.headers.set(
+    'X-Adult-Filter',
+    adultFilterEnabled ? 'enabled' : 'disabled',
+  );
 
   return response;
 }
@@ -53,7 +59,10 @@ export async function OPTIONS() {
 
   response.headers.set('Access-Control-Allow-Origin', '*');
   response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Content-Mode');
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Content-Type, X-Content-Mode',
+  );
 
   return response;
 }

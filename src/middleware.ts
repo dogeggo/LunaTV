@@ -26,7 +26,9 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set('adult', '1');
     }
 
-    console.log(`[Middleware ${requestId}] Rewritten path: ${url.pathname}${url.search}`);
+    console.log(
+      `[Middleware ${requestId}] Rewritten path: ${url.pathname}${url.search}`,
+    );
 
     // 重写请求
     const response = NextResponse.rewrite(url);
@@ -38,7 +40,12 @@ export async function middleware(request: NextRequest) {
     if (newPathname.startsWith('/api')) {
       // 将重写后的请求传递给认证逻辑
       const modifiedRequest = new NextRequest(url, request);
-      return handleAuthentication(modifiedRequest, newPathname, requestId, response);
+      return handleAuthentication(
+        modifiedRequest,
+        newPathname,
+        requestId,
+        response,
+      );
     }
 
     return response;
@@ -58,30 +65,42 @@ async function handleAuthentication(
   request: NextRequest,
   pathname: string,
   requestId: string,
-  response?: NextResponse
+  response?: NextResponse,
 ) {
-
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
   console.log(`[Middleware ${requestId}] Storage type:`, storageType);
 
   if (!process.env.PASSWORD) {
-    console.log(`[Middleware ${requestId}] PASSWORD env not set, redirecting to warning`);
+    console.log(
+      `[Middleware ${requestId}] PASSWORD env not set, redirecting to warning`,
+    );
     // 如果没有设置密码，重定向到警告页面
     const warningUrl = new URL('/warning', request.url);
     return NextResponse.redirect(warningUrl);
   }
 
   // 从cookie获取认证信息
-  console.log(`[Middleware ${requestId}] All cookies:`, request.cookies.getAll());
-  console.log(`[Middleware ${requestId}] Cookie header:`, request.headers.get('cookie'));
+  console.log(
+    `[Middleware ${requestId}] All cookies:`,
+    request.cookies.getAll(),
+  );
+  console.log(
+    `[Middleware ${requestId}] Cookie header:`,
+    request.headers.get('cookie'),
+  );
 
   const authInfo = getAuthInfoFromCookie(request);
-  console.log(`[Middleware ${requestId}] Auth info from cookie:`, authInfo ? {
-    username: authInfo.username,
-    hasSignature: !!authInfo.signature,
-    hasPassword: !!authInfo.password,
-    timestamp: authInfo.timestamp
-  } : null);
+  console.log(
+    `[Middleware ${requestId}] Auth info from cookie:`,
+    authInfo
+      ? {
+          username: authInfo.username,
+          hasSignature: !!authInfo.signature,
+          hasPassword: !!authInfo.password,
+          timestamp: authInfo.timestamp,
+        }
+      : null,
+  );
 
   if (!authInfo) {
     console.log(`[Middleware ${requestId}] No auth info, failing auth`);
@@ -101,18 +120,21 @@ async function handleAuthentication(
   if (!authInfo.username || !authInfo.signature) {
     console.log(`[Middleware ${requestId}] Missing username or signature:`, {
       hasUsername: !!authInfo.username,
-      hasSignature: !!authInfo.signature
+      hasSignature: !!authInfo.signature,
     });
     return handleAuthFailure(request, pathname);
   }
 
   // 验证签名（如果存在）
   if (authInfo.signature) {
-    console.log(`[Middleware ${requestId}] Verifying signature for user:`, authInfo.username);
+    console.log(
+      `[Middleware ${requestId}] Verifying signature for user:`,
+      authInfo.username,
+    );
     const isValidSignature = await verifySignature(
       authInfo.username,
       authInfo.signature,
-      process.env.PASSWORD || ''
+      process.env.PASSWORD || '',
     );
 
     console.log(`[Middleware ${requestId}] Signature valid:`, isValidSignature);
@@ -125,7 +147,9 @@ async function handleAuthentication(
   }
 
   // 签名验证失败或不存在签名
-  console.log(`[Middleware ${requestId}] Signature verification failed, denying access`);
+  console.log(
+    `[Middleware ${requestId}] Signature verification failed, denying access`,
+  );
   return handleAuthFailure(request, pathname);
 }
 
@@ -133,7 +157,7 @@ async function handleAuthentication(
 async function verifySignature(
   data: string,
   signature: string,
-  secret: string
+  secret: string,
 ): Promise<boolean> {
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
@@ -146,12 +170,12 @@ async function verifySignature(
       keyData,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
-      ['verify']
+      ['verify'],
     );
 
     // 将十六进制字符串转换为Uint8Array
     const signatureBuffer = new Uint8Array(
-      signature.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+      signature.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || [],
     );
 
     // 验证签名
@@ -159,7 +183,7 @@ async function verifySignature(
       'HMAC',
       key,
       signatureBuffer,
-      messageData
+      messageData,
     );
   } catch (error) {
     console.error('签名验证失败:', error);
@@ -170,7 +194,7 @@ async function verifySignature(
 // 处理认证失败的情况
 function handleAuthFailure(
   request: NextRequest,
-  pathname: string
+  pathname: string,
 ): NextResponse {
   // 如果是 API 路由，返回 401 状态码
   if (pathname.startsWith('/api')) {

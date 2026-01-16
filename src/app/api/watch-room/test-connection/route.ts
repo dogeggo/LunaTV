@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     if (!serverUrl) {
       return NextResponse.json(
         { success: false, error: '服务器地址不能为空' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       const response = await fetch(healthUrl, {
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
       });
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     console.error('测试连接失败:', error);
     return NextResponse.json(
       { success: false, error: error.message || '测试连接失败' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

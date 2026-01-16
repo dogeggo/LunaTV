@@ -1,5 +1,3 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
-
 import { AdminConfig } from './admin.types';
 import { KvrocksStorage } from './kvrocks.db';
 import { MemoryStorage } from './memory.db';
@@ -66,7 +64,7 @@ export class DbManager {
   async getPlayRecord(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<PlayRecord | null> {
     const key = generateStorageKey(source, id);
     return this.storage.getPlayRecord(userName, key);
@@ -76,7 +74,7 @@ export class DbManager {
     userName: string,
     source: string,
     id: string,
-    record: PlayRecord
+    record: PlayRecord,
   ): Promise<void> {
     const key = generateStorageKey(source, id);
     await this.storage.setPlayRecord(userName, key, record);
@@ -91,7 +89,7 @@ export class DbManager {
   async deletePlayRecord(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<void> {
     const key = generateStorageKey(source, id);
     await this.storage.deletePlayRecord(userName, key);
@@ -101,7 +99,7 @@ export class DbManager {
   async getFavorite(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<Favorite | null> {
     const key = generateStorageKey(source, id);
     return this.storage.getFavorite(userName, key);
@@ -111,14 +109,14 @@ export class DbManager {
     userName: string,
     source: string,
     id: string,
-    favorite: Favorite
+    favorite: Favorite,
   ): Promise<void> {
     const key = generateStorageKey(source, id);
     await this.storage.setFavorite(userName, key, favorite);
   }
 
   async getAllFavorites(
-    userName: string
+    userName: string,
   ): Promise<{ [key: string]: Favorite }> {
     return this.storage.getAllFavorites(userName);
   }
@@ -126,7 +124,7 @@ export class DbManager {
   async deleteFavorite(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<void> {
     const key = generateStorageKey(source, id);
     await this.storage.deleteFavorite(userName, key);
@@ -135,7 +133,7 @@ export class DbManager {
   async isFavorited(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<boolean> {
     const favorite = await this.getFavorite(userName, source, id);
     return favorite !== null;
@@ -170,10 +168,17 @@ export class DbManager {
     role: 'owner' | 'admin' | 'user' = 'user',
     tags?: string[],
     oidcSub?: string,
-    enabledApis?: string[]
+    enabledApis?: string[],
   ): Promise<void> {
     if (typeof (this.storage as any).createUserV2 === 'function') {
-      await (this.storage as any).createUserV2(userName, password, role, tags, oidcSub, enabledApis);
+      await (this.storage as any).createUserV2(
+        userName,
+        password,
+        role,
+        tags,
+        oidcSub,
+        enabledApis,
+      );
     }
   }
 
@@ -252,7 +257,7 @@ export class DbManager {
   async getSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<EpisodeSkipConfig | null> {
     if (typeof (this.storage as any).getSkipConfig === 'function') {
       return (this.storage as any).getSkipConfig(userName, source, id);
@@ -264,7 +269,7 @@ export class DbManager {
     userName: string,
     source: string,
     id: string,
-    config: EpisodeSkipConfig
+    config: EpisodeSkipConfig,
   ): Promise<void> {
     if (typeof (this.storage as any).setSkipConfig === 'function') {
       await (this.storage as any).setSkipConfig(userName, source, id, config);
@@ -274,7 +279,7 @@ export class DbManager {
   async deleteSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<void> {
     if (typeof (this.storage as any).deleteSkipConfig === 'function') {
       await (this.storage as any).deleteSkipConfig(userName, source, id);
@@ -282,7 +287,7 @@ export class DbManager {
   }
 
   async getAllSkipConfigs(
-    userName: string
+    userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }> {
     if (typeof (this.storage as any).getAllSkipConfigs === 'function') {
       return (this.storage as any).getAllSkipConfigs(userName);
@@ -294,7 +299,7 @@ export class DbManager {
   async getEpisodeSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<EpisodeSkipConfig | null> {
     if (typeof (this.storage as any).getEpisodeSkipConfig === 'function') {
       return (this.storage as any).getEpisodeSkipConfig(userName, source, id);
@@ -306,17 +311,22 @@ export class DbManager {
     userName: string,
     source: string,
     id: string,
-    config: EpisodeSkipConfig
+    config: EpisodeSkipConfig,
   ): Promise<void> {
     if (typeof (this.storage as any).saveEpisodeSkipConfig === 'function') {
-      await (this.storage as any).saveEpisodeSkipConfig(userName, source, id, config);
+      await (this.storage as any).saveEpisodeSkipConfig(
+        userName,
+        source,
+        id,
+        config,
+      );
     }
   }
 
   async deleteEpisodeSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<void> {
     if (typeof (this.storage as any).deleteEpisodeSkipConfig === 'function') {
       await (this.storage as any).deleteEpisodeSkipConfig(userName, source, id);
@@ -324,7 +334,7 @@ export class DbManager {
   }
 
   async getAllEpisodeSkipConfigs(
-    userName: string
+    userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }> {
     if (typeof (this.storage as any).getAllEpisodeSkipConfigs === 'function') {
       return (this.storage as any).getAllEpisodeSkipConfigs(userName);
@@ -349,7 +359,11 @@ export class DbManager {
     return null;
   }
 
-  async setCache(key: string, data: any, expireSeconds?: number): Promise<void> {
+  async setCache(
+    key: string,
+    data: any,
+    expireSeconds?: number,
+  ): Promise<void> {
     if (typeof this.storage.setCache === 'function') {
       await this.storage.setCache(key, data, expireSeconds);
     }
@@ -411,7 +425,7 @@ export class DbManager {
       lastPlayTime: 0,
       recentRecords: [],
       avgWatchTime: 0,
-      mostWatchedSource: ''
+      mostWatchedSource: '',
     };
   }
 
@@ -428,20 +442,29 @@ export class DbManager {
     _userName: string,
     _source: string,
     _id: string,
-    _watchTime: number
+    _watchTime: number,
   ): Promise<void> {
     if (typeof (this.storage as any).updatePlayStatistics === 'function') {
-      await (this.storage as any).updatePlayStatistics(_userName, _source, _id, _watchTime);
+      await (this.storage as any).updatePlayStatistics(
+        _userName,
+        _source,
+        _id,
+        _watchTime,
+      );
     }
   }
 
   async updateUserLoginStats(
     userName: string,
     loginTime: number,
-    isFirstLogin?: boolean
+    isFirstLogin?: boolean,
   ): Promise<void> {
     if (typeof (this.storage as any).updateUserLoginStats === 'function') {
-      await (this.storage as any).updateUserLoginStats(userName, loginTime, isFirstLogin);
+      await (this.storage as any).updateUserLoginStats(
+        userName,
+        loginTime,
+        isFirstLogin,
+      );
     }
   }
 

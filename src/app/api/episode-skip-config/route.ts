@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (authInfo.username !== process.env.USERNAME) {
       // 非站长，检查用户存在或被封禁
       const user = config.UserConfig.Users.find(
-        (u) => u.username === authInfo.username
+        (u) => u.username === authInfo.username,
       );
       if (!user) {
         return NextResponse.json({ error: '用户不存在' }, { status: 401 });
@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
 
     if (source && id) {
       // 获取单个配置
-      const config = await db.getEpisodeSkipConfig(authInfo.username, source, id);
+      const config = await db.getEpisodeSkipConfig(
+        authInfo.username,
+        source,
+        id,
+      );
       return NextResponse.json(config);
     } else {
       // 获取所有配置
@@ -47,7 +51,7 @@ export async function GET(request: NextRequest) {
     console.error('获取剧集跳过配置失败:', error);
     return NextResponse.json(
       { error: '获取剧集跳过配置失败' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (authInfo.username !== process.env.USERNAME) {
       // 非站长，检查用户存在或被封禁
       const user = adminConfig.UserConfig.Users.find(
-        (u) => u.username === authInfo.username
+        (u) => u.username === authInfo.username,
       );
       if (!user) {
         return NextResponse.json({ error: '用户不存在' }, { status: 401 });
@@ -89,14 +93,19 @@ export async function POST(request: NextRequest) {
       updated_time: Number(config.updated_time) || Date.now(),
     };
 
-    await db.saveEpisodeSkipConfig(authInfo.username, source, id, episodeSkipConfig);
+    await db.saveEpisodeSkipConfig(
+      authInfo.username,
+      source,
+      id,
+      episodeSkipConfig,
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('保存剧集跳过配置失败:', error);
     return NextResponse.json(
       { error: '保存剧集跳过配置失败' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -112,7 +121,7 @@ export async function DELETE(request: NextRequest) {
     if (authInfo.username !== process.env.USERNAME) {
       // 非站长，检查用户存在或被封禁
       const user = adminConfig.UserConfig.Users.find(
-        (u) => u.username === authInfo.username
+        (u) => u.username === authInfo.username,
       );
       if (!user) {
         return NextResponse.json({ error: '用户不存在' }, { status: 401 });
@@ -137,7 +146,7 @@ export async function DELETE(request: NextRequest) {
     console.error('删除剧集跳过配置失败:', error);
     return NextResponse.json(
       { error: '删除剧集跳过配置失败' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

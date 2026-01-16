@@ -15,7 +15,7 @@ export class SimpleCrypto {
     try {
       const encrypted = CryptoJS.AES.encrypt(data, password).toString();
       return encrypted;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('加密失败');
     }
   }
@@ -36,7 +36,7 @@ export class SimpleCrypto {
       }
 
       return decrypted;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('解密失败，请检查密码是否正确');
     }
   }

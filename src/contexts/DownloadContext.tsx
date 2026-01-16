@@ -1,9 +1,27 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { M3U8DownloadTask, parseM3U8, downloadM3U8Video, PauseResumeController, StreamSaverMode } from '@/lib/download';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import type { DownloadProgress } from '@/lib/download';
-import { getBestStreamMode, detectStreamModeSupport, type StreamModeSupport } from '@/lib/download/stream-mode-detector';
+import {
+  downloadM3U8Video,
+  M3U8DownloadTask,
+  parseM3U8,
+  PauseResumeController,
+  StreamSaverMode,
+} from '@/lib/download';
+import {
+  detectStreamModeSupport,
+  getBestStreamMode,
+  type StreamModeSupport,
+} from '@/lib/download/stream-mode-detector';
 
 export interface DownloadSettings {
   concurrency: number; // 并发线程数
@@ -19,7 +37,11 @@ interface DownloadContextType {
   settings: DownloadSettings;
   setSettings: (settings: DownloadSettings) => void;
   streamModeSupport: StreamModeSupport;
-  createTask: (url: string, title: string, type?: 'TS' | 'MP4') => Promise<void>;
+  createTask: (
+    url: string,
+    title: string,
+    type?: 'TS' | 'MP4',
+  ) => Promise<void>;
   startTask: (taskId: string) => Promise<void>;
   pauseTask: (taskId: string) => void;
   cancelTask: (taskId: string) => void;
@@ -27,16 +49,20 @@ interface DownloadContextType {
   getProgress: (taskId: string) => number;
 }
 
-const DownloadContext = createContext<DownloadContextType | undefined>(undefined);
+const DownloadContext = createContext<DownloadContextType | undefined>(
+  undefined,
+);
 
 export function DownloadProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<M3U8DownloadTask[]>([]);
   const [showDownloadPanel, setShowDownloadPanel] = useState(false);
-  const [streamModeSupport, setStreamModeSupport] = useState<StreamModeSupport>({
-    fileSystem: false,
-    serviceWorker: false,
-    blob: true,
-  });
+  const [streamModeSupport, setStreamModeSupport] = useState<StreamModeSupport>(
+    {
+      fileSystem: false,
+      serviceWorker: false,
+      blob: true,
+    },
+  );
 
   // 下载设置（从 localStorage 恢复或使用默认值）
   const [settings, setSettings] = useState<DownloadSettings>(() => {
@@ -84,16 +110,26 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
   }, [settings]);
 
   // 存储每个任务的控制器和 AbortController
-  const taskControllers = useRef<Map<string, {
-    pauseController: PauseResumeController;
-    abortController: AbortController;
-  }>>(new Map());
+  const taskControllers = useRef<
+    Map<
+      string,
+      {
+        pauseController: PauseResumeController;
+        abortController: AbortController;
+      }
+    >
+  >(new Map());
 
-  const updateTask = useCallback((taskId: string, updates: Partial<M3U8DownloadTask>) => {
-    setTasks(prev => prev.map(task =>
-      task.id === taskId ? { ...task, ...updates } : task
-    ));
-  }, []);
+  const updateTask = useCallback(
+    (taskId: string, updates: Partial<M3U8DownloadTask>) => {
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === taskId ? { ...task, ...updates } : task,
+        ),
+      );
+    },
+    [],
+  );
 
   const createTask = useCallback(
     async (url: string, title: string, type: 'TS' | 'MP4' = 'TS') => {
@@ -111,7 +147,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           status: 'ready',
         };
 
-        setTasks(prev => [...prev, newTask]);
+        setTasks((prev) => [...prev, newTask]);
 
         // 自动开始下载
         await startTask(taskId);
@@ -123,12 +159,12 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    []
+    [],
   );
 
   const startTask = useCallback(
     async (taskId: string) => {
-      const task = tasks.find(t => t.id === taskId);
+      const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
       // 创建新的控制器
@@ -154,7 +190,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
           pauseController,
           settings.concurrency, // 使用设置的并发数
           settings.streamMode, // 使用设置的下载模式
-          settings.maxRetries // 使用设置的重试次数
+          settings.maxRetries, // 使用设置的重试次数
         );
 
         // 下载完成
@@ -174,7 +210,7 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         taskControllers.current.delete(taskId);
       }
     },
-    [tasks, updateTask, settings]
+    [tasks, updateTask, settings],
   );
 
   const pauseTask = useCallback(
@@ -185,26 +221,23 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
         updateTask(taskId, { status: 'pause' });
       }
     },
-    [updateTask]
+    [updateTask],
   );
 
-  const cancelTask = useCallback(
-    (taskId: string) => {
-      const controllers = taskControllers.current.get(taskId);
-      if (controllers) {
-        controllers.abortController.abort();
-        taskControllers.current.delete(taskId);
-      }
+  const cancelTask = useCallback((taskId: string) => {
+    const controllers = taskControllers.current.get(taskId);
+    if (controllers) {
+      controllers.abortController.abort();
+      taskControllers.current.delete(taskId);
+    }
 
-      // 从任务列表中移除
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-    },
-    []
-  );
+    // 从任务列表中移除
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+  }, []);
 
   const retryFailedSegments = useCallback(
     async (taskId: string) => {
-      const task = tasks.find(t => t.id === taskId);
+      const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
       // 重置错误计数
@@ -213,18 +246,21 @@ export function DownloadProvider({ children }: { children: React.ReactNode }) {
       // 重新开始下载
       await startTask(taskId);
     },
-    [tasks, updateTask, startTask]
+    [tasks, updateTask, startTask],
   );
 
-  const getProgress = useCallback((taskId: string): number => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return 0;
+  const getProgress = useCallback(
+    (taskId: string): number => {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return 0;
 
-    const total = task.rangeDownload.targetSegment;
-    if (total === 0) return 0;
+      const total = task.rangeDownload.targetSegment;
+      if (total === 0) return 0;
 
-    return (task.finishNum / total) * 100;
-  }, [tasks]);
+      return (task.finishNum / total) * 100;
+    },
+    [tasks],
+  );
 
   return (
     <DownloadContext.Provider

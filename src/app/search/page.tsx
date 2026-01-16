@@ -1,9 +1,8 @@
-/* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any,@typescript-eslint/no-non-null-assertion,no-empty */
 'use client';
 
 import { ChevronUp, Search, X } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, {
   startTransition,
   Suspense,
@@ -61,9 +60,9 @@ const AcgSearch = dynamic(() => import('@/components/AcgSearch'), {
 
 // 导入类型
 import type { SearchFilterCategory } from '@/components/SearchResultFilter';
+import type { TMDBFilterState } from '@/components/TMDBFilterPanel';
 import type { VideoCardHandle } from '@/components/VideoCard';
 import type { VirtualSearchGridRef } from '@/components/VirtualSearchGrid';
-import type { TMDBFilterState } from '@/components/TMDBFilterPanel';
 
 function SearchPageClient() {
   const [isMounted, setIsMounted] = useState(false);
@@ -1087,7 +1086,7 @@ function SearchPageClient() {
       if (virtualGridRef.current) {
         virtualGridRef.current.scrollToTop();
       }
-    } catch (error) {
+    } catch (_error) {
       // 如果平滑滚动完全失败，使用立即滚动
       document.body.scrollTop = 0;
     }
@@ -1140,9 +1139,9 @@ function SearchPageClient() {
                       );
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                  className={`shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
                     searchType === 'video'
-                      ? 'bg-gradient-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
+                      ? 'bg-linear-to-br from-green-400 via-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105 ring-2 ring-green-400/60 dark:ring-green-500/80'
                       : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
                   }`}
                 >
@@ -1166,9 +1165,9 @@ function SearchPageClient() {
                       handleNetDiskSearch(currentQuery);
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                  className={`shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
                     searchType === 'netdisk'
-                      ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
+                      ? 'bg-linear-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
                       : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
                   }`}
                 >
@@ -1197,7 +1196,7 @@ function SearchPageClient() {
                       setTimeout(() => handleYouTubeSearch(currentQuery), 0);
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                  className={`shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
                     searchType === 'youtube'
                       ? 'bg-gradient-to-br from-red-400 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50 scale-105 ring-2 ring-red-400/60 dark:ring-red-500/80'
                       : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
@@ -1228,7 +1227,7 @@ function SearchPageClient() {
                       );
                     }
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
+                  className={`shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
                     searchType === 'tmdb-actor'
                       ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-violet-600 text-white shadow-lg shadow-purple-500/50 scale-105 ring-2 ring-purple-400/60 dark:ring-purple-500/80'
                       : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
@@ -1484,7 +1483,7 @@ function SearchPageClient() {
                       </button>
                     </div>
                   ) : tmdbActorResults && tmdbActorResults.length > 0 ? (
-                    <div className='grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                    <div className='grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] sm:gap-x-8'>
                       {tmdbActorResults.map((item, index) => (
                         <div key={item.id || index} className='w-full'>
                           <VideoCard
@@ -1817,14 +1816,11 @@ function SearchPageClient() {
                   {useVirtualization ? (
                     <VirtualSearchGrid
                       ref={virtualGridRef}
-                      allResults={searchResults}
                       filteredResults={filteredAllResults}
-                      aggregatedResults={aggregatedResults}
                       filteredAggResults={filteredAggResults}
                       viewMode={viewMode}
                       searchQuery={searchQuery}
                       isLoading={isLoading}
-                      groupRefs={groupRefs}
                       groupStatsRef={groupStatsRef}
                       getGroupRef={getGroupRef}
                       computeGroupStats={computeGroupStats}
@@ -1843,7 +1839,7 @@ function SearchPageClient() {
                   ) : (
                     <div
                       key={`search-results-${viewMode}`}
-                      className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
+                      className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] sm:gap-x-8'
                     >
                       {viewMode === 'agg'
                         ? filteredAggResults.map(([mapKey, group]) => {

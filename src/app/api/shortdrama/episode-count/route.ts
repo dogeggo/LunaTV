@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
@@ -15,7 +13,7 @@ export async function GET(request: NextRequest) {
     if (!name) {
       return NextResponse.json(
         { error: '缺少必要参数: name' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (!enableAlternative || !alternativeApiUrl) {
       return NextResponse.json(
         { error: '备用API未启用或未配置' },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -45,8 +43,9 @@ export async function GET(request: NextRequest) {
 
     const searchResponse = await fetch(searchUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        Accept: 'application/json',
       },
     });
 
@@ -55,25 +54,25 @@ export async function GET(request: NextRequest) {
       const fuzzySearchUrl = `${alternativeApiUrl}/api/v1/drama/dl?dramaName=${encodeURIComponent(name)}`;
       const fuzzyResponse = await fetch(fuzzySearchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'application/json',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          Accept: 'application/json',
         },
       });
 
       if (!fuzzyResponse.ok) {
-        return NextResponse.json(
-          { error: '备用API请求失败' },
-          { status: 502 }
-        );
+        return NextResponse.json({ error: '备用API请求失败' }, { status: 502 });
       }
 
       const fuzzyData = await fuzzyResponse.json();
 
-      if (!fuzzyData || !fuzzyData.data || !Array.isArray(fuzzyData.data) || fuzzyData.data.length === 0) {
-        return NextResponse.json(
-          { error: '未找到该短剧' },
-          { status: 404 }
-        );
+      if (
+        !fuzzyData ||
+        !fuzzyData.data ||
+        !Array.isArray(fuzzyData.data) ||
+        fuzzyData.data.length === 0
+      ) {
+        return NextResponse.json({ error: '未找到该短剧' }, { status: 404 });
       }
 
       const firstDrama = fuzzyData.data[0];
@@ -88,9 +87,18 @@ export async function GET(request: NextRequest) {
       // 设置缓存
       const cacheTime = await getCacheTime();
       const finalResponse = NextResponse.json(response);
-      finalResponse.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
-      finalResponse.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
-      finalResponse.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
+      finalResponse.headers.set(
+        'Cache-Control',
+        `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+      );
+      finalResponse.headers.set(
+        'CDN-Cache-Control',
+        `public, s-maxage=${cacheTime}`,
+      );
+      finalResponse.headers.set(
+        'Vercel-CDN-Cache-Control',
+        `public, s-maxage=${cacheTime}`,
+      );
 
       return finalResponse;
     }
@@ -101,7 +109,7 @@ export async function GET(request: NextRequest) {
     if (!searchData || typeof searchData !== 'object') {
       return NextResponse.json(
         { error: '备用API返回数据格式错误' },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
@@ -117,16 +125,22 @@ export async function GET(request: NextRequest) {
     // 设置缓存
     const cacheTime = await getCacheTime();
     const finalResponse = NextResponse.json(response);
-    finalResponse.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
-    finalResponse.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
-    finalResponse.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
+    finalResponse.headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+    );
+    finalResponse.headers.set(
+      'CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`,
+    );
+    finalResponse.headers.set(
+      'Vercel-CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`,
+    );
 
     return finalResponse;
   } catch (error) {
     console.error('获取集数失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器内部错误' }, { status: 500 });
   }
 }

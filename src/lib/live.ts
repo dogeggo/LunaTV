@@ -1,8 +1,5 @@
-/* eslint-disable no-constant-condition */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { getConfig } from "@/lib/config";
-import { db } from "@/lib/db";
+import { getConfig } from '@/lib/config';
+import { db } from '@/lib/db';
 
 const defaultUA = 'AptvPlayer/1.4.10';
 const TVBOX_UA = 'okhttp/4.1.0';
@@ -48,10 +45,12 @@ export function deleteCachedLiveChannels(key: string) {
   delete cachedLiveChannels[key];
 }
 
-export async function getCachedLiveChannels(key: string): Promise<LiveChannels | null> {
+export async function getCachedLiveChannels(
+  key: string,
+): Promise<LiveChannels | null> {
   if (!cachedLiveChannels[key]) {
     const config = await getConfig();
-    const liveInfo = config.LiveConfig?.find(live => live.key === key);
+    const liveInfo = config.LiveConfig?.find((live) => live.key === key);
     if (!liveInfo) {
       return null;
     }
@@ -76,123 +75,143 @@ export async function refreshLiveChannels(liveInfo: {
   channelNumber?: number;
   disabled?: boolean;
 }): Promise<number> {
-  console.log(`[Live] Starting refresh for source: ${liveInfo.name} (${liveInfo.url})`);
+  console.log(
+    `[Live] Starting refresh for source: ${liveInfo.name} (${liveInfo.url})`,
+  );
 
   if (cachedLiveChannels[liveInfo.key]) {
     delete cachedLiveChannels[liveInfo.key];
   }
-  
+
   if (!liveInfo.url) {
     console.error('[Live] refreshLiveChannels: URL is missing');
     return 0;
   }
 
   const ua = liveInfo.ua || defaultUA;
-  
+
   // 尝试检测是否为 TVBox 格式 (JSON 配置 或 TXT 直播源)
   // 如果用户手动指定了 isTvBox，则优先使用
-  let isTvBox = liveInfo.isTvBox || liveInfo.url.toLowerCase().endsWith('.json');
-  console.log(`[Live] Initial detection for ${liveInfo.url}: isTvBox=${isTvBox} (Manual: ${liveInfo.isTvBox})`);
+  let isTvBox =
+    liveInfo.isTvBox || liveInfo.url.toLowerCase().endsWith('.json');
+  console.log(
+    `[Live] Initial detection for ${liveInfo.url}: isTvBox=${isTvBox} (Manual: ${liveInfo.isTvBox})`,
+  );
 
   let content = '';
-  
+
   try {
     // 第一次 Fetch
-    console.log(`[Live] Fetching URL: ${liveInfo.url} with UA: ${isTvBox ? TVBOX_UA : ua}`);
+    console.log(
+      `[Live] Fetching URL: ${liveInfo.url} with UA: ${isTvBox ? TVBOX_UA : ua}`,
+    );
     const response = await fetch(liveInfo.url, {
       headers: {
         'User-Agent': isTvBox ? TVBOX_UA : ua,
       },
     });
-    
+
     if (!response.ok) {
-        console.error(`[Live] Failed to fetch live source: ${response.status} ${response.statusText}`);
-        return 0;
+      console.error(
+        `[Live] Failed to fetch live source: ${response.status} ${response.statusText}`,
+      );
+      return 0;
     }
 
     content = await response.text();
-    console.log(`[Live] Content received. Length: ${content.length}. Start: ${content.substring(0, 50)}...`);
+    console.log(
+      `[Live] Content received. Length: ${content.length}. Start: ${content.substring(0, 50)}...`,
+    );
 
     // 0. 尝试解密内容（针对 饭太硬/肥猫 等加密源）
     const decryptedContent = tryDecrypt(content);
     const effectiveContent = decryptedContent || content; // 如果解密失败或无加密，使用原内容
     if (decryptedContent !== content) {
-        console.log(`[Live] Content decrypted. New Length: ${effectiveContent.length}. Start: ${effectiveContent.substring(0, 50)}...`);
+      console.log(
+        `[Live] Content decrypted. New Length: ${effectiveContent.length}. Start: ${effectiveContent.substring(0, 50)}...`,
+      );
     }
 
     // 尝试从内容判断是否为 TVBox
     if (!isTvBox) {
-        // 检查 JSON 结构
-        if (effectiveContent.trim().startsWith('{')) {
-            try {
-                const json = tryParseJson(effectiveContent);
-                if (json.lives && Array.isArray(json.lives)) {
-                    isTvBox = true;
-                    console.log(`[Live] Content detected as TVBox JSON Config`);
-                }
-            } catch (e) {
-                // Ignore JSON parse error
-            }
+      // 检查 JSON 结构
+      if (effectiveContent.trim().startsWith('{')) {
+        try {
+          const json = tryParseJson(effectiveContent);
+          if (json.lives && Array.isArray(json.lives)) {
+            isTvBox = true;
+            console.log(`[Live] Content detected as TVBox JSON Config`);
+          }
+        } catch (_e) {
+          // Ignore JSON parse error
         }
-        
-        // 检查 TXT 特征 (排除 M3U)
-        if (!isTvBox && !effectiveContent.includes('#EXTM3U')) {
-            if (effectiveContent.includes(',#genre#') || (effectiveContent.includes(',') && !effectiveContent.trim().startsWith('<'))) {
-                isTvBox = true;
-                console.log(`[Live] Content detected as TVBox TXT`);
-            }
+      }
+
+      // 检查 TXT 特征 (排除 M3U)
+      if (!isTvBox && !effectiveContent.includes('#EXTM3U')) {
+        if (
+          effectiveContent.includes(',#genre#') ||
+          (effectiveContent.includes(',') &&
+            !effectiveContent.trim().startsWith('<'))
+        ) {
+          isTvBox = true;
+          console.log(`[Live] Content detected as TVBox TXT`);
         }
+      }
     }
 
     let result: {
-        tvgUrl: string;
-        channels: {
-            id: string;
-            tvgId: string;
-            name: string;
-            logo: string;
-            group: string;
-            url: string;
-        }[];
+      tvgUrl: string;
+      channels: {
+        id: string;
+        tvgId: string;
+        name: string;
+        logo: string;
+        group: string;
+        url: string;
+      }[];
     };
 
     if (isTvBox) {
-        console.log(`[Live] Processing as TVBox source...`);
-        // 使用 TVBox 处理器 - 传递已解密的内容
-        const tvBoxResult = await processTvBoxContent(effectiveContent, liveInfo.key);
-        console.log(`[Live] TVBox processing result type: ${tvBoxResult.type}`);
+      console.log(`[Live] Processing as TVBox source...`);
+      // 使用 TVBox 处理器 - 传递已解密的内容
+      const tvBoxResult = await processTvBoxContent(
+        effectiveContent,
+        liveInfo.key,
+      );
+      console.log(`[Live] TVBox processing result type: ${tvBoxResult.type}`);
 
-        if (tvBoxResult.type === 'txt') {
-            result = {
-                tvgUrl: '',
-                channels: tvBoxResult.data.channels
-            };
-        } else if (tvBoxResult.type === 'm3u') {
-             // 回退到 M3U 解析
-             result = parseM3U(liveInfo.key, tvBoxResult.content);
-        } else {
-             // 无法识别或出错，尝试作为普通 M3U 解析
-             result = parseM3U(liveInfo.key, effectiveContent);
-        }
-    } else {
-        // 标准 M3U 解析
+      if (tvBoxResult.type === 'txt') {
+        result = {
+          tvgUrl: '',
+          channels: tvBoxResult.data.channels,
+        };
+      } else if (tvBoxResult.type === 'm3u') {
+        // 回退到 M3U 解析
+        result = parseM3U(liveInfo.key, tvBoxResult.content);
+      } else {
+        // 无法识别或出错，尝试作为普通 M3U 解析
         result = parseM3U(liveInfo.key, effectiveContent);
+      }
+    } else {
+      // 标准 M3U 解析
+      result = parseM3U(liveInfo.key, effectiveContent);
     }
 
     const epgUrl = liveInfo.epg || result.tvgUrl;
-    
+
     // 如果没有频道，直接返回
     if (!result.channels || result.channels.length === 0) {
-        return 0;
+      return 0;
     }
 
     const { epgs, logos } = await parseEpg(
       epgUrl,
       liveInfo.ua || defaultUA,
-      result.channels.map(channel => channel.tvgId).filter(tvgId => tvgId),
-      result.channels
+      result.channels.map((channel) => channel.tvgId).filter((tvgId) => tvgId),
+      result.channels,
     );
-    
+
     cachedLiveChannels[liveInfo.key] = {
       channelNumber: result.channels.length,
       channels: result.channels,
@@ -201,10 +220,9 @@ export async function refreshLiveChannels(liveInfo: {
       epgLogos: logos,
     };
     return result.channels.length;
-
   } catch (error) {
-      console.error('Failed to refresh live channels:', error);
-      return 0;
+    console.error('Failed to refresh live channels:', error);
+    return 0;
   }
 }
 
@@ -220,25 +238,28 @@ function tryDecrypt(content: string): string {
   // 1. 检查是否存在 "8位字符 + **" 的特征 (FanTaiYing, Feimao 等常用加密/混淆格式)
   const match = content.match(/[A-Za-z0-9]{8}\*\*/);
   if (match && match.index !== undefined) {
-     // 提取 ** 之后的所有内容作为 Base64
-     // 注意：对于图片隐写，配置通常在文件末尾，match.index 会定位到特征头
-     const base64Part = content.slice(match.index + 10).trim();
-     try {
-       // 尝试 Base64 解码
-       const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
-       // 简单验证解码后是否像 JSON
-       if (decoded.trim().startsWith('{') || decoded.trim().startsWith('[')) {
-           console.log('[Live] Successfully decrypted TVBox config (Base64)');
-           return decoded;
-       }
-     } catch (e) {
-       console.warn('[Live] Detected encrypted format but failed to decode:', e);
-     }
+    // 提取 ** 之后的所有内容作为 Base64
+    // 注意：对于图片隐写，配置通常在文件末尾，match.index 会定位到特征头
+    const base64Part = content.slice(match.index + 10).trim();
+    try {
+      // 尝试 Base64 解码
+      const decoded = Buffer.from(base64Part, 'base64').toString('utf-8');
+      // 简单验证解码后是否像 JSON
+      if (decoded.trim().startsWith('{') || decoded.trim().startsWith('[')) {
+        console.log('[Live] Successfully decrypted TVBox config (Base64)');
+        return decoded;
+      }
+    } catch (e) {
+      console.warn('[Live] Detected encrypted format but failed to decode:', e);
+    }
   }
   return content;
 }
 
-async function processTvBoxContent(content: string, sourceKey: string): Promise<any> {
+async function processTvBoxContent(
+  content: string,
+  sourceKey: string,
+): Promise<any> {
   let config: TvBoxConfig | null = null;
 
   // 注意: content 已经在 refreshLiveChannels 中解密过了，无需再次解密
@@ -247,12 +268,12 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
   try {
     const trimmed = content.trim();
     if (trimmed.startsWith('{')) {
-        const json = tryParseJson(trimmed);
-        if (json.lives && Array.isArray(json.lives)) {
-            config = json;
-        }
+      const json = tryParseJson(trimmed);
+      if (json.lives && Array.isArray(json.lives)) {
+        config = json;
+      }
     }
-  } catch (e) {
+  } catch (_e) {
     // Not JSON
   }
 
@@ -265,8 +286,8 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
       try {
         const response = await fetch(firstLive.url, {
           headers: {
-            'User-Agent': liveUa
-          }
+            'User-Agent': liveUa,
+          },
         });
         if (!response.ok) return { type: 'error', error: 'Fetch failed' };
 
@@ -278,7 +299,7 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
           return {
             type: 'txt',
             data: parseTvBoxLiveTxt(liveContent, sourceKey),
-            ua: liveUa
+            ua: liveUa,
           };
         }
       } catch (error) {
@@ -291,22 +312,28 @@ async function processTvBoxContent(content: string, sourceKey: string): Promise<
 
   // 3. 优先检查 M3U
   if (content.includes('#EXTM3U')) {
-      return { type: 'm3u', content: content, ua: TVBOX_UA };
+    return { type: 'm3u', content: content, ua: TVBOX_UA };
   }
 
   // 4. 检查 TXT
-  if (content.includes(',#genre#') || (content.includes(',') && !content.trim().startsWith('<'))) {
-     return {
-       type: 'txt',
-       data: parseTvBoxLiveTxt(content, sourceKey),
-       ua: TVBOX_UA
-     };
+  if (
+    content.includes(',#genre#') ||
+    (content.includes(',') && !content.trim().startsWith('<'))
+  ) {
+    return {
+      type: 'txt',
+      data: parseTvBoxLiveTxt(content, sourceKey),
+      ua: TVBOX_UA,
+    };
   }
 
   return { type: 'unknown' };
 }
 
-function parseTvBoxLiveTxt(content: string, sourceKey: string): {
+function parseTvBoxLiveTxt(
+  content: string,
+  sourceKey: string,
+): {
   channels: {
     id: string;
     tvgId: string;
@@ -325,7 +352,7 @@ function parseTvBoxLiveTxt(content: string, sourceKey: string): {
     group: string;
     url: string;
   }[] = [];
-  
+
   let currentGroup = '默认分组';
   let channelIndex = 0;
 
@@ -345,7 +372,7 @@ function parseTvBoxLiveTxt(content: string, sourceKey: string): {
     let url = parts[1].trim();
 
     if (url.includes('$')) {
-        url = url.split('$')[0].trim();
+      url = url.split('$')[0].trim();
     }
 
     channels.push({
@@ -354,7 +381,7 @@ function parseTvBoxLiveTxt(content: string, sourceKey: string): {
       name: name,
       logo: '',
       group: currentGroup,
-      url: url
+      url: url,
     });
 
     channelIndex++;
@@ -380,11 +407,13 @@ function tryParseJson(content: string): any {
       // 2. 去除整行注释 (以 // 开头的行)
       const cleanedLines = content.replace(/^\s*\/\/.*$/gm, '');
       return JSON.parse(cleanedLines);
-    } catch (e2) {
+    } catch (_e2) {
       // 3. 如果还失败，尝试更激进的清洗（注意：可能会破坏包含 // 的 URL，需谨慎）
       // 这里暂不实施激进清洗，以免破坏 http:// 链接
       // 可以考虑使用更复杂的正则来避开字符串内的 //
-      console.warn('[Live] JSON parse failed even after simple comment stripping');
+      console.warn(
+        '[Live] JSON parse failed even after simple comment stripping',
+      );
       throw e;
     }
   }
@@ -403,35 +432,41 @@ function normalizeChannelName(name: string): string {
 
 export interface EpgDebugInfo {
   nameToTvgIdSample: Array<{ normalizedName: string; key: string }>;
-  epgNameToChannelIdSample: Array<{ normalizedName: string; channelId: string }>;
+  epgNameToChannelIdSample: Array<{
+    normalizedName: string;
+    channelId: string;
+  }>;
   totalEpgChannels: number;
   totalM3uChannelMappings: number;
   tvgIdMatchCount: number;
   nameMatchCount: number;
   nameMatchDetails: Array<{ epgName: string; m3uKey: string }>;
-  unmatchedEpgSample: Array<{ channelId: string; normalizedName: string | undefined }>;
+  unmatchedEpgSample: Array<{
+    channelId: string;
+    normalizedName: string | undefined;
+  }>;
   epgResultKeys: string[];
   titleTagsFound: number;
   programmeTagsFound: number;
 }
 
-// Internal function, not exported to avoid conflict if not needed, 
+// Internal function, not exported to avoid conflict if not needed,
 // but refreshLiveChannels uses it.
 async function parseEpg(
   epgUrl: string,
   ua: string,
   tvgIds: string[],
-  channels?: { tvgId: string; name: string }[]
+  channels?: { tvgId: string; name: string }[],
 ): Promise<{
   epgs: {
     [key: string]: {
       start: string;
       end: string;
       title: string;
-    }[]
+    }[];
   };
   logos: {
-    [key: string]: string; 
+    [key: string]: string;
   };
 }> {
   if (!epgUrl) {
@@ -439,12 +474,16 @@ async function parseEpg(
   }
 
   const tvgs = new Set(tvgIds);
-  const result: { [key: string]: { start: string; end: string; title: string }[] } = {};
+  const result: {
+    [key: string]: { start: string; end: string; title: string }[];
+  } = {};
   const logos: { [key: string]: string } = {};
 
   // Stub implementation for EPG parsing to keep file size manageable and safe.
   // Real implementation follows.
-  const epgDataByChannelId: { [channelId: string]: { start: string; end: string; title: string }[] } = {};
+  const epgDataByChannelId: {
+    [channelId: string]: { start: string; end: string; title: string }[];
+  } = {};
   const epgNameToChannelId = new Map<string, string>();
   const epgChannelIdToLogo = new Map<string, string>();
 
@@ -461,7 +500,8 @@ async function parseEpg(
     let buffer = '';
     let currentChannelId = '';
     let inChannelTag = false;
-    let currentProgram: { start: string; end: string; title: string } | null = null;
+    let currentProgram: { start: string; end: string; title: string } | null =
+      null;
     let currentEpgChannelId = '';
 
     // Streaming parser logic - Support both single-line and multi-line XML formats
@@ -478,80 +518,100 @@ async function parseEpg(
 
         // Handle <channel> tag - support multi-line format
         if (trimmed.startsWith('<channel')) {
-           const idMatch = trimmed.match(/id="([^"]*)"/);
-           if (idMatch) {
-               currentChannelId = idMatch[1];
-               inChannelTag = true;
-           }
+          const idMatch = trimmed.match(/id="([^"]*)"/);
+          if (idMatch) {
+            currentChannelId = idMatch[1];
+            inChannelTag = true;
+          }
 
-           // Check if display-name is on the same line (single-line format)
-           const nameMatch = trimmed.match(/<display-name[^>]*>(.*?)<\/display-name>/);
-           if (currentChannelId && nameMatch) {
-               epgNameToChannelId.set(normalizeChannelName(nameMatch[1]), currentChannelId);
-           }
-           const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
-           if (currentChannelId && iconMatch) {
-               epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
-           }
+          // Check if display-name is on the same line (single-line format)
+          const nameMatch = trimmed.match(
+            /<display-name[^>]*>(.*?)<\/display-name>/,
+          );
+          if (currentChannelId && nameMatch) {
+            epgNameToChannelId.set(
+              normalizeChannelName(nameMatch[1]),
+              currentChannelId,
+            );
+          }
+          const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
+          if (currentChannelId && iconMatch) {
+            epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
+          }
 
-           // Check if it's a self-closing or closing on same line
-           if (trimmed.includes('</channel>')) {
-               inChannelTag = false;
-               currentChannelId = '';
-           }
+          // Check if it's a self-closing or closing on same line
+          if (trimmed.includes('</channel>')) {
+            inChannelTag = false;
+            currentChannelId = '';
+          }
         }
         // Handle display-name in multi-line format (when inside channel tag)
         else if (inChannelTag && trimmed.startsWith('<display-name')) {
-           const nameMatch = trimmed.match(/<display-name[^>]*>(.*?)<\/display-name>/);
-           if (currentChannelId && nameMatch) {
-               epgNameToChannelId.set(normalizeChannelName(nameMatch[1]), currentChannelId);
-           }
+          const nameMatch = trimmed.match(
+            /<display-name[^>]*>(.*?)<\/display-name>/,
+          );
+          if (currentChannelId && nameMatch) {
+            epgNameToChannelId.set(
+              normalizeChannelName(nameMatch[1]),
+              currentChannelId,
+            );
+          }
         }
         // Handle icon in multi-line format (when inside channel tag)
         else if (inChannelTag && trimmed.startsWith('<icon')) {
-           const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
-           if (currentChannelId && iconMatch) {
-               epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
-           }
+          const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
+          if (currentChannelId && iconMatch) {
+            epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
+          }
         }
         // Handle closing </channel> tag
         else if (trimmed.startsWith('</channel>')) {
-           inChannelTag = false;
-           currentChannelId = '';
+          inChannelTag = false;
+          currentChannelId = '';
         }
         // Handle <programme> tag
         else if (trimmed.startsWith('<programme')) {
-             const channelIdMatch = trimmed.match(/channel="([^"]*)"/);
-             const epgChannelId = channelIdMatch ? channelIdMatch[1] : '';
-             const startMatch = trimmed.match(/start="([^"]*)"/);
-             const endMatch = trimmed.match(/stop="([^"]*)"/);
-             if (epgChannelId && startMatch && endMatch) {
-                 currentProgram = { start: startMatch[1], end: endMatch[1], title: '' };
-                 currentEpgChannelId = epgChannelId;
-                 // Check if title is on the same line (single-line format)
-                 const titleMatch = trimmed.match(/<title(?:\s+[^>]*)?>(.*?)<\/title>/);
-                 if (titleMatch) {
-                     currentProgram.title = titleMatch[1];
-                     if (!epgDataByChannelId[epgChannelId]) epgDataByChannelId[epgChannelId] = [];
-                     epgDataByChannelId[epgChannelId].push({ ...currentProgram });
-                     currentProgram = null;
-                 }
-             }
+          const channelIdMatch = trimmed.match(/channel="([^"]*)"/);
+          const epgChannelId = channelIdMatch ? channelIdMatch[1] : '';
+          const startMatch = trimmed.match(/start="([^"]*)"/);
+          const endMatch = trimmed.match(/stop="([^"]*)"/);
+          if (epgChannelId && startMatch && endMatch) {
+            currentProgram = {
+              start: startMatch[1],
+              end: endMatch[1],
+              title: '',
+            };
+            currentEpgChannelId = epgChannelId;
+            // Check if title is on the same line (single-line format)
+            const titleMatch = trimmed.match(
+              /<title(?:\s+[^>]*)?>(.*?)<\/title>/,
+            );
+            if (titleMatch) {
+              currentProgram.title = titleMatch[1];
+              if (!epgDataByChannelId[epgChannelId])
+                epgDataByChannelId[epgChannelId] = [];
+              epgDataByChannelId[epgChannelId].push({ ...currentProgram });
+              currentProgram = null;
+            }
+          }
         }
         // Handle <title> tag in multi-line format (when inside programme tag)
         else if (trimmed.startsWith('<title') && currentProgram) {
-             const titleMatch = trimmed.match(/<title(?:\s+[^>]*)?>(.*?)<\/title>/);
-             if (titleMatch) {
-                 currentProgram.title = titleMatch[1];
-                 if (!epgDataByChannelId[currentEpgChannelId]) epgDataByChannelId[currentEpgChannelId] = [];
-                 epgDataByChannelId[currentEpgChannelId].push({ ...currentProgram });
-                 currentProgram = null;
-             }
+          const titleMatch = trimmed.match(
+            /<title(?:\s+[^>]*)?>(.*?)<\/title>/,
+          );
+          if (titleMatch) {
+            currentProgram.title = titleMatch[1];
+            if (!epgDataByChannelId[currentEpgChannelId])
+              epgDataByChannelId[currentEpgChannelId] = [];
+            epgDataByChannelId[currentEpgChannelId].push({ ...currentProgram });
+            currentProgram = null;
+          }
         }
       }
     }
-  } catch (e) {
-      // ignore
+  } catch (_e) {
+    // ignore
   }
 
   // Map back to M3U channels
@@ -560,7 +620,11 @@ async function parseEpg(
       const key = channel.tvgId || channel.name;
       const normalizedName = normalizeChannelName(channel.name);
 
-      if (channel.tvgId && tvgs.has(channel.tvgId) && epgDataByChannelId[channel.tvgId]) {
+      if (
+        channel.tvgId &&
+        tvgs.has(channel.tvgId) &&
+        epgDataByChannelId[channel.tvgId]
+      ) {
         result[key] = epgDataByChannelId[channel.tvgId];
         const logoUrl = epgChannelIdToLogo.get(channel.tvgId);
         if (logoUrl && !logos[key]) logos[key] = logoUrl;
@@ -574,41 +638,44 @@ async function parseEpg(
       }
     }
   }
-  
+
   return { epgs: result, logos };
 }
 
 // Exported for debug use if needed
 export async function parseEpgWithDebug(
-  epgUrl: string,
-  ua: string,
-  tvgIds: string[],
-  channels?: { tvgId: string; name: string }[]
+  _epgUrl: string,
+  _ua: string,
+  _tvgIds: string[],
+  _channels?: { tvgId: string; name: string }[],
 ): Promise<{
   epgs: any;
   debug: EpgDebugInfo;
 }> {
-    // Reuse parseEpg logic or separate implementation
-    // For now returning empty to ensure safe compilation
-    return { 
-        epgs: {}, 
-        debug: {
-            nameToTvgIdSample: [],
-            epgNameToChannelIdSample: [],
-            totalEpgChannels: 0,
-            totalM3uChannelMappings: 0,
-            tvgIdMatchCount: 0,
-            nameMatchCount: 0,
-            nameMatchDetails: [],
-            unmatchedEpgSample: [],
-            epgResultKeys: [],
-            titleTagsFound: 0,
-            programmeTagsFound: 0,
-        } 
-    };
+  // Reuse parseEpg logic or separate implementation
+  // For now returning empty to ensure safe compilation
+  return {
+    epgs: {},
+    debug: {
+      nameToTvgIdSample: [],
+      epgNameToChannelIdSample: [],
+      totalEpgChannels: 0,
+      totalM3uChannelMappings: 0,
+      tvgIdMatchCount: 0,
+      nameMatchCount: 0,
+      nameMatchDetails: [],
+      unmatchedEpgSample: [],
+      epgResultKeys: [],
+      titleTagsFound: 0,
+      programmeTagsFound: 0,
+    },
+  };
 }
 
-export function parseM3U(sourceKey: string, m3uContent: string): {
+export function parseM3U(
+  sourceKey: string,
+  m3uContent: string,
+): {
   tvgUrl: string;
   channels: {
     id: string;
@@ -627,7 +694,10 @@ export function parseM3U(sourceKey: string, m3uContent: string): {
     group: string;
     url: string;
   }[] = [];
-  const lines = m3uContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const lines = m3uContent
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
   let tvgUrl = '';
   let channelIndex = 0;
 
@@ -651,7 +721,11 @@ export function parseM3U(sourceKey: string, m3uContent: string): {
         if (name && url) {
           channels.push({
             id: `${sourceKey}-${channelIndex}`,
-            tvgId, name, logo, group, url
+            tvgId,
+            name,
+            logo,
+            group,
+            url,
           });
           channelIndex++;
         }
@@ -669,7 +743,10 @@ export function parseM3U(sourceKey: string, m3uContent: string): {
 export function resolveUrl(baseUrl: string, relativePath: string) {
   try {
     // 如果已经是完整的 URL，直接返回
-    if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    if (
+      relativePath.startsWith('http://') ||
+      relativePath.startsWith('https://')
+    ) {
       return relativePath;
     }
 
@@ -683,7 +760,7 @@ export function resolveUrl(baseUrl: string, relativePath: string) {
     const baseUrlObj = new URL(baseUrl);
     const resolvedUrl = new URL(relativePath, baseUrlObj);
     return resolvedUrl.href;
-  } catch (error) {
+  } catch (_error) {
     // 降级处理
     return fallbackUrlResolve(baseUrl, relativePath);
   }
@@ -703,8 +780,8 @@ function fallbackUrlResolve(baseUrl: string, relativePath: string) {
     return `${urlObj.protocol}//${urlObj.host}${relativePath}`;
   } else if (relativePath.startsWith('../')) {
     // 上级目录相对路径 (../path/to/file)
-    const segments = base.split('/').filter(s => s);
-    const relativeSegments = relativePath.split('/').filter(s => s);
+    const segments = base.split('/').filter((s) => s);
+    const relativeSegments = relativePath.split('/').filter((s) => s);
 
     for (const segment of relativeSegments) {
       if (segment === '..') {
@@ -718,7 +795,9 @@ function fallbackUrlResolve(baseUrl: string, relativePath: string) {
     return `${urlObj.protocol}//${urlObj.host}/${segments.join('/')}`;
   } else {
     // 当前目录相对路径 (file.ts 或 ./file.ts)
-    const cleanRelative = relativePath.startsWith('./') ? relativePath.slice(2) : relativePath;
+    const cleanRelative = relativePath.startsWith('./')
+      ? relativePath.slice(2)
+      : relativePath;
     return base + cleanRelative;
   }
 }
@@ -728,12 +807,15 @@ export function getBaseUrl(m3u8Url: string) {
     const url = new URL(m3u8Url);
     // 如果 URL 以 .m3u8 结尾，移除文件名
     if (url.pathname.endsWith('.m3u8')) {
-      url.pathname = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
+      url.pathname = url.pathname.substring(
+        0,
+        url.pathname.lastIndexOf('/') + 1,
+      );
     } else if (!url.pathname.endsWith('/')) {
       url.pathname += '/';
     }
-    return url.protocol + "//" + url.host + url.pathname;
-  } catch (error) {
+    return url.protocol + '//' + url.host + url.pathname;
+  } catch (_error) {
     return m3u8Url.endsWith('/') ? m3u8Url : m3u8Url + '/';
   }
 }

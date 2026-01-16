@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getConfig } from '@/lib/config';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
@@ -20,24 +21,24 @@ export const runtime = 'nodejs';
 // 完整的浏览器请求头伪装
 const BROWSER_HEADERS = {
   'User-Agent': DEFAULT_USER_AGENT,
-  'Accept': 'application/json, text/javascript, */*; q=0.01',
+  Accept: 'application/json, text/javascript, */*; q=0.01',
   'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
   'Accept-Encoding': 'gzip, deflate',
-  'Connection': 'keep-alive',
-  'Pragma': 'no-cache',
+  Connection: 'keep-alive',
+  Pragma: 'no-cache',
   'Cache-Control': 'no-cache',
 };
 
 // 安全白名单：只允许代理这些合法的 CMS API 模式
 const ALLOWED_PATTERNS = [
-  /\?ac=class/i,           // 获取分类
-  /\?ac=list/i,            // 获取列表
-  /\?ac=videolist/i,       // 获取视频列表
-  /\?ac=detail/i,          // 获取详情
-  /\/api\/vod/i,           // API 路由
-  /\/index\.php/i,         // 标准 PHP 入口
-  /\/api\.php/i,           // API PHP 入口
-  /\/provide\/vod/i,       // 提供接口
+  /\?ac=class/i, // 获取分类
+  /\?ac=list/i, // 获取列表
+  /\?ac=videolist/i, // 获取视频列表
+  /\?ac=detail/i, // 获取详情
+  /\/api\/vod/i, // API 路由
+  /\/index\.php/i, // 标准 PHP 入口
+  /\/api\.php/i, // API PHP 入口
+  /\/provide\/vod/i, // 提供接口
 ];
 
 // CORS 响应头
@@ -52,7 +53,7 @@ function getCorsHeaders() {
 
 // 检查 URL 是否在白名单中
 function isUrlAllowed(url: string): boolean {
-  return ALLOWED_PATTERNS.some(pattern => pattern.test(url));
+  return ALLOWED_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 // 清理 BOM 和空白符（提高非标响应兼容性）
@@ -77,7 +78,11 @@ function getErrorType(error: any): string {
   if (message.includes('ECONNREFUSED')) {
     return 'CONNECTION_REFUSED';
   }
-  if (message.includes('certificate') || message.includes('SSL') || message.includes('TLS')) {
+  if (
+    message.includes('certificate') ||
+    message.includes('SSL') ||
+    message.includes('TLS')
+  ) {
     return 'SSL_ERROR';
   }
   if (message.includes('ECONNRESET')) {
@@ -100,7 +105,7 @@ export async function GET(request: NextRequest) {
     if (!targetUrl) {
       return NextResponse.json(
         { error: 'Missing required parameter: url' },
-        { status: 400, headers: getCorsHeaders() }
+        { status: 400, headers: getCorsHeaders() },
       );
     }
 
@@ -111,7 +116,7 @@ export async function GET(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { error: 'Invalid URL format' },
-        { status: 400, headers: getCorsHeaders() }
+        { status: 400, headers: getCorsHeaders() },
       );
     }
 
@@ -120,7 +125,7 @@ export async function GET(request: NextRequest) {
       console.warn(`[CMS Proxy] Blocked non-whitelisted URL: ${targetUrl}`);
       return NextResponse.json(
         { error: 'URL not in whitelist' },
-        { status: 403, headers: getCorsHeaders() }
+        { status: 403, headers: getCorsHeaders() },
       );
     }
 
@@ -136,7 +141,7 @@ export async function GET(request: NextRequest) {
 
         // 检查请求的 URL 是否属于成人源
         const requestOrigin = `${parsedUrl.protocol}//${parsedUrl.host}`;
-        const isAdultSource = sourceConfigs.some(source => {
+        const isAdultSource = sourceConfigs.some((source) => {
           if (!source.is_adult) return false;
 
           try {
@@ -157,9 +162,9 @@ export async function GET(request: NextRequest) {
               msg: 'success',
               list: [],
               class: [],
-              total: 0
+              total: 0,
             },
-            { status: 200, headers: getCorsHeaders() }
+            { status: 200, headers: getCorsHeaders() },
           );
         }
       } catch (configError) {
@@ -191,14 +196,16 @@ export async function GET(request: NextRequest) {
 
       // 检查响应状态
       if (!response.ok) {
-        console.warn(`[CMS Proxy] Upstream error: ${response.status} ${response.statusText}`);
+        console.warn(
+          `[CMS Proxy] Upstream error: ${response.status} ${response.statusText}`,
+        );
         return NextResponse.json(
           {
             error: 'Upstream server error',
             status: response.status,
-            statusText: response.statusText
+            statusText: response.statusText,
           },
-          { status: 502, headers: getCorsHeaders() }
+          { status: 502, headers: getCorsHeaders() },
         );
       }
 
@@ -219,8 +226,10 @@ export async function GET(request: NextRequest) {
           status: 200,
           headers: {
             ...getCorsHeaders(),
-            'Content-Type': response.headers.get('content-type') || 'text/plain; charset=utf-8',
-          }
+            'Content-Type':
+              response.headers.get('content-type') ||
+              'text/plain; charset=utf-8',
+          },
         });
       }
 
@@ -230,44 +239,45 @@ export async function GET(request: NextRequest) {
         headers: {
           ...getCorsHeaders(),
           'X-Proxy-Via': 'Local-Server', // 🔍 标记请求经过本地代理
-        }
+        },
       });
-
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
 
       const errorType = getErrorType(fetchError);
-      console.error(`[CMS Proxy] Fetch error (${errorType}):`, fetchError.message);
+      console.error(
+        `[CMS Proxy] Fetch error (${errorType}):`,
+        fetchError.message,
+      );
 
       // 根据错误类型返回不同的错误信息
       const errorMessages: Record<string, string> = {
-        'TIMEOUT': 'Request timeout (20s)',
-        'DNS_ERROR': 'DNS resolution failed',
-        'CONNECTION_REFUSED': 'Connection refused',
-        'SSL_ERROR': 'SSL/TLS certificate error',
-        'CONNECTION_RESET': 'Connection reset by peer',
-        'NETWORK_TIMEOUT': 'Network timeout',
-        'UNKNOWN_ERROR': 'Unknown network error',
+        TIMEOUT: 'Request timeout (20s)',
+        DNS_ERROR: 'DNS resolution failed',
+        CONNECTION_REFUSED: 'Connection refused',
+        SSL_ERROR: 'SSL/TLS certificate error',
+        CONNECTION_RESET: 'Connection reset by peer',
+        NETWORK_TIMEOUT: 'Network timeout',
+        UNKNOWN_ERROR: 'Unknown network error',
       };
 
       return NextResponse.json(
         {
           error: errorMessages[errorType] || 'Network error',
           type: errorType,
-          details: fetchError.message
+          details: fetchError.message,
         },
-        { status: 502, headers: getCorsHeaders() }
+        { status: 502, headers: getCorsHeaders() },
       );
     }
-
   } catch (error: any) {
     console.error('[CMS Proxy] Unexpected error:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',
-        details: error.message
+        details: error.message,
       },
-      { status: 500, headers: getCorsHeaders() }
+      { status: 500, headers: getCorsHeaders() },
     );
   }
 }
@@ -276,6 +286,6 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
-    headers: getCorsHeaders()
+    headers: getCorsHeaders(),
   });
 }

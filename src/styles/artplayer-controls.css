@@ -37,12 +37,16 @@
     opacity: 1 !important;
     transform: translateY(0) !important;
     pointer-events: auto !important;
-    transition: opacity 0.15s ease 0.1s, transform 0.15s ease 0.1s !important;
+    transition:
+      opacity 0.15s ease 0.1s,
+      transform 0.15s ease 0.1s !important;
   }
 
   /* 音量面板默认隐藏状态 */
   .art-volume-panel {
-    transition: opacity 0.15s ease 0.3s, transform 0.15s ease 0.3s !important;
+    transition:
+      opacity 0.15s ease 0.3s,
+      transform 0.15s ease 0.3s !important;
   }
 }
 

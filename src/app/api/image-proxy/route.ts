@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 export const runtime = 'nodejs';
@@ -30,13 +31,14 @@ export async function GET(request: Request) {
 
     // 构建请求头
     const fetchHeaders: HeadersInit = {
-      'Referer': sourceOrigin + '/',
-      'Origin': sourceOrigin,
+      Referer: sourceOrigin + '/',
+      Origin: sourceOrigin,
       'User-Agent': DEFAULT_USER_AGENT,
-      'Accept': 'image/avif,image/webp,image/jxl,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      Accept:
+        'image/avif,image/webp,image/jxl,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     };
 
     const imageResponse = await fetch(imageUrl, {
@@ -51,12 +53,15 @@ export async function GET(request: Request) {
         {
           error: 'Failed to fetch image',
           status: imageResponse.status,
-          statusText: imageResponse.statusText
+          statusText: imageResponse.statusText,
         },
-        { status: imageResponse.status }
+        { status: imageResponse.status },
       );
       // 错误响应不缓存，避免缓存失效的图片链接
-      errorResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      errorResponse.headers.set(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate',
+      );
       return errorResponse;
     }
 
@@ -65,7 +70,7 @@ export async function GET(request: Request) {
     if (!imageResponse.body) {
       return NextResponse.json(
         { error: 'Image response has no body' },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -82,7 +87,10 @@ export async function GET(request: Request) {
     }
 
     // 设置缓存头 - 缓存7天（604800秒），允许重新验证
-    headers.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    headers.set(
+      'Cache-Control',
+      'public, max-age=604800, stale-while-revalidate=86400',
+    );
     headers.set('CDN-Cache-Control', 'public, s-maxage=604800');
     headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=604800');
     headers.set('Netlify-Vary', 'query');
@@ -103,14 +111,14 @@ export async function GET(request: Request) {
     if (error.name === 'AbortError') {
       return NextResponse.json(
         { error: 'Image fetch timeout (15s)' },
-        { status: 504 }
+        { status: 504 },
       );
     }
 
     console.error('[Image Proxy] Error fetching image:', error.message);
     return NextResponse.json(
       { error: 'Error fetching image', details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -123,6 +131,6 @@ export async function OPTIONS() {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-    }
+    },
   });
 }

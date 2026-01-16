@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       {
         error: '不支持本地存储进行管理员配置',
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (!issuerUrl || typeof issuerUrl !== 'string') {
       return NextResponse.json(
         { error: 'Issuer URL不能为空' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(wellKnownUrl, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       // 设置超时
       signal: AbortSignal.timeout(10000), // 10秒超时
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         {
           error: `无法获取OIDC配置: ${response.status} ${response.statusText}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'OIDC配置不完整，缺少必需的端点',
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -84,18 +84,18 @@ export async function POST(request: NextRequest) {
       if (error.name === 'AbortError') {
         return NextResponse.json(
           { error: '请求超时，请检查Issuer URL是否正确' },
-          { status: 408 }
+          { status: 408 },
         );
       }
       return NextResponse.json(
         { error: `获取配置失败: ${error.message}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json(
       { error: '获取配置失败，请检查Issuer URL是否正确' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

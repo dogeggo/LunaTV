@@ -23,12 +23,17 @@ export async function GET(request: NextRequest) {
       // 查找指定的 Provider
       if (providerId === 'default') {
         // 如果没有指定，使用第一个启用的 Provider
-        oidcConfig = config.OIDCProviders.find(p => p.enabled);
+        oidcConfig = config.OIDCProviders.find((p) => p.enabled);
       } else {
         // 查找指定 ID 的 Provider
-        oidcConfig = config.OIDCProviders.find(p => p.id === providerId && p.enabled);
+        oidcConfig = config.OIDCProviders.find(
+          (p) => p.id === providerId && p.enabled,
+        );
       }
-      console.log('[OIDC Login] Found provider from OIDCProviders:', oidcConfig);
+      console.log(
+        '[OIDC Login] Found provider from OIDCProviders:',
+        oidcConfig,
+      );
     } else if (config.OIDCAuthConfig) {
       // 向后兼容：使用旧的单 Provider 配置
       oidcConfig = config.OIDCAuthConfig;
@@ -37,11 +42,14 @@ export async function GET(request: NextRequest) {
 
     // 检查是否启用OIDC登录
     if (!oidcConfig || !oidcConfig.enabled) {
-      console.log('[OIDC Login] ERROR: Provider not found or not enabled. oidcConfig:', oidcConfig);
+      console.log(
+        '[OIDC Login] ERROR: Provider not found or not enabled. oidcConfig:',
+        oidcConfig,
+      );
 
       return NextResponse.json(
         { error: 'OIDC登录未启用或找不到指定的 Provider' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -49,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (!oidcConfig.authorizationEndpoint || !oidcConfig.clientId) {
       return NextResponse.json(
         { error: 'OIDC配置不完整，请配置Authorization Endpoint和Client ID' },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -136,9 +144,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('OIDC登录发起失败:', error);
-    return NextResponse.json(
-      { error: '服务器错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
 }

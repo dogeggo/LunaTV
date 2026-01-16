@@ -1,4 +1,4 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
+/* eslint-disable no-console */
 
 import { createClient, RedisClientType } from 'redis';
 
@@ -32,10 +32,13 @@ export interface RedisConnectionConfig {
 }
 
 // 添加Redis操作重试包装器
-function createRetryWrapper(clientName: string, getClient: () => RedisClientType) {
+function createRetryWrapper(
+  clientName: string,
+  getClient: () => RedisClientType,
+) {
   return async function withRetry<T>(
     operation: () => Promise<T>,
-    maxRetries = 3
+    maxRetries = 3,
   ): Promise<T> {
     for (let i = 0; i < maxRetries; i++) {
       try {
@@ -51,7 +54,7 @@ function createRetryWrapper(clientName: string, getClient: () => RedisClientType
 
         if (isConnectionError && !isLastAttempt) {
           console.log(
-            `${clientName} operation failed, retrying... (${i + 1}/${maxRetries})`
+            `${clientName} operation failed, retrying... (${i + 1}/${maxRetries})`,
           );
           console.error('Error:', err.message);
 
@@ -80,7 +83,10 @@ function createRetryWrapper(clientName: string, getClient: () => RedisClientType
 }
 
 // 创建客户端的工厂函数
-export function createRedisClient(config: RedisConnectionConfig, globalSymbol: symbol): RedisClientType {
+export function createRedisClient(
+  config: RedisConnectionConfig,
+  globalSymbol: symbol,
+): RedisClientType {
   let client: RedisClientType | undefined = (global as any)[globalSymbol];
 
   if (!client) {
@@ -94,9 +100,13 @@ export function createRedisClient(config: RedisConnectionConfig, globalSymbol: s
       socket: {
         // 重连策略：指数退避，最大30秒
         reconnectStrategy: (retries: number) => {
-          console.log(`${config.clientName} reconnection attempt ${retries + 1}`);
+          console.log(
+            `${config.clientName} reconnection attempt ${retries + 1}`,
+          );
           if (retries > 10) {
-            console.error(`${config.clientName} max reconnection attempts exceeded`);
+            console.error(
+              `${config.clientName} max reconnection attempts exceeded`,
+            );
             return false; // 停止重连
           }
           return Math.min(1000 * Math.pow(2, retries), 30000); // 指数退避，最大30秒
@@ -155,7 +165,10 @@ export function createRedisClient(config: RedisConnectionConfig, globalSymbol: s
 export abstract class BaseRedisStorage implements IStorage {
   protected client: RedisClientType;
   protected config: RedisConnectionConfig;
-  protected withRetry: <T>(operation: () => Promise<T>, maxRetries?: number) => Promise<T>;
+  protected withRetry: <T>(
+    operation: () => Promise<T>,
+    maxRetries?: number,
+  ) => Promise<T>;
 
   constructor(config: RedisConnectionConfig, globalSymbol: symbol) {
     this.config = config; // 保存配置
@@ -170,10 +183,10 @@ export abstract class BaseRedisStorage implements IStorage {
 
   async getPlayRecord(
     userName: string,
-    key: string
+    key: string,
   ): Promise<PlayRecord | null> {
     const val = await this.withRetry(() =>
-      this.client.get(this.prKey(userName, key))
+      this.client.get(this.prKey(userName, key)),
     );
     return val ? (JSON.parse(val) as PlayRecord) : null;
   }
@@ -181,18 +194,20 @@ export abstract class BaseRedisStorage implements IStorage {
   async setPlayRecord(
     userName: string,
     key: string,
-    record: PlayRecord
+    record: PlayRecord,
   ): Promise<void> {
     await this.withRetry(() =>
-      this.client.set(this.prKey(userName, key), JSON.stringify(record))
+      this.client.set(this.prKey(userName, key), JSON.stringify(record)),
     );
   }
 
   async getAllPlayRecords(
-    userName: string
+    userName: string,
   ): Promise<Record<string, PlayRecord>> {
     const pattern = `u:${userName}:pr:*`;
-    const keys: string[] = await this.withRetry(() => this.client.keys(pattern));
+    const keys: string[] = await this.withRetry(() =>
+      this.client.keys(pattern),
+    );
     if (keys.length === 0) return {};
     const values = await this.withRetry(() => this.client.mGet(keys));
     const result: Record<string, PlayRecord> = {};
@@ -219,7 +234,7 @@ export abstract class BaseRedisStorage implements IStorage {
 
   async getFavorite(userName: string, key: string): Promise<Favorite | null> {
     const val = await this.withRetry(() =>
-      this.client.get(this.favKey(userName, key))
+      this.client.get(this.favKey(userName, key)),
     );
     return val ? (JSON.parse(val) as Favorite) : null;
   }
@@ -227,16 +242,18 @@ export abstract class BaseRedisStorage implements IStorage {
   async setFavorite(
     userName: string,
     key: string,
-    favorite: Favorite
+    favorite: Favorite,
   ): Promise<void> {
     await this.withRetry(() =>
-      this.client.set(this.favKey(userName, key), JSON.stringify(favorite))
+      this.client.set(this.favKey(userName, key), JSON.stringify(favorite)),
     );
   }
 
   async getAllFavorites(userName: string): Promise<Record<string, Favorite>> {
     const pattern = `u:${userName}:fav:*`;
-    const keys: string[] = await this.withRetry(() => this.client.keys(pattern));
+    const keys: string[] = await this.withRetry(() =>
+      this.client.keys(pattern),
+    );
     if (keys.length === 0) return {};
     const values = await this.withRetry(() => this.client.mGet(keys));
     const result: Record<string, Favorite> = {};
@@ -262,12 +279,14 @@ export abstract class BaseRedisStorage implements IStorage {
 
   async registerUser(userName: string, password: string): Promise<void> {
     // 简单存储明文密码，生产环境应加密
-    await this.withRetry(() => this.client.set(this.userPwdKey(userName), password));
+    await this.withRetry(() =>
+      this.client.set(this.userPwdKey(userName), password),
+    );
   }
 
   async verifyUser(userName: string, password: string): Promise<boolean> {
     const stored = await this.withRetry(() =>
-      this.client.get(this.userPwdKey(userName))
+      this.client.get(this.userPwdKey(userName)),
     );
     if (stored === null) return false;
     // 确保比较时都是字符串类型
@@ -278,7 +297,7 @@ export abstract class BaseRedisStorage implements IStorage {
   async checkUserExist(userName: string): Promise<boolean> {
     // 使用 EXISTS 判断 key 是否存在
     const exists = await this.withRetry(() =>
-      this.client.exists(this.userPwdKey(userName))
+      this.client.exists(this.userPwdKey(userName)),
     );
     return exists === 1;
   }
@@ -287,7 +306,7 @@ export abstract class BaseRedisStorage implements IStorage {
   async changePassword(userName: string, newPassword: string): Promise<void> {
     // 简单存储明文密码，生产环境应加密
     await this.withRetry(() =>
-      this.client.set(this.userPwdKey(userName), newPassword)
+      this.client.set(this.userPwdKey(userName), newPassword),
     );
   }
 
@@ -302,7 +321,7 @@ export abstract class BaseRedisStorage implements IStorage {
     // 删除播放记录
     const playRecordPattern = `u:${userName}:pr:*`;
     const playRecordKeys = await this.withRetry(() =>
-      this.client.keys(playRecordPattern)
+      this.client.keys(playRecordPattern),
     );
     if (playRecordKeys.length > 0) {
       await this.withRetry(() => this.client.del(playRecordKeys));
@@ -311,7 +330,7 @@ export abstract class BaseRedisStorage implements IStorage {
     // 删除收藏夹
     const favoritePattern = `u:${userName}:fav:*`;
     const favoriteKeys = await this.withRetry(() =>
-      this.client.keys(favoritePattern)
+      this.client.keys(favoritePattern),
     );
     if (favoriteKeys.length > 0) {
       await this.withRetry(() => this.client.del(favoriteKeys));
@@ -320,7 +339,7 @@ export abstract class BaseRedisStorage implements IStorage {
     // 删除跳过片头片尾配置
     const skipConfigPattern = `u:${userName}:skip:*`;
     const skipConfigKeys = await this.withRetry(() =>
-      this.client.keys(skipConfigPattern)
+      this.client.keys(skipConfigPattern),
     );
     if (skipConfigKeys.length > 0) {
       await this.withRetry(() => this.client.del(skipConfigKeys));
@@ -350,7 +369,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const data = encoder.encode(password);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   }
 
   // 创建新用户（新版本）
@@ -360,7 +379,7 @@ export abstract class BaseRedisStorage implements IStorage {
     role: 'owner' | 'admin' | 'user' = 'user',
     tags?: string[],
     oidcSub?: string,
-    enabledApis?: string[]
+    enabledApis?: string[],
   ): Promise<void> {
     const hashedPassword = await this.hashPassword(password);
     const createdAt = Date.now();
@@ -384,22 +403,28 @@ export abstract class BaseRedisStorage implements IStorage {
     if (oidcSub) {
       userInfo.oidcSub = oidcSub;
       // 创建OIDC映射
-      await this.withRetry(() => this.client.set(this.oidcSubKey(oidcSub), userName));
+      await this.withRetry(() =>
+        this.client.set(this.oidcSubKey(oidcSub), userName),
+      );
     }
 
-    await this.withRetry(() => this.client.hSet(this.userInfoKey(userName), userInfo));
+    await this.withRetry(() =>
+      this.client.hSet(this.userInfoKey(userName), userInfo),
+    );
 
     // 添加到用户列表（Sorted Set，按注册时间排序）
-    await this.withRetry(() => this.client.zAdd(this.userListKey(), {
-      score: createdAt,
-      value: userName,
-    }));
+    await this.withRetry(() =>
+      this.client.zAdd(this.userListKey(), {
+        score: createdAt,
+        value: userName,
+      }),
+    );
   }
 
   // 验证用户密码（新版本）
   async verifyUserV2(userName: string, password: string): Promise<boolean> {
     const userInfo = await this.withRetry(() =>
-      this.client.hGetAll(this.userInfoKey(userName))
+      this.client.hGetAll(this.userInfoKey(userName)),
     );
 
     if (!userInfo || !userInfo.password) {
@@ -421,7 +446,7 @@ export abstract class BaseRedisStorage implements IStorage {
     createdAt?: number;
   } | null> {
     const userInfo = await this.withRetry(() =>
-      this.client.hGetAll(this.userInfoKey(userName))
+      this.client.hGetAll(this.userInfoKey(userName)),
     );
 
     if (!userInfo || Object.keys(userInfo).length === 0) {
@@ -440,12 +465,12 @@ export abstract class BaseRedisStorage implements IStorage {
           const parsed = JSON.parse(userInfo.tags);
           parsedTags = Array.isArray(parsed) ? parsed : [parsed];
         }
-      } catch (e) {
+      } catch (_e) {
         // JSON 解析失败，可能是单个字符串值
         console.warn(`用户 ${userName} tags 解析失败，原始值:`, userInfo.tags);
         // 如果是逗号分隔的字符串
         if (typeof userInfo.tags === 'string' && userInfo.tags.includes(',')) {
-          parsedTags = userInfo.tags.split(',').map(t => t.trim());
+          parsedTags = userInfo.tags.split(',').map((t) => t.trim());
         } else if (typeof userInfo.tags === 'string') {
           parsedTags = [userInfo.tags];
         }
@@ -462,10 +487,13 @@ export abstract class BaseRedisStorage implements IStorage {
           const parsed = JSON.parse(userInfo.enabledApis);
           parsedApis = Array.isArray(parsed) ? parsed : [parsed];
         }
-      } catch (e) {
+      } catch (_e) {
         console.warn(`用户 ${userName} enabledApis 解析失败`);
-        if (typeof userInfo.enabledApis === 'string' && userInfo.enabledApis.includes(',')) {
-          parsedApis = userInfo.enabledApis.split(',').map(t => t.trim());
+        if (
+          typeof userInfo.enabledApis === 'string' &&
+          userInfo.enabledApis.includes(',')
+        ) {
+          parsedApis = userInfo.enabledApis.split(',').map((t) => t.trim());
         } else if (typeof userInfo.enabledApis === 'string') {
           parsedApis = [userInfo.enabledApis];
         }
@@ -479,14 +507,16 @@ export abstract class BaseRedisStorage implements IStorage {
       tags: parsedTags,
       oidcSub: userInfo.oidcSub,
       enabledApis: parsedApis,
-      createdAt: userInfo.created_at ? parseInt(userInfo.created_at, 10) : undefined,
+      createdAt: userInfo.created_at
+        ? parseInt(userInfo.created_at, 10)
+        : undefined,
     };
   }
 
   // 检查用户是否存在（新版本）
   async checkUserExistV2(userName: string): Promise<boolean> {
     const exists = await this.withRetry(() =>
-      this.client.exists(this.userInfoKey(userName))
+      this.client.exists(this.userInfoKey(userName)),
     );
     return exists === 1;
   }
@@ -494,7 +524,7 @@ export abstract class BaseRedisStorage implements IStorage {
   // 通过OIDC Sub查找用户名
   async getUserByOidcSub(oidcSub: string): Promise<string | null> {
     const userName = await this.withRetry(() =>
-      this.client.get(this.oidcSubKey(oidcSub))
+      this.client.get(this.oidcSubKey(oidcSub)),
     );
     return userName ? ensureString(userName) : null;
   }
@@ -506,7 +536,7 @@ export abstract class BaseRedisStorage implements IStorage {
 
   async getSearchHistory(userName: string): Promise<string[]> {
     const result = await this.withRetry(() =>
-      this.client.lRange(this.shKey(userName), 0, -1)
+      this.client.lRange(this.shKey(userName), 0, -1),
     );
     // 确保返回的都是字符串类型
     return ensureStringArray(result as any[]);
@@ -519,13 +549,17 @@ export abstract class BaseRedisStorage implements IStorage {
     // 插入到最前
     await this.withRetry(() => this.client.lPush(key, ensureString(keyword)));
     // 限制最大长度
-    await this.withRetry(() => this.client.lTrim(key, 0, SEARCH_HISTORY_LIMIT - 1));
+    await this.withRetry(() =>
+      this.client.lTrim(key, 0, SEARCH_HISTORY_LIMIT - 1),
+    );
   }
 
   async deleteSearchHistory(userName: string, keyword?: string): Promise<void> {
     const key = this.shKey(userName);
     if (keyword) {
-      await this.withRetry(() => this.client.lRem(key, 0, ensureString(keyword)));
+      await this.withRetry(() =>
+        this.client.lRem(key, 0, ensureString(keyword)),
+      );
     } else {
       await this.withRetry(() => this.client.del(key));
     }
@@ -562,13 +596,15 @@ export abstract class BaseRedisStorage implements IStorage {
   }
 
   async getAdminConfig(): Promise<AdminConfig | null> {
-    const val = await this.withRetry(() => this.client.get(this.adminConfigKey()));
+    const val = await this.withRetry(() =>
+      this.client.get(this.adminConfigKey()),
+    );
     return val ? (JSON.parse(val) as AdminConfig) : null;
   }
 
   async setAdminConfig(config: AdminConfig): Promise<void> {
     await this.withRetry(() =>
-      this.client.set(this.adminConfigKey(), JSON.stringify(config))
+      this.client.set(this.adminConfigKey(), JSON.stringify(config)),
     );
   }
 
@@ -580,10 +616,10 @@ export abstract class BaseRedisStorage implements IStorage {
   async getSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<EpisodeSkipConfig | null> {
     const val = await this.withRetry(() =>
-      this.client.get(this.skipConfigKey(userName, source, id))
+      this.client.get(this.skipConfigKey(userName, source, id)),
     );
     return val ? (JSON.parse(val) as EpisodeSkipConfig) : null;
   }
@@ -592,28 +628,28 @@ export abstract class BaseRedisStorage implements IStorage {
     userName: string,
     source: string,
     id: string,
-    config: EpisodeSkipConfig
+    config: EpisodeSkipConfig,
   ): Promise<void> {
     await this.withRetry(() =>
       this.client.set(
         this.skipConfigKey(userName, source, id),
-        JSON.stringify(config)
-      )
+        JSON.stringify(config),
+      ),
     );
   }
 
   async deleteSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<void> {
     await this.withRetry(() =>
-      this.client.del(this.skipConfigKey(userName, source, id))
+      this.client.del(this.skipConfigKey(userName, source, id)),
     );
   }
 
   async getAllSkipConfigs(
-    userName: string
+    userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }> {
     const pattern = `u:${userName}:skip:*`;
     const keys = await this.withRetry(() => this.client.keys(pattern));
@@ -634,7 +670,9 @@ export abstract class BaseRedisStorage implements IStorage {
         const match = key.match(/^u:.+?:skip:(.+)$/);
         if (match) {
           const sourceAndId = match[1];
-          configs[sourceAndId] = JSON.parse(value as string) as EpisodeSkipConfig;
+          configs[sourceAndId] = JSON.parse(
+            value as string,
+          ) as EpisodeSkipConfig;
         }
       }
     });
@@ -650,10 +688,10 @@ export abstract class BaseRedisStorage implements IStorage {
   async getEpisodeSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<EpisodeSkipConfig | null> {
     const val = await this.withRetry(() =>
-      this.client.get(this.episodeSkipConfigKey(userName, source, id))
+      this.client.get(this.episodeSkipConfigKey(userName, source, id)),
     );
     return val ? (JSON.parse(val) as EpisodeSkipConfig) : null;
   }
@@ -662,28 +700,28 @@ export abstract class BaseRedisStorage implements IStorage {
     userName: string,
     source: string,
     id: string,
-    config: EpisodeSkipConfig
+    config: EpisodeSkipConfig,
   ): Promise<void> {
     await this.withRetry(() =>
       this.client.set(
         this.episodeSkipConfigKey(userName, source, id),
-        JSON.stringify(config)
-      )
+        JSON.stringify(config),
+      ),
     );
   }
 
   async deleteEpisodeSkipConfig(
     userName: string,
     source: string,
-    id: string
+    id: string,
   ): Promise<void> {
     await this.withRetry(() =>
-      this.client.del(this.episodeSkipConfigKey(userName, source, id))
+      this.client.del(this.episodeSkipConfigKey(userName, source, id)),
     );
   }
 
   async getAllEpisodeSkipConfigs(
-    userName: string
+    userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }> {
     const pattern = `u:${userName}:episodeskip:*`;
     const keys = await this.withRetry(() => this.client.keys(pattern));
@@ -704,7 +742,9 @@ export abstract class BaseRedisStorage implements IStorage {
         const match = key.match(/^u:.+?:episodeskip:(.+)$/);
         if (match) {
           const sourceAndId = match[1];
-          configs[sourceAndId] = JSON.parse(value as string) as EpisodeSkipConfig;
+          configs[sourceAndId] = JSON.parse(
+            value as string,
+          ) as EpisodeSkipConfig;
         }
       }
     });
@@ -747,11 +787,17 @@ export abstract class BaseRedisStorage implements IStorage {
       if (!val && process.env.NODE_ENV === 'development') {
         const ttl = await this.withRetry(() => this.client.ttl(cacheKey));
         if (ttl === -2) {
-          console.log(`${this.config.clientName} getCache: Key ${key} does not exist (TTL: -2)`);
+          console.log(
+            `${this.config.clientName} getCache: Key ${key} does not exist (TTL: -2)`,
+          );
         } else if (ttl === -1) {
-          console.warn(`${this.config.clientName} getCache: Key ${key} exists but has no expiration (TTL: -1)`);
+          console.warn(
+            `${this.config.clientName} getCache: Key ${key} exists but has no expiration (TTL: -1)`,
+          );
         } else if (ttl > 0) {
-          console.warn(`${this.config.clientName} getCache: Key ${key} exists with TTL ${ttl}s but returned null value`);
+          console.warn(
+            `${this.config.clientName} getCache: Key ${key} exists with TTL ${ttl}s but returned null value`,
+          );
         }
         return null;
       }
@@ -761,21 +807,31 @@ export abstract class BaseRedisStorage implements IStorage {
       // 调试：显示剩余 TTL
       if (process.env.NODE_ENV === 'development') {
         const ttl = await this.withRetry(() => this.client.ttl(cacheKey));
-        console.log(`${this.config.clientName} getCache: key=${key}, remaining TTL=${ttl}s`);
+        console.log(
+          `${this.config.clientName} getCache: key=${key}, remaining TTL=${ttl}s`,
+        );
       }
 
       // 智能处理返回值：兼容不同Redis客户端的行为
       if (typeof val === 'string') {
         // 检查是否是HTML错误页面
-        if (val.trim().startsWith('<!DOCTYPE') || val.trim().startsWith('<html')) {
-          console.error(`${this.config.clientName} returned HTML instead of JSON. Connection issue detected.`);
+        if (
+          val.trim().startsWith('<!DOCTYPE') ||
+          val.trim().startsWith('<html')
+        ) {
+          console.error(
+            `${this.config.clientName} returned HTML instead of JSON. Connection issue detected.`,
+          );
           return null;
         }
 
         try {
           return JSON.parse(val);
         } catch (parseError) {
-          console.warn(`${this.config.clientName} JSON解析失败，返回原字符串 (key: ${key}):`, parseError);
+          console.warn(
+            `${this.config.clientName} JSON解析失败，返回原字符串 (key: ${key}):`,
+            parseError,
+          );
           return val; // 解析失败返回原字符串
         }
       } else {
@@ -783,12 +839,19 @@ export abstract class BaseRedisStorage implements IStorage {
         return val;
       }
     } catch (error: any) {
-      console.error(`${this.config.clientName} getCache error (key: ${key}):`, error);
+      console.error(
+        `${this.config.clientName} getCache error (key: ${key}):`,
+        error,
+      );
       return null;
     }
   }
 
-  async setCache(key: string, data: any, expireSeconds?: number): Promise<void> {
+  async setCache(
+    key: string,
+    data: any,
+    expireSeconds?: number,
+  ): Promise<void> {
     try {
       const cacheKey = this.cacheKey(key);
       const value = JSON.stringify(data);
@@ -797,7 +860,7 @@ export abstract class BaseRedisStorage implements IStorage {
         // 验证 TTL 值的有效性
         if (expireSeconds <= 0) {
           const error = new Error(
-            `${this.config.clientName} Invalid TTL: ${expireSeconds} seconds. TTL must be positive.`
+            `${this.config.clientName} Invalid TTL: ${expireSeconds} seconds. TTL must be positive.`,
           );
           console.error(error.message);
           throw error;
@@ -808,28 +871,39 @@ export abstract class BaseRedisStorage implements IStorage {
 
         if (ttl !== expireSeconds) {
           console.warn(
-            `${this.config.clientName} TTL rounded from ${expireSeconds} to ${ttl} seconds`
+            `${this.config.clientName} TTL rounded from ${expireSeconds} to ${ttl} seconds`,
           );
         }
 
-        console.log(`${this.config.clientName} setCache with TTL: key=${key}, ttl=${ttl}s`);
+        console.log(
+          `${this.config.clientName} setCache with TTL: key=${key}, ttl=${ttl}s`,
+        );
         await this.withRetry(() => this.client.setEx(cacheKey, ttl, value));
 
         // 验证是否成功设置（可选，仅在调试模式下）
         if (process.env.NODE_ENV === 'development') {
           const setTtl = await this.withRetry(() => this.client.ttl(cacheKey));
-          console.log(`${this.config.clientName} Verified TTL for ${key}: ${setTtl}s (expected: ${ttl}s)`);
+          console.log(
+            `${this.config.clientName} Verified TTL for ${key}: ${setTtl}s (expected: ${ttl}s)`,
+          );
 
           if (setTtl < 0) {
-            console.warn(`${this.config.clientName} WARNING: TTL not set correctly for ${key}. Got: ${setTtl}`);
+            console.warn(
+              `${this.config.clientName} WARNING: TTL not set correctly for ${key}. Got: ${setTtl}`,
+            );
           }
         }
       } else {
-        console.log(`${this.config.clientName} setCache without TTL: key=${key}`);
+        console.log(
+          `${this.config.clientName} setCache without TTL: key=${key}`,
+        );
         await this.withRetry(() => this.client.set(cacheKey, value));
       }
     } catch (error) {
-      console.error(`${this.config.clientName} setCache error (key: ${key}):`, error);
+      console.error(
+        `${this.config.clientName} setCache error (key: ${key}):`,
+        error,
+      );
       throw error; // 重新抛出错误以便上层处理
     }
   }
@@ -846,7 +920,9 @@ export abstract class BaseRedisStorage implements IStorage {
 
     if (keys.length > 0) {
       await this.withRetry(() => this.client.del(keys));
-      console.log(`Cleared ${keys.length} cache entries with pattern: ${pattern}`);
+      console.log(
+        `Cleared ${keys.length} cache entries with pattern: ${pattern}`,
+      );
     }
   }
 
@@ -906,7 +982,8 @@ export abstract class BaseRedisStorage implements IStorage {
         const PROJECT_START_DATE = new Date('2025-09-14').getTime();
         // 模拟用户创建时间（Redis模式下通常没有这个信息，使用首次播放时间或项目开始时间）
         const userCreatedAt = userStat.firstWatchDate || PROJECT_START_DATE;
-        const registrationDays = Math.floor((now - userCreatedAt) / (1000 * 60 * 60 * 24)) + 1;
+        const registrationDays =
+          Math.floor((now - userCreatedAt) / (1000 * 60 * 60 * 24)) + 1;
 
         // 统计今日新增用户
         if (userCreatedAt >= todayStart) {
@@ -962,7 +1039,7 @@ export abstract class BaseRedisStorage implements IStorage {
         dailyStats.push({
           date: date.toISOString().split('T')[0],
           watchTime: Math.floor(totalWatchTime / 7), // 简化计算
-          plays: Math.floor(totalPlays / 7)
+          plays: Math.floor(totalPlays / 7),
         });
       }
 
@@ -982,18 +1059,24 @@ export abstract class BaseRedisStorage implements IStorage {
       const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
       const activeUsers = {
-        daily: userStats.filter(user => user.lastLoginTime >= oneDayAgo).length,
-        weekly: userStats.filter(user => user.lastLoginTime >= sevenDaysAgo).length,
-        monthly: userStats.filter(user => user.lastLoginTime >= thirtyDaysAgo).length,
+        daily: userStats.filter((user) => user.lastLoginTime >= oneDayAgo)
+          .length,
+        weekly: userStats.filter((user) => user.lastLoginTime >= sevenDaysAgo)
+          .length,
+        monthly: userStats.filter((user) => user.lastLoginTime >= thirtyDaysAgo)
+          .length,
       };
 
       const result: PlayStatsResult = {
         totalUsers: allUsers.length,
         totalWatchTime,
         totalPlays,
-        avgWatchTimePerUser: allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
+        avgWatchTimePerUser:
+          allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
         avgPlaysPerUser: allUsers.length > 0 ? totalPlays / allUsers.length : 0,
-        userStats: userStats.sort((a, b) => b.totalWatchTime - a.totalWatchTime),
+        userStats: userStats.sort(
+          (a, b) => b.totalWatchTime - a.totalWatchTime,
+        ),
         topSources,
         dailyStats,
         // 新增：用户注册统计
@@ -1050,7 +1133,7 @@ export abstract class BaseRedisStorage implements IStorage {
           loginCount: 0,
           firstLoginTime: 0,
           lastLoginTime: 0,
-          lastLoginDate: 0
+          lastLoginDate: 0,
         };
 
         try {
@@ -1062,7 +1145,7 @@ export abstract class BaseRedisStorage implements IStorage {
               loginCount: parsed.loginCount || 0,
               firstLoginTime: parsed.firstLoginTime || 0,
               lastLoginTime: parsed.lastLoginTime || 0,
-              lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0
+              lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0,
             };
           }
         } catch (error) {
@@ -1085,20 +1168,27 @@ export abstract class BaseRedisStorage implements IStorage {
           loginCount: loginStats.loginCount,
           firstLoginTime: loginStats.firstLoginTime,
           lastLoginTime: loginStats.lastLoginTime,
-          lastLoginDate: loginStats.lastLoginDate
+          lastLoginDate: loginStats.lastLoginDate,
         };
       }
 
       // 计算统计数据
-      const totalWatchTime = records.reduce((sum, record) => sum + (record.play_time || 0), 0);
+      const totalWatchTime = records.reduce(
+        (sum, record) => sum + (record.play_time || 0),
+        0,
+      );
       const totalPlays = records.length;
-      const lastPlayTime = Math.max(...records.map(r => r.save_time || 0));
+      const lastPlayTime = Math.max(...records.map((r) => r.save_time || 0));
 
       // 计算观看影片总数（去重）
-      const totalMovies = new Set(records.map(r => `${r.title}_${r.source_name}_${r.year}`)).size;
+      const totalMovies = new Set(
+        records.map((r) => `${r.title}_${r.source_name}_${r.year}`),
+      ).size;
 
       // 计算首次观看时间
-      const firstWatchDate = Math.min(...records.map(r => r.save_time || Date.now()));
+      const firstWatchDate = Math.min(
+        ...records.map((r) => r.save_time || Date.now()),
+      );
 
       // 最近10条记录，按时间排序
       const recentRecords = records
@@ -1110,22 +1200,25 @@ export abstract class BaseRedisStorage implements IStorage {
 
       // 最常观看的来源
       const sourceMap = new Map<string, number>();
-      records.forEach(record => {
+      records.forEach((record) => {
         const sourceName = record.source_name || '未知来源';
         const count = sourceMap.get(sourceName) || 0;
         sourceMap.set(sourceName, count + 1);
       });
 
-      const mostWatchedSource = sourceMap.size > 0
-        ? Array.from(sourceMap.entries()).reduce((a, b) => a[1] > b[1] ? a : b)[0]
-        : '';
+      const mostWatchedSource =
+        sourceMap.size > 0
+          ? Array.from(sourceMap.entries()).reduce((a, b) =>
+              a[1] > b[1] ? a : b,
+            )[0]
+          : '';
 
       // 获取登入统计数据
       let loginStats = {
         loginCount: 0,
         firstLoginTime: 0,
         lastLoginTime: 0,
-        lastLoginDate: 0
+        lastLoginDate: 0,
       };
 
       try {
@@ -1137,7 +1230,7 @@ export abstract class BaseRedisStorage implements IStorage {
             loginCount: parsed.loginCount || 0,
             firstLoginTime: parsed.firstLoginTime || 0,
             lastLoginTime: parsed.lastLoginTime || 0,
-            lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0
+            lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0,
           };
         }
       } catch (error) {
@@ -1160,7 +1253,7 @@ export abstract class BaseRedisStorage implements IStorage {
         loginCount: loginStats.loginCount,
         firstLoginTime: loginStats.firstLoginTime,
         lastLoginTime: loginStats.lastLoginTime,
-        lastLoginDate: loginStats.lastLoginDate
+        lastLoginDate: loginStats.lastLoginDate,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -1180,7 +1273,7 @@ export abstract class BaseRedisStorage implements IStorage {
         loginCount: 0,
         firstLoginTime: 0,
         lastLoginTime: 0,
-        lastLoginDate: 0
+        lastLoginDate: 0,
       };
     }
   }
@@ -1190,12 +1283,15 @@ export abstract class BaseRedisStorage implements IStorage {
     try {
       // 获取所有用户
       const allUsers = await this.getAllUsers();
-      const contentMap = new Map<string, {
-        record: PlayRecord;
-        playCount: number;
-        totalWatchTime: number;
-        users: Set<string>;
-      }>();
+      const contentMap = new Map<
+        string,
+        {
+          record: PlayRecord;
+          playCount: number;
+          totalWatchTime: number;
+          users: Set<string>;
+        }
+      >();
 
       // 收集所有播放记录
       for (const username of allUsers) {
@@ -1209,7 +1305,7 @@ export abstract class BaseRedisStorage implements IStorage {
               record,
               playCount: 0,
               totalWatchTime: 0,
-              users: new Set()
+              users: new Set(),
             });
           }
 
@@ -1233,9 +1329,10 @@ export abstract class BaseRedisStorage implements IStorage {
             year: data.record.year,
             playCount: data.playCount,
             totalWatchTime: data.totalWatchTime,
-            averageWatchTime: data.playCount > 0 ? data.totalWatchTime / data.playCount : 0,
+            averageWatchTime:
+              data.playCount > 0 ? data.totalWatchTime / data.playCount : 0,
             lastPlayed: data.record.save_time,
-            uniqueUsers: data.users.size
+            uniqueUsers: data.users.size,
           };
         })
         .sort((a, b) => b.playCount - a.playCount)
@@ -1253,7 +1350,7 @@ export abstract class BaseRedisStorage implements IStorage {
     _userName: string,
     _source: string,
     _id: string,
-    _watchTime: number
+    _watchTime: number,
   ): Promise<void> {
     try {
       // 清除全站统计缓存，下次查询时重新计算
@@ -1271,19 +1368,21 @@ export abstract class BaseRedisStorage implements IStorage {
   async updateUserLoginStats(
     userName: string,
     loginTime: number,
-    isFirstLogin?: boolean
+    isFirstLogin?: boolean,
   ): Promise<void> {
     try {
       const loginStatsKey = `user_login_stats:${userName}`;
 
       // 获取当前登入统计数据
       const currentStats = await this.client.get(loginStatsKey);
-      const loginStats = currentStats ? JSON.parse(currentStats) : {
-        loginCount: 0,
-        firstLoginTime: null,
-        lastLoginTime: null,
-        lastLoginDate: null
-      };
+      const loginStats = currentStats
+        ? JSON.parse(currentStats)
+        : {
+            loginCount: 0,
+            firstLoginTime: null,
+            lastLoginTime: null,
+            lastLoginDate: null,
+          };
 
       // 更新统计数据
       loginStats.loginCount = (loginStats.loginCount || 0) + 1;

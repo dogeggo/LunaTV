@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
+import stcasc, { ChineseType } from 'switch-chinese';
 
 import { API_CONFIG, ApiSite, getConfig } from '@/lib/config';
 import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
-// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
-import stcasc, { ChineseType } from 'switch-chinese';
 
 // 创建模块级别的繁简转换器实例
 const converter = stcasc();
@@ -31,7 +30,7 @@ async function searchWithCache(
   query: string,
   page: number,
   url: string,
-  timeoutMs = 8000
+  timeoutMs = 8000,
 ): Promise<{ results: SearchResult[]; pageCount?: number }> {
   // 先查缓存
   const cached = getCachedSearchPage(apiSite.key, query, page);
@@ -124,7 +123,9 @@ async function searchWithCache(
     });
 
     // 过滤掉集数为 0 的结果
-    const results = allResults.filter((result: SearchResult) => result.episodes.length > 0);
+    const results = allResults.filter(
+      (result: SearchResult) => result.episodes.length > 0,
+    );
 
     const pageCount = page === 1 ? data.pagecount || 1 : undefined;
     // 写入缓存（成功）
@@ -133,7 +134,10 @@ async function searchWithCache(
   } catch (error: any) {
     clearTimeout(timeoutId);
     // 识别被 AbortController 中止（超时）
-    const aborted = error?.name === 'AbortError' || error?.code === 20 || error?.message?.includes('aborted');
+    const aborted =
+      error?.name === 'AbortError' ||
+      error?.code === 20 ||
+      error?.message?.includes('aborted');
     if (aborted) {
       setCachedSearchPage(apiSite.key, query, page, 'timeout', []);
     }
@@ -144,13 +148,14 @@ async function searchWithCache(
 export async function searchFromApi(
   apiSite: ApiSite,
   query: string,
-  precomputedVariants?: string[] // 新增：预计算的变体
+  precomputedVariants?: string[], // 新增：预计算的变体
 ): Promise<SearchResult[]> {
   try {
     const apiBaseUrl = apiSite.api;
 
     // 智能搜索：使用预计算的变体或即时生成（优化：只生成最有用的变体）
-    const searchVariants = precomputedVariants || generateSearchVariants(query).slice(0, 2);
+    const searchVariants =
+      precomputedVariants || generateSearchVariants(query).slice(0, 2);
     let results: SearchResult[] = [];
     let pageCountFromFirst = 0;
 
@@ -166,17 +171,27 @@ export async function searchFromApi(
       const apiUrl =
         apiBaseUrl + API_CONFIG.search.path + encodeURIComponent(variant);
 
-      console.log(`[DEBUG] 尝试搜索变体 ${i + 1}/${searchVariants.length}: "${variant}"`);
+      console.log(
+        `[DEBUG] 尝试搜索变体 ${i + 1}/${searchVariants.length}: "${variant}"`,
+      );
 
       try {
         // 使用新的缓存搜索函数处理第一页
-        const firstPageResult = await searchWithCache(apiSite, variant, 1, apiUrl, 8000);
+        const firstPageResult = await searchWithCache(
+          apiSite,
+          variant,
+          1,
+          apiUrl,
+          8000,
+        );
 
         if (firstPageResult.results.length > 0) {
-          console.log(`[DEBUG] 变体 "${variant}" 找到 ${firstPageResult.results.length} 个结果`);
+          console.log(
+            `[DEBUG] 变体 "${variant}" 找到 ${firstPageResult.results.length} 个结果`,
+          );
 
           // 去重添加结果
-          firstPageResult.results.forEach(result => {
+          firstPageResult.results.forEach((result) => {
             const uniqueKey = `${result.source}_${result.id}`;
             if (!seenIds.has(uniqueKey)) {
               seenIds.add(uniqueKey);
@@ -212,7 +227,7 @@ export async function searchFromApi(
 
     // 使用原始查询进行后续分页
     query = searchVariants[0];
-    
+
     // 如果所有变体都没有结果，直接返回空数组
     if (results.length === 0) {
       return [];
@@ -239,7 +254,13 @@ export async function searchFromApi(
 
         const pagePromise = (async () => {
           // 使用新的缓存搜索函数处理分页
-          const pageResult = await searchWithCache(apiSite, query, page, pageUrl, 8000);
+          const pageResult = await searchWithCache(
+            apiSite,
+            query,
+            page,
+            pageUrl,
+            8000,
+          );
           return pageResult.results;
         })();
 
@@ -258,7 +279,7 @@ export async function searchFromApi(
     }
 
     return results;
-  } catch (error) {
+  } catch (_error) {
     return [];
   }
 }
@@ -270,7 +291,11 @@ export async function searchFromApi(
  * @param results 搜索结果
  * @returns 相关性分数（越高越相关）
  */
-function calculateRelevanceScore(originalQuery: string, variant: string, results: SearchResult[]): number {
+function _calculateRelevanceScore(
+  originalQuery: string,
+  variant: string,
+  results: SearchResult[],
+): number {
   let score = 0;
 
   // 基础分数：结果数量（越多越好，但有上限）
@@ -287,15 +312,19 @@ function calculateRelevanceScore(originalQuery: string, variant: string, results
   // 移除数字变体加分逻辑，依赖智能匹配处理
 
   // 结果质量分数：检查结果标题的匹配程度
-  const originalWords = originalQuery.toLowerCase().replace(/[^\w\s\u4e00-\u9fff]/g, '').split(/\s+/).filter(w => w.length > 0);
+  const originalWords = originalQuery
+    .toLowerCase()
+    .replace(/[^\w\s\u4e00-\u9fff]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
 
-  results.forEach(result => {
+  results.forEach((result) => {
     const title = result.title.toLowerCase();
     let titleScore = 0;
 
     // 检查原始查询中的每个词是否在标题中
     let matchedWords = 0;
-    originalWords.forEach(word => {
+    originalWords.forEach((word) => {
       if (title.includes(word)) {
         // 较长的词（如"血脉诅咒"）给予更高权重
         const wordWeight = word.length > 2 ? 100 : 50;
@@ -351,8 +380,9 @@ export function generateSearchVariants(originalQuery: string): string[] {
   variants.push(trimmed);
 
   // 2. 处理中文标点符号变体
-  const chinesePunctuationVariants = generateChinesePunctuationVariants(trimmed);
-  chinesePunctuationVariants.forEach(variant => {
+  const chinesePunctuationVariants =
+    generateChinesePunctuationVariants(trimmed);
+  chinesePunctuationVariants.forEach((variant) => {
     if (!variants.includes(variant)) {
       variants.push(variant);
     }
@@ -408,10 +438,26 @@ export function generateSearchVariants(originalQuery: string): string[] {
       }
 
       // 仅使用主关键词搜索（过滤无意义的词）
-      const meaninglessWords = ['the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
-      if (!variants.includes(mainKeyword) &&
-          !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
-          mainKeyword.length > 2) {
+      const meaninglessWords = [
+        'the',
+        'a',
+        'an',
+        'and',
+        'or',
+        'of',
+        'in',
+        'on',
+        'at',
+        'to',
+        'for',
+        'with',
+        'by',
+      ];
+      if (
+        !variants.includes(mainKeyword) &&
+        !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
+        mainKeyword.length > 2
+      ) {
         variants.push(mainKeyword);
       }
     }
@@ -433,9 +479,14 @@ export function generateSearchVariants(originalQuery: string): string[] {
       const type = converter.detect(variant);
       if (type !== ChineseType.SIMPLIFIED) {
         const simplifiedVariant = converter.simplized(variant);
-        if (simplifiedVariant !== variant && !finalVariants.includes(simplifiedVariant)) {
+        if (
+          simplifiedVariant !== variant &&
+          !finalVariants.includes(simplifiedVariant)
+        ) {
           finalVariants.push(simplifiedVariant);
-          console.log(`[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`);
+          console.log(
+            `[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`,
+          );
         }
       }
     }
@@ -510,7 +561,10 @@ function generateChinesePunctuationVariants(query: string): string[] {
   }
 
   // 完全去除所有标点符号
-  const noPunctuation = query.replace(/[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>]/g, '');
+  const noPunctuation = query.replace(
+    /[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>]/g,
+    '',
+  );
   if (noPunctuation !== query && noPunctuation.trim()) {
     variants.push(noPunctuation);
   }
@@ -520,7 +574,7 @@ function generateChinesePunctuationVariants(query: string): string[] {
 
 export async function getDetailFromApi(
   apiSite: ApiSite,
-  id: string
+  id: string,
 ): Promise<SearchResult> {
   if (apiSite.detail) {
     return handleSpecialSourceDetail(id, apiSite);
@@ -610,7 +664,7 @@ export async function getDetailFromApi(
 
 async function handleSpecialSourceDetail(
   id: string,
-  apiSite: ApiSite
+  apiSite: ApiSite,
 ): Promise<SearchResult> {
   const detailUrl = `${apiSite.detail}/index.php/vod/detail/id/${id}.html`;
 
@@ -651,7 +705,7 @@ async function handleSpecialSourceDetail(
 
   // 根据 matches 数量生成剧集标题
   const episodes_titles = Array.from({ length: matches.length }, (_, i) =>
-    (i + 1).toString()
+    (i + 1).toString(),
   );
 
   // 提取标题
@@ -660,7 +714,7 @@ async function handleSpecialSourceDetail(
 
   // 提取描述
   const descMatch = html.match(
-    /<div[^>]*class=["']sketch["'][^>]*>([\s\S]*?)<\/div>/
+    /<div[^>]*class=["']sketch["'][^>]*>([\s\S]*?)<\/div>/,
   );
   const descText = descMatch ? cleanHtmlTags(descMatch[1]) : '';
 

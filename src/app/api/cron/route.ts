@@ -1,4 +1,4 @@
-/* eslint-disable no-console,@typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     isRunning = false;
@@ -97,13 +97,16 @@ async function refreshAllLiveChannels() {
 
   // 并发刷新所有启用的直播源
   const refreshPromises = (config.LiveConfig || [])
-    .filter(liveInfo => !liveInfo.disabled)
+    .filter((liveInfo) => !liveInfo.disabled)
     .map(async (liveInfo) => {
       try {
         const nums = await refreshLiveChannels(liveInfo);
         liveInfo.channelNumber = nums;
       } catch (error) {
-        console.error(`刷新直播源失败 [${liveInfo.name || liveInfo.key}]:`, error);
+        console.error(
+          `刷新直播源失败 [${liveInfo.name || liveInfo.key}]:`,
+          error,
+        );
         liveInfo.channelNumber = 0;
       }
     });
@@ -117,7 +120,12 @@ async function refreshAllLiveChannels() {
 
 async function refreshConfig() {
   let config = await getConfig();
-  if (config && config.ConfigSubscribtion && config.ConfigSubscribtion.URL && config.ConfigSubscribtion.AutoUpdate) {
+  if (
+    config &&
+    config.ConfigSubscribtion &&
+    config.ConfigSubscribtion.URL &&
+    config.ConfigSubscribtion.AutoUpdate
+  ) {
     try {
       console.log('🌐 开始获取配置订阅:', config.ConfigSubscribtion.URL);
 
@@ -128,8 +136,8 @@ async function refreshConfig() {
       const response = await fetch(config.ConfigSubscribtion.URL, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'LunaTV-ConfigFetcher/1.0'
-        }
+          'User-Agent': 'LunaTV-ConfigFetcher/1.0',
+        },
       });
 
       clearTimeout(timeoutId);
@@ -153,7 +161,7 @@ async function refreshConfig() {
 
       try {
         JSON.parse(decodedContent);
-      } catch (e) {
+      } catch (_e) {
         throw new Error('配置文件格式错误，请检查 JSON 语法');
       }
       config.ConfigFile = decodedContent;
@@ -172,12 +180,12 @@ async function refreshRecordAndFavorites() {
   try {
     const users = await db.getAllUsers();
     console.log('📋 数据库中的用户列表:', users);
-    
+
     if (process.env.USERNAME && !users.includes(process.env.USERNAME)) {
       users.push(process.env.USERNAME);
       console.log(`➕ 添加环境变量用户: ${process.env.USERNAME}`);
     }
-    
+
     console.log('📋 最终处理用户列表:', users);
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();
@@ -186,7 +194,7 @@ async function refreshRecordAndFavorites() {
     const getDetail = async (
       source: string,
       id: string,
-      fallbackTitle: string
+      fallbackTitle: string,
     ): Promise<SearchResult | null> => {
       const key = `${source}+${id}`;
       let promise = detailCache.get(key);
@@ -212,7 +220,7 @@ async function refreshRecordAndFavorites() {
 
     for (const user of users) {
       console.log(`开始处理用户: ${user}`);
-      
+
       // 检查用户是否真的存在
       const userExists = await db.checkUserExist(user);
       console.log(`用户 ${user} 是否存在: ${userExists}`);
@@ -254,7 +262,7 @@ async function refreshRecordAndFavorites() {
                 original_episodes: record.original_episodes,
               });
               console.log(
-                `更新播放记录: ${record.title} (${record.total_episodes} -> ${episodeCount})`
+                `更新播放记录: ${record.title} (${record.total_episodes} -> ${episodeCount})`,
               );
             }
 
@@ -274,7 +282,7 @@ async function refreshRecordAndFavorites() {
       try {
         let favorites = await db.getAllFavorites(user);
         favorites = Object.fromEntries(
-          Object.entries(favorites).filter(([_, fav]) => fav.origin !== 'live')
+          Object.entries(favorites).filter(([_, fav]) => fav.origin !== 'live'),
         );
         const totalFavorites = Object.keys(favorites).length;
         let processedFavorites = 0;
@@ -305,7 +313,7 @@ async function refreshRecordAndFavorites() {
                 search_title: fav.search_title,
               });
               console.log(
-                `更新收藏: ${fav.title} (${fav.total_episodes} -> ${favEpisodeCount})`
+                `更新收藏: ${fav.title} (${fav.total_episodes} -> ${favEpisodeCount})`,
               );
             }
 
@@ -347,10 +355,13 @@ async function cleanupInactiveUsers() {
     }
 
     // 检查是否启用自动清理功能
-    const autoCleanupEnabled = config.UserConfig?.AutoCleanupInactiveUsers ?? false;
+    const autoCleanupEnabled =
+      config.UserConfig?.AutoCleanupInactiveUsers ?? false;
     const inactiveUserDays = config.UserConfig?.InactiveUserDays ?? 7;
 
-    console.log(`📋 清理配置: 启用=${autoCleanupEnabled}, 保留天数=${inactiveUserDays}`);
+    console.log(
+      `📋 清理配置: 启用=${autoCleanupEnabled}, 保留天数=${inactiveUserDays}`,
+    );
 
     if (!autoCleanupEnabled) {
       console.log('⏭️ 自动清理非活跃用户功能已禁用，跳过清理任务');
@@ -365,7 +376,7 @@ async function cleanupInactiveUsers() {
     const envUsername = process.env.USERNAME;
     console.log('✅ 环境变量用户名:', envUsername);
 
-    const cutoffTime = Date.now() - (inactiveUserDays * 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - inactiveUserDays * 24 * 60 * 60 * 1000;
     console.log('✅ 计算截止时间成功:', new Date(cutoffTime).toISOString());
 
     let deletedCount = 0;
@@ -392,12 +403,12 @@ async function cleanupInactiveUsers() {
         console.log(`  🔍 检查用户是否存在于数据库: ${user.username}`);
         let userExists = true;
         try {
-          userExists = await Promise.race([
+          userExists = (await Promise.race([
             db.checkUserExist(user.username),
             new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('checkUserExist超时')), 5000)
-            )
-          ]) as boolean;
+              setTimeout(() => reject(new Error('checkUserExist超时')), 5000),
+            ),
+          ])) as boolean;
           console.log(`  📝 用户存在状态: ${userExists}`);
         } catch (err) {
           console.error(`  ❌ 检查用户存在状态失败: ${err}, 跳过该用户`);
@@ -405,7 +416,9 @@ async function cleanupInactiveUsers() {
         }
 
         if (!userExists) {
-          console.log(`  ⚠️ 用户 ${user.username} 在配置中存在但数据库中不存在，跳过处理`);
+          console.log(
+            `  ⚠️ 用户 ${user.username} 在配置中存在但数据库中不存在，跳过处理`,
+          );
           continue;
         }
 
@@ -413,12 +426,17 @@ async function cleanupInactiveUsers() {
         console.log(`  📊 获取用户统计信息: ${user.username}`);
         let userStats;
         try {
-          userStats = await Promise.race([
+          userStats = (await Promise.race([
             db.getUserPlayStat(user.username),
             new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('getUserPlayStat超时')), 5000)
-            )
-          ]) as { lastLoginTime?: number; firstLoginTime?: number; loginCount?: number; [key: string]: any };
+              setTimeout(() => reject(new Error('getUserPlayStat超时')), 5000),
+            ),
+          ])) as {
+            lastLoginTime?: number;
+            firstLoginTime?: number;
+            loginCount?: number;
+            [key: string]: any;
+          };
           console.log(`  📈 用户统计结果:`, userStats);
         } catch (err) {
           console.error(`  ❌ 获取用户统计失败: ${err}, 跳过该用户`);
@@ -428,31 +446,39 @@ async function cleanupInactiveUsers() {
         // 🔥 简化逻辑：只检查最后登入时间是否超过阈值
         // 适用于所有用户类型（普通、Telegram、OIDC）
         // 因为所有用户注册时都会自动记录登入时间，不存在"从未登入"的情况
-        const lastLoginTime = userStats.lastLoginTime || userStats.lastLoginDate || userStats.firstLoginTime || 0;
+        const lastLoginTime =
+          userStats.lastLoginTime ||
+          userStats.lastLoginDate ||
+          userStats.firstLoginTime ||
+          0;
 
         // 删除条件：有登入记录且最后登入时间超过阈值
         const shouldDelete = lastLoginTime > 0 && lastLoginTime < cutoffTime;
 
         if (shouldDelete) {
-          console.log(`🗑️ 删除非活跃用户: ${user.username} (最后登入: ${new Date(lastLoginTime).toISOString()}, 登入次数: ${userStats.loginCount || 0}, 阈值: ${inactiveUserDays}天)`);
+          console.log(
+            `🗑️ 删除非活跃用户: ${user.username} (最后登入: ${new Date(lastLoginTime).toISOString()}, 登入次数: ${userStats.loginCount || 0}, 阈值: ${inactiveUserDays}天)`,
+          );
 
           // 从数据库删除用户数据
           await db.deleteUser(user.username);
 
           // 从配置中移除用户
-          const userIndex = config.UserConfig.Users.findIndex(u => u.username === user.username);
+          const userIndex = config.UserConfig.Users.findIndex(
+            (u) => u.username === user.username,
+          );
           if (userIndex !== -1) {
             config.UserConfig.Users.splice(userIndex, 1);
           }
 
           deletedCount++;
         } else {
-          const reason = lastLoginTime > 0
-            ? `最近有登入活动 (最后登入: ${new Date(lastLoginTime).toISOString()})`
-            : '无登入记录（数据异常，保留用户）';
+          const reason =
+            lastLoginTime > 0
+              ? `最近有登入活动 (最后登入: ${new Date(lastLoginTime).toISOString()})`
+              : '无登入记录（数据异常，保留用户）';
           console.log(`✅ 保留用户 ${user.username}: ${reason}`);
         }
-
       } catch (err) {
         console.error(`❌ 处理用户 ${user.username} 时出错:`, err);
       }
@@ -469,7 +495,6 @@ async function cleanupInactiveUsers() {
     // 优化活跃用户的统计显示（等级系统）
     console.log('🎯 开始优化活跃用户等级显示...');
     await optimizeActiveUserLevels();
-
   } catch (err) {
     console.error('🚫 清理非活跃用户任务失败:', err);
   }
@@ -477,14 +502,70 @@ async function cleanupInactiveUsers() {
 
 // 用户等级定义
 const USER_LEVELS = [
-  { level: 1, name: "新星观众", icon: "🌟", minLogins: 1, maxLogins: 9, description: "刚刚开启观影之旅" },
-  { level: 2, name: "常客影迷", icon: "🎬", minLogins: 10, maxLogins: 49, description: "热爱电影的观众" },
-  { level: 3, name: "资深观众", icon: "📺", minLogins: 50, maxLogins: 199, description: "对剧集有独特品味" },
-  { level: 4, name: "影院达人", icon: "🎭", minLogins: 200, maxLogins: 499, description: "深度电影爱好者" },
-  { level: 5, name: "观影专家", icon: "🏆", minLogins: 500, maxLogins: 999, description: "拥有丰富观影经验" },
-  { level: 6, name: "传奇影神", icon: "👑", minLogins: 1000, maxLogins: 2999, description: "影视界的传奇人物" },
-  { level: 7, name: "殿堂影帝", icon: "💎", minLogins: 3000, maxLogins: 9999, description: "影视殿堂的至尊" },
-  { level: 8, name: "永恒之光", icon: "✨", minLogins: 10000, maxLogins: Infinity, description: "永恒闪耀的观影之光" }
+  {
+    level: 1,
+    name: '新星观众',
+    icon: '🌟',
+    minLogins: 1,
+    maxLogins: 9,
+    description: '刚刚开启观影之旅',
+  },
+  {
+    level: 2,
+    name: '常客影迷',
+    icon: '🎬',
+    minLogins: 10,
+    maxLogins: 49,
+    description: '热爱电影的观众',
+  },
+  {
+    level: 3,
+    name: '资深观众',
+    icon: '📺',
+    minLogins: 50,
+    maxLogins: 199,
+    description: '对剧集有独特品味',
+  },
+  {
+    level: 4,
+    name: '影院达人',
+    icon: '🎭',
+    minLogins: 200,
+    maxLogins: 499,
+    description: '深度电影爱好者',
+  },
+  {
+    level: 5,
+    name: '观影专家',
+    icon: '🏆',
+    minLogins: 500,
+    maxLogins: 999,
+    description: '拥有丰富观影经验',
+  },
+  {
+    level: 6,
+    name: '传奇影神',
+    icon: '👑',
+    minLogins: 1000,
+    maxLogins: 2999,
+    description: '影视界的传奇人物',
+  },
+  {
+    level: 7,
+    name: '殿堂影帝',
+    icon: '💎',
+    minLogins: 3000,
+    maxLogins: 9999,
+    description: '影视殿堂的至尊',
+  },
+  {
+    level: 8,
+    name: '永恒之光',
+    icon: '✨',
+    minLogins: 10000,
+    maxLogins: Infinity,
+    description: '永恒闪耀的观影之光',
+  },
 ];
 
 function calculateUserLevel(loginCount: number) {
@@ -522,19 +603,24 @@ async function optimizeActiveUserLevels() {
               name: userLevel.name,
               icon: userLevel.icon,
               description: userLevel.description,
-              displayTitle: `${userLevel.icon} ${userLevel.name}`
+              displayTitle: `${userLevel.icon} ${userLevel.name}`,
             },
-            displayLoginCount: userStats.loginCount > 10000 ? '10000+' :
-                              userStats.loginCount > 1000 ? `${Math.floor(userStats.loginCount / 1000)}k+` :
-                              userStats.loginCount.toString(),
-            lastLevelUpdate: new Date().toISOString()
+            displayLoginCount:
+              userStats.loginCount > 10000
+                ? '10000+'
+                : userStats.loginCount > 1000
+                  ? `${Math.floor(userStats.loginCount / 1000)}k+`
+                  : userStats.loginCount.toString(),
+            lastLevelUpdate: new Date().toISOString(),
           };
 
           // 注意：这里我们只计算等级信息用于日志显示，不保存到数据库
           // 等级信息会在前端动态计算，确保数据一致性
           optimizedCount++;
 
-          console.log(`🎯 用户等级: ${user} -> ${userLevel.icon} ${userLevel.name} (登录${userStats.loginCount}次)`);
+          console.log(
+            `🎯 用户等级: ${user} -> ${userLevel.icon} ${userLevel.name} (登录${userStats.loginCount}次)`,
+          );
         }
       } catch (err) {
         console.error(`❌ 优化用户等级失败 (${user}):`, err);

@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     if (!serverUrl) {
       return NextResponse.json(
         { success: false, error: '服务器地址不能为空' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     console.error('获取统计信息失败:', error);
     return NextResponse.json(
       { success: false, error: error.message || '获取统计信息失败' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

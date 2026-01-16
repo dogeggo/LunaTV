@@ -22,7 +22,7 @@ interface ImportExportModalProps {
   onClose: () => void;
   onImport?: (
     file: File,
-    onProgress?: (current: number, total: number) => void
+    onProgress?: (current: number, total: number) => void,
   ) => Promise<ImportResult>;
   onExport?: (format?: 'array' | 'config') => void;
   result?: ImportResult;
@@ -101,10 +101,10 @@ export default function ImportExportModal({
             mode === 'import'
               ? 'bg-linear-to-r from-blue-600 to-cyan-600'
               : mode === 'export'
-              ? 'bg-linear-to-r from-green-600 to-emerald-600'
-              : result && result.failed > 0
-              ? 'bg-linear-to-r from-yellow-600 to-orange-600'
-              : 'bg-linear-to-r from-green-600 to-emerald-600'
+                ? 'bg-linear-to-r from-green-600 to-emerald-600'
+                : result && result.failed > 0
+                  ? 'bg-linear-to-r from-yellow-600 to-orange-600'
+                  : 'bg-linear-to-r from-green-600 to-emerald-600'
           }`}
         >
           <div className='flex items-center justify-between'>
@@ -121,8 +121,8 @@ export default function ImportExportModal({
                   {mode === 'import'
                     ? '导入视频源'
                     : mode === 'export'
-                    ? '导出视频源'
-                    : '导入结果'}
+                      ? '导出视频源'
+                      : '导入结果'}
                 </h2>
                 <p className='text-white/80 text-xs mt-0.5'>
                   {mode === 'import'
@@ -130,8 +130,8 @@ export default function ImportExportModal({
                       ? `正在导入 ${importProgress.current}/${importProgress.total}`
                       : '从 JSON 文件导入配置'
                     : mode === 'export'
-                    ? '导出为 JSON 文件'
-                    : '查看导入详情'}
+                      ? '导出为 JSON 文件'
+                      : '查看导入详情'}
                 </p>
               </div>
             </div>
@@ -271,7 +271,9 @@ export default function ImportExportModal({
                       name='exportFormat'
                       value='array'
                       checked={exportFormat === 'array'}
-                      onChange={(e) => setExportFormat(e.target.value as 'array' | 'config')}
+                      onChange={(e) =>
+                        setExportFormat(e.target.value as 'array' | 'config')
+                      }
                       className='mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500'
                     />
                     <div className='flex-1'>
@@ -279,7 +281,10 @@ export default function ImportExportModal({
                         数组格式（推荐）
                       </div>
                       <div className='text-xs text-blue-700 dark:text-blue-300 mt-0.5'>
-                        适用于批量导入功能，结构：<code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>[&#123;...&#125;]</code>
+                        适用于批量导入功能，结构：
+                        <code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>
+                          [&#123;...&#125;]
+                        </code>
                       </div>
                     </div>
                   </label>
@@ -291,7 +296,9 @@ export default function ImportExportModal({
                       name='exportFormat'
                       value='config'
                       checked={exportFormat === 'config'}
-                      onChange={(e) => setExportFormat(e.target.value as 'array' | 'config')}
+                      onChange={(e) =>
+                        setExportFormat(e.target.value as 'array' | 'config')
+                      }
                       className='mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500'
                     />
                     <div className='flex-1'>
@@ -299,7 +306,10 @@ export default function ImportExportModal({
                         配置文件格式
                       </div>
                       <div className='text-xs text-blue-700 dark:text-blue-300 mt-0.5'>
-                        适用于直接插入配置文件，结构：<code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>&#123;api_site: &#123;key: &#123;...&#125;&#125;&#125;</code>
+                        适用于直接插入配置文件，结构：
+                        <code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>
+                          &#123;api_site: &#123;key: &#123;...&#125;&#125;&#125;
+                        </code>
                       </div>
                     </div>
                   </label>
@@ -312,7 +322,11 @@ export default function ImportExportModal({
                 </h4>
                 <ul className='text-xs text-green-800 dark:text-green-300 space-y-0.5'>
                   <li>• 视频源配置将导出为 JSON 格式</li>
-                  <li>• 文件名：{exportFormat === 'array' ? 'video_sources' : 'config'}_YYYYMMDD_HHMMSS.json</li>
+                  <li>
+                    • 文件名：
+                    {exportFormat === 'array' ? 'video_sources' : 'config'}
+                    _YYYYMMDD_HHMMSS.json
+                  </li>
                   <li>• 包含所有视频源的完整配置信息</li>
                   <li>• 可用于备份或迁移到其他设备</li>
                 </ul>
@@ -360,8 +374,8 @@ export default function ImportExportModal({
                         item.status === 'success'
                           ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                           : item.status === 'skipped'
-                          ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                          : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                       }`}
                     >
                       {item.status === 'success' ? (

@@ -23,7 +23,6 @@ function getDatabaseStorage(): any {
 
 // 日历数据库缓存管理器
 export class CalendarCacheManager {
-
   // 保存日历数据到数据库
   static async saveCalendarData(data: any): Promise<boolean> {
     const storageType = getStorageType();
@@ -61,8 +60,12 @@ export class CalendarCacheManager {
       } else if (storageType === 'kvrocks' || storageType === 'redis') {
         // KVRocks/标准Redis
         if (storage.withRetry && storage.client?.set) {
-          await storage.withRetry(() => storage.client.set(CALENDAR_DATA_KEY, dataStr));
-          await storage.withRetry(() => storage.client.set(CALENDAR_TIME_KEY, timestamp));
+          await storage.withRetry(() =>
+            storage.client.set(CALENDAR_DATA_KEY, dataStr),
+          );
+          await storage.withRetry(() =>
+            storage.client.set(CALENDAR_TIME_KEY, timestamp),
+          );
         } else if (storage.client?.set) {
           await storage.client.set(CALENDAR_DATA_KEY, dataStr);
           await storage.client.set(CALENDAR_TIME_KEY, timestamp);
@@ -114,8 +117,12 @@ export class CalendarCacheManager {
       } else if (storageType === 'kvrocks' || storageType === 'redis') {
         // KVRocks/标准Redis
         if (storage.withRetry && storage.client?.get) {
-          dataStr = await storage.withRetry(() => storage.client.get(CALENDAR_DATA_KEY));
-          timeStr = await storage.withRetry(() => storage.client.get(CALENDAR_TIME_KEY));
+          dataStr = await storage.withRetry(() =>
+            storage.client.get(CALENDAR_DATA_KEY),
+          );
+          timeStr = await storage.withRetry(() =>
+            storage.client.get(CALENDAR_TIME_KEY),
+          );
         } else if (storage.client?.get) {
           dataStr = await storage.client.get(CALENDAR_DATA_KEY);
           timeStr = await storage.client.get(CALENDAR_TIME_KEY);
@@ -134,7 +141,9 @@ export class CalendarCacheManager {
       // 检查缓存是否过期
       const age = Date.now() - parseInt(timeStr);
       if (age >= CACHE_DURATION) {
-        console.log(`⏰ 数据库中的日历缓存已过期，年龄: ${Math.round(age / 1000 / 60 / 60)} 小时`);
+        console.log(
+          `⏰ 数据库中的日历缓存已过期，年龄: ${Math.round(age / 1000 / 60 / 60)} 小时`,
+        );
         await this.clearCalendarData(); // 清理过期数据
         return null;
       }
@@ -157,7 +166,9 @@ export class CalendarCacheManager {
         data = JSON.parse(dataStr);
       }
 
-      console.log(`✅ 从数据库读取日历缓存，缓存年龄: ${Math.round(age / 1000 / 60)} 分钟`);
+      console.log(
+        `✅ 从数据库读取日历缓存，缓存年龄: ${Math.round(age / 1000 / 60)} 分钟`,
+      );
       return data;
     } catch (error) {
       console.error('❌ 从数据库读取日历缓存失败:', error);
@@ -229,7 +240,9 @@ export class CalendarCacheManager {
         }
       } else if (storageType === 'kvrocks' || storageType === 'redis') {
         if (storage.withRetry && storage.client?.get) {
-          timeStr = await storage.withRetry(() => storage.client.get(CALENDAR_TIME_KEY));
+          timeStr = await storage.withRetry(() =>
+            storage.client.get(CALENDAR_TIME_KEY),
+          );
         } else if (storage.client?.get) {
           timeStr = await storage.client.get(CALENDAR_TIME_KEY);
         }

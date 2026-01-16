@@ -32,7 +32,12 @@ export function detectNetworkEnvironment(req: NextRequest): NetworkEnvironment {
 
   // 优先级1: Cloudflare 国家代码（最准确）
   if (cfCountry) {
-    if (cfCountry === 'CN' || cfCountry === 'HK' || cfCountry === 'TW' || cfCountry === 'MO') {
+    if (
+      cfCountry === 'CN' ||
+      cfCountry === 'HK' ||
+      cfCountry === 'TW' ||
+      cfCountry === 'MO'
+    ) {
       isDomestic = true;
       region = cfCountry;
       detectionMethod = 'cloudflare-country';
@@ -72,14 +77,54 @@ export function detectNetworkEnvironment(req: NextRequest): NetworkEnvironment {
   if (ip) {
     // 中国大陆主要IP段
     const domesticIpPrefixes = [
-      '1.', '14.', '27.', '36.', '39.', '42.', '49.', '58.', '59.', '60.', '61.',
-      '101.', '103.', '106.', '110.', '111.', '112.', '113.', '114.', '115.', '116.',
-      '117.', '118.', '119.', '120.', '121.', '122.', '123.', '124.', '125.',
-      '171.', '175.', '180.', '182.', '183.', '202.', '203.', '210.', '211.',
-      '218.', '219.', '220.', '221.', '222.', '223.',
+      '1.',
+      '14.',
+      '27.',
+      '36.',
+      '39.',
+      '42.',
+      '49.',
+      '58.',
+      '59.',
+      '60.',
+      '61.',
+      '101.',
+      '103.',
+      '106.',
+      '110.',
+      '111.',
+      '112.',
+      '113.',
+      '114.',
+      '115.',
+      '116.',
+      '117.',
+      '118.',
+      '119.',
+      '120.',
+      '121.',
+      '122.',
+      '123.',
+      '124.',
+      '125.',
+      '171.',
+      '175.',
+      '180.',
+      '182.',
+      '183.',
+      '202.',
+      '203.',
+      '210.',
+      '211.',
+      '218.',
+      '219.',
+      '220.',
+      '221.',
+      '222.',
+      '223.',
     ];
 
-    if (domesticIpPrefixes.some(prefix => ip.startsWith(prefix))) {
+    if (domesticIpPrefixes.some((prefix) => ip.startsWith(prefix))) {
       isDomestic = true;
       region = 'cn-ip';
       detectionMethod = 'ip-address';
@@ -89,11 +134,19 @@ export function detectNetworkEnvironment(req: NextRequest): NetworkEnvironment {
 
   // 优先级4: User-Agent 检测（国内特定浏览器）
   const domesticBrowsers = [
-    '360Browser', 'QQBrowser', 'UCBrowser', 'LBBROWSER', 'SogouMobileBrowser',
-    'baiduboxapp', 'BaiduHD', 'MicroMessenger', 'QQ/', 'Quark',
+    '360Browser',
+    'QQBrowser',
+    'UCBrowser',
+    'LBBROWSER',
+    'SogouMobileBrowser',
+    'baiduboxapp',
+    'BaiduHD',
+    'MicroMessenger',
+    'QQ/',
+    'Quark',
   ];
 
-  if (domesticBrowsers.some(browser => userAgent.includes(browser))) {
+  if (domesticBrowsers.some((browser) => userAgent.includes(browser))) {
     isDomestic = true;
     region = 'cn-browser';
     detectionMethod = 'user-agent';
@@ -121,5 +174,7 @@ export function isDomesticNetwork(req: NextRequest): boolean {
  * 获取用户地区代码
  */
 export function getUserRegion(req: NextRequest): 'domestic' | 'international' {
-  return detectNetworkEnvironment(req).isDomestic ? 'domestic' : 'international';
+  return detectNetworkEnvironment(req).isDomestic
+    ? 'domestic'
+    : 'international';
 }

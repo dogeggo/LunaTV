@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 
 'use client';
 
@@ -7,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ClientCache } from '@/lib/client-cache';
-import PageLayout from '@/components/PageLayout';
 import type {
   DoubanItem,
   SearchResult as GlobalSearchResult,
 } from '@/lib/types';
+
+import PageLayout from '@/components/PageLayout';
 
 type Source = { key: string; name: string; api: string };
 type Category = { type_id: string | number; type_name: string };
@@ -434,7 +434,7 @@ export default function SourceBrowserPage() {
       } else {
         setPreviewDouban(null);
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore
     } finally {
       setPreviewDoubanLoading(false);
@@ -463,7 +463,7 @@ export default function SourceBrowserPage() {
         };
         setPreviewBangumi(data);
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore
     } finally {
       setPreviewBangumiLoading(false);

@@ -15,7 +15,7 @@ const containerVariants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.03, // 减少延迟从 80ms 到 30ms
-      delayChildren: 0,      // 移除首个元素延迟
+      delayChildren: 0, // 移除首个元素延迟
     },
   },
 };
@@ -44,14 +44,14 @@ export default function AnimatedCardGrid({
     <motion.div
       className={className}
       variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      initial='hidden'
+      animate='visible'
     >
       {React.Children.map(children, (child, index) => (
         <motion.div
           key={index}
           variants={itemVariants}
-          className="inline-block"
+          className='inline-block'
         >
           {child}
         </motion.div>

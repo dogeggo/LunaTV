@@ -30,7 +30,7 @@ export async function GET() {
     console.error('获取观影室配置失败:', error);
     return NextResponse.json(
       { error: '获取配置失败', enabled: false },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -61,9 +61,6 @@ export async function POST() {
     });
   } catch (error) {
     console.error('获取观影室完整配置失败:', error);
-    return NextResponse.json(
-      { error: '获取配置失败' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '获取配置失败' }, { status: 500 });
   }
 }

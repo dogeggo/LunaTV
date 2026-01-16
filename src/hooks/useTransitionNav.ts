@@ -27,7 +27,7 @@ export function useTransitionNav() {
         router.push(href);
       });
     },
-    [router]
+    [router],
   );
 
   return navigate;

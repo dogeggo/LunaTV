@@ -1,5 +1,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Children, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Children,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import AnimatedCardGrid from '@/components/AnimatedCardGrid';
 
@@ -20,7 +28,9 @@ function ScrollableRow({
   const [showLeftScroll, setShowLeftScroll] = useState(false);
   const [showRightScroll, setShowRightScroll] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const checkScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const checkScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 20 });
 
   // 使用 useMemo 缓存 children 数量，减少不必要的 effect 触发
@@ -36,8 +46,12 @@ function ScrollableRow({
         scrollWidth - (scrollLeft + clientWidth) > threshold;
       const canScrollLeft = scrollLeft > threshold;
 
-      setShowRightScroll((prev) => (prev !== canScrollRight ? canScrollRight : prev));
-      setShowLeftScroll((prev) => (prev !== canScrollLeft ? canScrollLeft : prev));
+      setShowRightScroll((prev) =>
+        prev !== canScrollRight ? canScrollRight : prev,
+      );
+      setShowLeftScroll((prev) =>
+        prev !== canScrollLeft ? canScrollLeft : prev,
+      );
 
       // 虚拟化：精确计算可见范围（参考 react-window 实现）
       if (enableVirtualization && containerRef.current.children.length > 0) {
@@ -61,7 +75,11 @@ function ScrollableRow({
         }
 
         // 查找最后一个可见元素
-        for (let i = startIndexVisible; i < containerRef.current.children.length; i++) {
+        for (
+          let i = startIndexVisible;
+          i < containerRef.current.children.length;
+          i++
+        ) {
           const child = containerRef.current.children[i] as HTMLElement;
           const offsetLeft = child.offsetLeft;
 
@@ -74,7 +92,7 @@ function ScrollableRow({
         const start = Math.max(0, startIndexVisible - overscan);
         const end = Math.min(childrenCount, stopIndexVisible + overscan + 1);
 
-        setVisibleRange(prev => {
+        setVisibleRange((prev) => {
           if (prev.start !== start || prev.end !== end) {
             return { start, end };
           }
@@ -178,7 +196,7 @@ function ScrollableRow({
         onScroll={checkScroll}
       >
         {enableAnimation ? (
-          <AnimatedCardGrid className="flex space-x-6">
+          <AnimatedCardGrid className='flex space-x-6'>
             {visibleChildren}
           </AnimatedCardGrid>
         ) : (

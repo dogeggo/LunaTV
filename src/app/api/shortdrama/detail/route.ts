@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
@@ -16,20 +14,14 @@ export async function GET(request: NextRequest) {
     const name = searchParams.get('name'); // 可选：用于备用API
 
     if (!id) {
-      return NextResponse.json(
-        { error: '缺少必要参数: id' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '缺少必要参数: id' }, { status: 400 });
     }
 
     const videoId = parseInt(id);
     const episodeNum = episode ? parseInt(episode) : 1;
 
     if (isNaN(videoId) || isNaN(episodeNum)) {
-      return NextResponse.json(
-        { error: '参数格式错误' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
 
     // 读取配置以获取备用API地址
@@ -37,7 +29,9 @@ export async function GET(request: NextRequest) {
     try {
       const config = await getConfig();
       const shortDramaConfig = config.ShortDramaConfig;
-      alternativeApiUrl = shortDramaConfig?.enableAlternative ? shortDramaConfig.alternativeApiUrl : undefined;
+      alternativeApiUrl = shortDramaConfig?.enableAlternative
+        ? shortDramaConfig.alternativeApiUrl
+        : undefined;
 
       // 调试日志
       console.log('[ShortDrama Detail] 配置读取:', {
@@ -58,7 +52,7 @@ export async function GET(request: NextRequest) {
       episodeNum,
       true,
       name || undefined,
-      alternativeApiUrl
+      alternativeApiUrl,
     );
 
     // 如果失败，尝试其他集数
@@ -68,7 +62,7 @@ export async function GET(request: NextRequest) {
         episodeNum === 1 ? 2 : 1,
         true,
         name || undefined,
-        alternativeApiUrl
+        alternativeApiUrl,
       );
     }
 
@@ -79,14 +73,14 @@ export async function GET(request: NextRequest) {
         0,
         true,
         name || undefined,
-        alternativeApiUrl
+        alternativeApiUrl,
       );
     }
 
     if (result.code !== 0 || !result.data) {
       return NextResponse.json(
         { error: result.msg || '解析失败' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -98,11 +92,13 @@ export async function GET(request: NextRequest) {
       id: id, // 使用原始请求ID，保持一致性
       title: result.data!.videoName,
       poster: result.data!.cover,
-      episodes: Array.from({ length: totalEpisodes }, (_, i) =>
-        `shortdrama:${id}:${i}` // 使用原始请求ID
+      episodes: Array.from(
+        { length: totalEpisodes },
+        (_, i) => `shortdrama:${id}:${i}`, // 使用原始请求ID
       ),
-      episodes_titles: Array.from({ length: totalEpisodes }, (_, i) =>
-        `第${i + 1}集`
+      episodes_titles: Array.from(
+        { length: totalEpisodes },
+        (_, i) => `第${i + 1}集`,
       ),
       source: 'shortdrama',
       source_name: '短剧',
@@ -120,17 +116,23 @@ export async function GET(request: NextRequest) {
     // 设置与豆瓣一致的缓存策略
     const cacheTime = await getCacheTime();
     const finalResponse = NextResponse.json(response);
-    finalResponse.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
-    finalResponse.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
-    finalResponse.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
+    finalResponse.headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+    );
+    finalResponse.headers.set(
+      'CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`,
+    );
+    finalResponse.headers.set(
+      'Vercel-CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`,
+    );
     finalResponse.headers.set('Netlify-Vary', 'query');
 
     return finalResponse;
   } catch (error) {
     console.error('短剧详情获取失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器内部错误' }, { status: 500 });
   }
 }

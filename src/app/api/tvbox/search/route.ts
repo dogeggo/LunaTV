@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
           msg: '缺少必要参数: source 或 wd',
           list: [],
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
           msg: `未找到视频源: ${sourceKey}`,
           list: [],
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -72,12 +72,12 @@ export async function GET(request: NextRequest) {
           msg: `视频源已被禁用: ${sourceKey}`,
           list: [],
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     console.log(
-      `[TVBox Search Proxy] source=${sourceKey}, query="${query}", filter=${filterParam}, strict=${strictMode}`
+      `[TVBox Search Proxy] source=${sourceKey}, query="${query}", filter=${filterParam}, strict=${strictMode}`,
     );
 
     // 从上游API搜索
@@ -88,11 +88,11 @@ export async function GET(request: NextRequest) {
         api: targetSource.api,
         detail: targetSource.detail,
       },
-      query
+      query,
     );
 
     console.log(
-      `[TVBox Search Proxy] Fetched ${results.length} results from upstream`
+      `[TVBox Search Proxy] Fetched ${results.length} results from upstream`,
     );
 
     // 🔒 成人内容过滤
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
       console.log(
         `[TVBox Search Proxy] Adult filter: ${beforeFilterCount} → ${
           results.length
-        } (filtered ${beforeFilterCount - results.length})`
+        } (filtered ${beforeFilterCount - results.length})`,
       );
     }
 
@@ -153,13 +153,13 @@ export async function GET(request: NextRequest) {
       });
 
       console.log(
-        `[TVBox Search Proxy] Strict mode: ${beforeStrictCount} → ${results.length}`
+        `[TVBox Search Proxy] Strict mode: ${beforeStrictCount} → ${results.length}`,
       );
     }
 
     const processingTime = Date.now() - startTime;
     console.log(
-      `[TVBox Search Proxy] Completed in ${processingTime}ms, returning ${results.length} results`
+      `[TVBox Search Proxy] Completed in ${processingTime}ms, returning ${results.length} results`,
     );
 
     // 返回TVBox兼容的格式
@@ -172,7 +172,6 @@ export async function GET(request: NextRequest) {
       limit: results.length,
       total: results.length,
       list: results.map((r) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const raw = r as any;
         return {
           vod_id: r.id,
@@ -211,7 +210,7 @@ export async function GET(request: NextRequest) {
         msg: error instanceof Error ? error.message : '搜索失败',
         list: [],
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -255,7 +254,7 @@ function levenshteinDistance(str1: string, str2: string): number {
       matrix[i][j] = Math.min(
         matrix[i - 1][j] + 1, // 删除
         matrix[i][j - 1] + 1, // 插入
-        matrix[i - 1][j - 1] + cost // 替换
+        matrix[i - 1][j - 1] + cost, // 替换
       );
     }
   }

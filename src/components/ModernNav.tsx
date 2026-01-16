@@ -1,15 +1,26 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 'use client';
 
-import { Cat, Clover, Film, Globe, Home, MoreHorizontal, PlaySquare, Radio, Search, Star, Tv, X } from 'lucide-react';
+import {
+  Cat,
+  Clover,
+  Film,
+  Globe,
+  Home,
+  MoreHorizontal,
+  PlaySquare,
+  Radio,
+  Search,
+  Star,
+  Tv,
+  X,
+} from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { FastLink } from './FastLink';
+import { useSite } from './SiteProvider';
 import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
-import { useSite } from './SiteProvider';
 
 interface NavItem {
   icon: any;
@@ -143,54 +154,54 @@ export default function ModernNav() {
             {/* Navigation Items */}
             <div className='flex items-center justify-center gap-1 lg:gap-2 overflow-x-auto scrollbar-hide flex-1 px-4'>
               {menuItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
+                const Icon = item.icon;
+                const active = isActive(item.href);
 
-              return (
-                <FastLink
-                  key={item.label}
-                  href={item.href}
-                  useTransitionNav
-                  className='group relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 whitespace-nowrap shrink-0'
-                >
-                  {/* Active indicator */}
-                  {active && (
-                    <div
-                      className={`absolute inset-0 bg-linear-to-r ${item.gradient} opacity-10 rounded-full animate-pulse`}
-                    />
-                  )}
-
-                  {/* Icon */}
-                  <div className='relative'>
-                    <Icon
-                      className={`w-5 h-5 transition-all duration-300 ${
-                        active
-                          ? item.color
-                          : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'
-                      } ${active ? 'scale-110' : 'group-hover:scale-110'}`}
-                    />
-                  </div>
-
-                  {/* Label */}
-                  <span
-                    className={`text-sm font-medium transition-all duration-300 ${
-                      active
-                        ? `${item.color} font-semibold`
-                        : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
-                    }`}
+                return (
+                  <FastLink
+                    key={item.label}
+                    href={item.href}
+                    useTransitionNav
+                    className='group relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 whitespace-nowrap shrink-0'
                   >
-                    {item.label}
-                  </span>
+                    {/* Active indicator */}
+                    {active && (
+                      <div
+                        className={`absolute inset-0 bg-linear-to-r ${item.gradient} opacity-10 rounded-full animate-pulse`}
+                      />
+                    )}
 
-                  {/* Bottom active border */}
-                  {active && (
-                    <div
-                      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r ${item.gradient} rounded-full`}
-                    />
-                  )}
-                </FastLink>
-              );
-            })}
+                    {/* Icon */}
+                    <div className='relative'>
+                      <Icon
+                        className={`w-5 h-5 transition-all duration-300 ${
+                          active
+                            ? item.color
+                            : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'
+                        } ${active ? 'scale-110' : 'group-hover:scale-110'}`}
+                      />
+                    </div>
+
+                    {/* Label */}
+                    <span
+                      className={`text-sm font-medium transition-all duration-300 ${
+                        active
+                          ? `${item.color} font-semibold`
+                          : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+
+                    {/* Bottom active border */}
+                    {active && (
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r ${item.gradient} rounded-full`}
+                      />
+                    )}
+                  </FastLink>
+                );
+              })}
             </div>
 
             {/* Right Side Actions */}
@@ -215,7 +226,9 @@ export default function ModernNav() {
           >
             {/* Header */}
             <div className='flex items-center justify-between px-6 py-4 border-b border-gray-200/50 dark:border-gray-700/50'>
-              <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>全部分类</h3>
+              <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                全部分类
+              </h3>
               <button
                 onClick={() => setShowMoreMenu(false)}
                 className='p-2 rounded-full hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-colors'
@@ -257,9 +270,7 @@ export default function ModernNav() {
                     </div>
                     <span
                       className={`text-xs font-medium ${
-                        active
-                          ? item.color
-                          : 'text-gray-700 dark:text-gray-300'
+                        active ? item.color : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       {item.label}
@@ -315,7 +326,9 @@ export default function ModernNav() {
             className='flex flex-col items-center justify-center min-w-[60px] flex-1 py-2 px-1 transition-all duration-200 active:scale-95'
           >
             <MoreHorizontal className='w-6 h-6 mb-1 text-gray-600 dark:text-gray-400' />
-            <span className='text-[10px] font-medium text-gray-600 dark:text-gray-400'>更多</span>
+            <span className='text-[10px] font-medium text-gray-600 dark:text-gray-400'>
+              更多
+            </span>
           </button>
         </div>
       </nav>

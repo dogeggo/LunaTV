@@ -36,7 +36,15 @@ export interface UseWatchRoomReturn {
     isPublic: boolean;
   }) => Promise<{ success: boolean; room?: Room; error?: string }>;
 
-  joinRoom: (roomId: string, password?: string) => Promise<{ success: boolean; room?: Room; members?: Member[]; error?: string }>;
+  joinRoom: (
+    roomId: string,
+    password?: string,
+  ) => Promise<{
+    success: boolean;
+    room?: Room;
+    members?: Member[];
+    error?: string;
+  }>;
 
   leaveRoom: () => void;
 
@@ -167,7 +175,9 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
     newSocket.on('play:update', (state: PlayState) => {
       console.log('[WatchRoom] Play state updated:', state);
       // 更新房间的 currentState
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
+      setCurrentRoom((prev) =>
+        prev ? { ...prev, currentState: state } : null,
+      );
     });
 
     newSocket.on('play:seek', (currentTime: number) => {
@@ -185,13 +195,17 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
     newSocket.on('play:change', (state: PlayState) => {
       console.log('[WatchRoom] Video changed:', state);
       // 更新房间的 currentState
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
+      setCurrentRoom((prev) =>
+        prev ? { ...prev, currentState: state } : null,
+      );
     });
 
     newSocket.on('state:cleared', () => {
       console.log('[WatchRoom] State cleared');
       // 清除房间的 currentState
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: undefined } : null);
+      setCurrentRoom((prev) =>
+        prev ? { ...prev, currentState: undefined } : null,
+      );
     });
 
     // 聊天事件
@@ -227,56 +241,71 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
   }, [socket]);
 
   // 创建房间
-  const createRoom = useCallback(async (data: {
-    name: string;
-    description: string;
-    password?: string;
-    isPublic: boolean;
-  }) => {
-    if (!socket || !connected) {
-      return { success: false, error: '未连接到服务器' };
-    }
+  const createRoom = useCallback(
+    async (data: {
+      name: string;
+      description: string;
+      password?: string;
+      isPublic: boolean;
+    }) => {
+      if (!socket || !connected) {
+        return { success: false, error: '未连接到服务器' };
+      }
 
-    return new Promise<{ success: boolean; room?: Room; error?: string }>((resolve) => {
-      socket.emit('room:create', { ...data, userName }, (response) => {
-        if (response.success && response.room) {
-          // 立即更新状态
-          setCurrentRoom(response.room);
-          setMembers([{
-            id: socket.id!,
-            name: userName,
-            isOwner: true,
-            lastHeartbeat: Date.now(),
-          }]);
-          setMessages([]);
-        }
-        resolve(response);
-      });
-    });
-  }, [socket, connected, userName]);
+      return new Promise<{ success: boolean; room?: Room; error?: string }>(
+        (resolve) => {
+          socket.emit('room:create', { ...data, userName }, (response) => {
+            if (response.success && response.room) {
+              // 立即更新状态
+              setCurrentRoom(response.room);
+              setMembers([
+                {
+                  id: socket.id!,
+                  name: userName,
+                  isOwner: true,
+                  lastHeartbeat: Date.now(),
+                },
+              ]);
+              setMessages([]);
+            }
+            resolve(response);
+          });
+        },
+      );
+    },
+    [socket, connected, userName],
+  );
 
   // 加入房间
-  const joinRoom = useCallback(async (roomId: string, password?: string) => {
-    if (!socket || !connected) {
-      return { success: false, error: '未连接到服务器' };
-    }
+  const joinRoom = useCallback(
+    async (roomId: string, password?: string) => {
+      if (!socket || !connected) {
+        return { success: false, error: '未连接到服务器' };
+      }
 
-    console.log('[WatchRoom] Joining room with userName:', userName);
+      console.log('[WatchRoom] Joining room with userName:', userName);
 
-    return new Promise<{ success: boolean; room?: Room; members?: Member[]; error?: string }>((resolve) => {
-      socket.emit('room:join', { roomId, password, userName }, (response) => {
-        console.log('[WatchRoom] Join room response:', response);
-        if (response.success && response.room && response.members) {
-          console.log('[WatchRoom] Members received:', response.members);
-          // 立即更新状态
-          setCurrentRoom(response.room);
-          setMembers(response.members);
-          setMessages([]);
-        }
-        resolve(response);
+      return new Promise<{
+        success: boolean;
+        room?: Room;
+        members?: Member[];
+        error?: string;
+      }>((resolve) => {
+        socket.emit('room:join', { roomId, password, userName }, (response) => {
+          console.log('[WatchRoom] Join room response:', response);
+          if (response.success && response.room && response.members) {
+            console.log('[WatchRoom] Members received:', response.members);
+            // 立即更新状态
+            setCurrentRoom(response.room);
+            setMembers(response.members);
+            setMessages([]);
+          }
+          resolve(response);
+        });
       });
-    });
-  }, [socket, connected, userName]);
+    },
+    [socket, connected, userName],
+  );
 
   // 离开房间
   const leaveRoom = useCallback(() => {
@@ -303,19 +332,27 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
   }, [socket, connected]);
 
   // 播放控制
-  const updatePlayState = useCallback((state: PlayState) => {
-    if (socket && connected) {
-      socket.emit('play:update', state);
-      // 本地也更新 currentState（因为服务器不会广播回给发送者）
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
-    }
-  }, [socket, connected]);
+  const updatePlayState = useCallback(
+    (state: PlayState) => {
+      if (socket && connected) {
+        socket.emit('play:update', state);
+        // 本地也更新 currentState（因为服务器不会广播回给发送者）
+        setCurrentRoom((prev) =>
+          prev ? { ...prev, currentState: state } : null,
+        );
+      }
+    },
+    [socket, connected],
+  );
 
-  const seekTo = useCallback((currentTime: number) => {
-    if (socket && connected) {
-      socket.emit('play:seek', currentTime);
-    }
-  }, [socket, connected]);
+  const seekTo = useCallback(
+    (currentTime: number) => {
+      if (socket && connected) {
+        socket.emit('play:seek', currentTime);
+      }
+    },
+    [socket, connected],
+  );
 
   const play = useCallback(() => {
     if (socket && connected) {
@@ -329,13 +366,18 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
     }
   }, [socket, connected]);
 
-  const changeVideo = useCallback((state: PlayState) => {
-    if (socket && connected) {
-      socket.emit('play:change', state);
-      // 本地也更新 currentState（因为服务器不会广播回给发送者）
-      setCurrentRoom((prev) => prev ? { ...prev, currentState: state } : null);
-    }
-  }, [socket, connected]);
+  const changeVideo = useCallback(
+    (state: PlayState) => {
+      if (socket && connected) {
+        socket.emit('play:change', state);
+        // 本地也更新 currentState（因为服务器不会广播回给发送者）
+        setCurrentRoom((prev) =>
+          prev ? { ...prev, currentState: state } : null,
+        );
+      }
+    },
+    [socket, connected],
+  );
 
   const clearState = useCallback(async () => {
     if (!socket || !connected) {
@@ -354,11 +396,14 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
   }, [socket, connected]);
 
   // 发送消息
-  const sendMessage = useCallback((content: string, type: 'text' | 'emoji' = 'text') => {
-    if (socket && connected && currentRoom) {
-      socket.emit('chat:message', { content, type });
-    }
-  }, [socket, connected, currentRoom]);
+  const sendMessage = useCallback(
+    (content: string, type: 'text' | 'emoji' = 'text') => {
+      if (socket && connected && currentRoom) {
+        socket.emit('chat:message', { content, type });
+      }
+    },
+    [socket, connected, currentRoom],
+  );
 
   // 清理
   useEffect(() => {
@@ -374,7 +419,7 @@ export function useWatchRoom(options: UseWatchRoomOptions): UseWatchRoomReturn {
 
   // 计算当前用户是否为房主
   const isOwner = currentRoom
-    ? members.find(m => m.name === userName)?.isOwner || false
+    ? members.find((m) => m.name === userName)?.isOwner || false
     : false;
 
   return {

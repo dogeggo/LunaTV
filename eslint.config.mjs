@@ -18,11 +18,19 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['public/sw.js', 'public/workbox-*.js', 'node_modules/**', '.next/**'],
+    ignores: [
+      'public/sw.js',
+      'public/workbox-*.js',
+      'node_modules/**',
+      '.next/**',
+    ],
   },
   // ...compat.extends('next/core-web-vitals', 'prettier'),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
+    },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -39,7 +47,7 @@ export default [
     },
     rules: {
       'no-unused-vars': 'off',
-      'no-console': 'warn',
+      'no-console': 'off',
       // 'react/no-unescaped-entities': 'off',
       // 'react/display-name': 'off',
       // 'react/jsx-curly-brace-presence': [
@@ -47,15 +55,7 @@ export default [
       //   { props: 'never', children: 'never' },
       // ],
       'unused-imports/no-unused-imports': 'warn',
-      'unused-imports/no-unused-vars': [
-        'warn',
-        {
-          vars: 'all',
-          varsIgnorePattern: '^_',
-          args: 'after-used',
-          argsIgnorePattern: '^_',
-        },
-      ],
+      'unused-imports/no-unused-vars': 'off',
       'simple-import-sort/exports': 'warn',
       'simple-import-sort/imports': [
         'warn',

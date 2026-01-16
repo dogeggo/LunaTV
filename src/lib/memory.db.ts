@@ -25,7 +25,10 @@ export class MemoryStorage implements IStorage {
   private skipConfigs = new Map<string, EpisodeSkipConfig>();
   private cache = new Map<string, CacheEntry>();
 
-  private getUserMap<T>(store: Map<string, Map<string, T>>, userName: string): Map<string, T> {
+  private getUserMap<T>(
+    store: Map<string, Map<string, T>>,
+    userName: string,
+  ): Map<string, T> {
     let userMap = store.get(userName);
     if (!userMap) {
       userMap = new Map<string, T>();
@@ -38,16 +41,25 @@ export class MemoryStorage implements IStorage {
     return `${userName}::${source}::${id}`;
   }
 
-  async getPlayRecord(userName: string, key: string): Promise<PlayRecord | null> {
+  async getPlayRecord(
+    userName: string,
+    key: string,
+  ): Promise<PlayRecord | null> {
     return this.playRecords.get(userName)?.get(key) ?? null;
   }
 
-  async setPlayRecord(userName: string, key: string, record: PlayRecord): Promise<void> {
+  async setPlayRecord(
+    userName: string,
+    key: string,
+    record: PlayRecord,
+  ): Promise<void> {
     const userMap = this.getUserMap(this.playRecords, userName);
     userMap.set(key, record);
   }
 
-  async getAllPlayRecords(userName: string): Promise<{ [key: string]: PlayRecord }> {
+  async getAllPlayRecords(
+    userName: string,
+  ): Promise<{ [key: string]: PlayRecord }> {
     const userMap = this.playRecords.get(userName);
     if (!userMap) return {};
     return Object.fromEntries(userMap.entries());
@@ -61,12 +73,18 @@ export class MemoryStorage implements IStorage {
     return this.favorites.get(userName)?.get(key) ?? null;
   }
 
-  async setFavorite(userName: string, key: string, favorite: Favorite): Promise<void> {
+  async setFavorite(
+    userName: string,
+    key: string,
+    favorite: Favorite,
+  ): Promise<void> {
     const userMap = this.getUserMap(this.favorites, userName);
     userMap.set(key, favorite);
   }
 
-  async getAllFavorites(userName: string): Promise<{ [key: string]: Favorite }> {
+  async getAllFavorites(
+    userName: string,
+  ): Promise<{ [key: string]: Favorite }> {
     const userMap = this.favorites.get(userName);
     if (!userMap) return {};
     return Object.fromEntries(userMap.entries());
@@ -124,7 +142,7 @@ export class MemoryStorage implements IStorage {
     const history = this.searchHistory.get(userName) ?? [];
     this.searchHistory.set(
       userName,
-      history.filter((item) => item !== keyword)
+      history.filter((item) => item !== keyword),
     );
   }
 
@@ -140,19 +158,34 @@ export class MemoryStorage implements IStorage {
     this.adminConfig = config;
   }
 
-  async getSkipConfig(userName: string, source: string, id: string): Promise<EpisodeSkipConfig | null> {
+  async getSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+  ): Promise<EpisodeSkipConfig | null> {
     return this.skipConfigs.get(this.makeSkipKey(userName, source, id)) ?? null;
   }
 
-  async setSkipConfig(userName: string, source: string, id: string, config: EpisodeSkipConfig): Promise<void> {
+  async setSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+    config: EpisodeSkipConfig,
+  ): Promise<void> {
     this.skipConfigs.set(this.makeSkipKey(userName, source, id), config);
   }
 
-  async deleteSkipConfig(userName: string, source: string, id: string): Promise<void> {
+  async deleteSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+  ): Promise<void> {
     this.skipConfigs.delete(this.makeSkipKey(userName, source, id));
   }
 
-  async getAllSkipConfigs(userName: string): Promise<{ [key: string]: EpisodeSkipConfig }> {
+  async getAllSkipConfigs(
+    userName: string,
+  ): Promise<{ [key: string]: EpisodeSkipConfig }> {
     const prefix = `${userName}::`;
     const entries = Array.from(this.skipConfigs.entries())
       .filter(([key]) => key.startsWith(prefix))
@@ -180,7 +213,11 @@ export class MemoryStorage implements IStorage {
     return entry.data;
   }
 
-  async setCache(key: string, data: any, expireSeconds?: number): Promise<void> {
+  async setCache(
+    key: string,
+    data: any,
+    expireSeconds?: number,
+  ): Promise<void> {
     const expiresAt = expireSeconds ? Date.now() + expireSeconds * 1000 : null;
     this.cache.set(key, { data, expiresAt });
   }
@@ -247,12 +284,12 @@ export class MemoryStorage implements IStorage {
     _userName: string,
     _source: string,
     _id: string,
-    _watchTime: number
+    _watchTime: number,
   ): Promise<void> {}
 
   async updateUserLoginStats(
     _userName: string,
     _loginTime: number,
-    _isFirstLogin?: boolean
+    _isFirstLogin?: boolean,
   ): Promise<void> {}
 }

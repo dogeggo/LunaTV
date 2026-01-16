@@ -48,9 +48,9 @@ export interface PlayState {
   searchTitle?: string;
   episode?: number;
   source: string;
-  poster?: string;  // 海报图片
-  totalEpisodes?: number;  // 总集数（用于判断是否显示集数信息）
-  doubanId?: number;  // 豆瓣ID（用于准确判断是否是同一部视频）
+  poster?: string; // 海报图片
+  totalEpisodes?: number; // 总集数（用于判断是否显示集数信息）
+  doubanId?: number; // 豆瓣ID（用于准确判断是否是同一部视频）
 }
 
 // 直播状态
@@ -95,11 +95,24 @@ export interface ServerToClientEvents {
   'play:change': (state: PlayState) => void;
   'live:change': (state: LiveState) => void;
   'chat:message': (message: ChatMessage) => void;
-  'voice:offer': (data: { userId: string; offer: RTCSessionDescriptionInit }) => void;
-  'voice:answer': (data: { userId: string; answer: RTCSessionDescriptionInit }) => void;
-  'voice:ice': (data: { userId: string; candidate: RTCIceCandidateInit }) => void;
+  'voice:offer': (data: {
+    userId: string;
+    offer: RTCSessionDescriptionInit;
+  }) => void;
+  'voice:answer': (data: {
+    userId: string;
+    answer: RTCSessionDescriptionInit;
+  }) => void;
+  'voice:ice': (data: {
+    userId: string;
+    candidate: RTCIceCandidateInit;
+  }) => void;
   'voice:mic-enabled': (data: { userId: string }) => void;
-  'voice:audio-chunk': (data: { userId: string; audioData: number[]; sampleRate?: number }) => void;
+  'voice:audio-chunk': (data: {
+    userId: string;
+    audioData: number[];
+    sampleRate?: number;
+  }) => void;
   'state:cleared': () => void;
   'heartbeat:pong': (data: { timestamp: number }) => void;
   error: (message: string) => void;
@@ -115,7 +128,11 @@ export interface ClientToServerEvents {
       isPublic: boolean;
       userName: string;
     },
-    callback: (response: { success: boolean; room?: Room; error?: string }) => void
+    callback: (response: {
+      success: boolean;
+      room?: Room;
+      error?: string;
+    }) => void,
   ) => void;
 
   'room:join': (
@@ -125,7 +142,12 @@ export interface ClientToServerEvents {
       userName: string;
       ownerToken?: string;
     },
-    callback: (response: { success: boolean; room?: Room; members?: Member[]; error?: string }) => void
+    callback: (response: {
+      success: boolean;
+      room?: Room;
+      members?: Member[];
+      error?: string;
+    }) => void,
   ) => void;
 
   'room:leave': () => void;
@@ -142,12 +164,27 @@ export interface ClientToServerEvents {
 
   'chat:message': (data: { content: string; type: 'text' | 'emoji' }) => void;
 
-  'voice:offer': (data: { targetUserId: string; offer: RTCSessionDescriptionInit }) => void;
-  'voice:answer': (data: { targetUserId: string; answer: RTCSessionDescriptionInit }) => void;
-  'voice:ice': (data: { targetUserId: string; candidate: RTCIceCandidateInit }) => void;
-  'voice:audio-chunk': (data: { roomId: string; audioData: number[]; sampleRate?: number }) => void;
+  'voice:offer': (data: {
+    targetUserId: string;
+    offer: RTCSessionDescriptionInit;
+  }) => void;
+  'voice:answer': (data: {
+    targetUserId: string;
+    answer: RTCSessionDescriptionInit;
+  }) => void;
+  'voice:ice': (data: {
+    targetUserId: string;
+    candidate: RTCIceCandidateInit;
+  }) => void;
+  'voice:audio-chunk': (data: {
+    roomId: string;
+    audioData: number[];
+    sampleRate?: number;
+  }) => void;
 
-  'state:clear': (callback?: (response: { success: boolean; error?: string }) => void) => void;
+  'state:clear': (
+    callback?: (response: { success: boolean; error?: string }) => void,
+  ) => void;
 
   heartbeat: () => void;
 }

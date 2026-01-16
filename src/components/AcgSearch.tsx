@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { AlertCircle, Copy, ExternalLink, Loader2, Check } from 'lucide-react';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { AlertCircle, Check, Copy, ExternalLink, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AcgSearchItem {
   title: string;
@@ -70,7 +69,7 @@ export default function AcgSearch({
 
       if (isLoadMore) {
         // 追加新数据
-        setAllItems(prev => [...prev, ...data.items]);
+        setAllItems((prev) => [...prev, ...data.items]);
         setHasMore(data.items.length > 0);
       } else {
         // 新搜索，重置数据
@@ -129,7 +128,7 @@ export default function AcgSearch({
         root: null,
         rootMargin: '100px',
         threshold: 0.1,
-      }
+      },
     );
 
     observer.observe(element);
@@ -264,7 +263,10 @@ export default function AcgSearch({
 
       {/* 加载更多指示器 */}
       {hasMore && (
-        <div ref={loadMoreRef} className='flex items-center justify-center py-8'>
+        <div
+          ref={loadMoreRef}
+          className='flex items-center justify-center py-8'
+        >
           <div className='text-center'>
             <Loader2 className='mx-auto h-6 w-6 animate-spin text-green-600 dark:text-green-400' />
             <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>

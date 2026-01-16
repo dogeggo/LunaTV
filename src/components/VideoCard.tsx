@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any,react-hooks/exhaustive-deps,@typescript-eslint/no-empty-function */
-
 import {
   ExternalLink,
   Heart,
@@ -189,7 +187,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         try {
           const fav = await isFavorited(actualSource, actualId);
           setFavorited(fav);
-        } catch (err) {
+        } catch (_err) {
           throw new Error('检查收藏状态失败');
         }
       };
@@ -295,7 +293,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         try {
           await deletePlayRecord(actualSource, actualId);
           onDelete?.();
-        } catch (err) {
+        } catch (_err) {
           throw new Error('删除播放记录失败');
         }
       },
@@ -420,7 +418,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         try {
           const fav = await isFavorited(actualSource, actualId);
           setSearchFavorited(fav);
-        } catch (err) {
+        } catch (_err) {
           setSearchFavorited(false);
         }
       }

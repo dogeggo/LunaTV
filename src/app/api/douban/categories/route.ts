@@ -36,28 +36,28 @@ export async function GET(request: Request) {
   if (!kind || !category || !type) {
     return NextResponse.json(
       { error: '缺少必要参数: kind 或 category 或 type' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (!['tv', 'movie'].includes(kind)) {
     return NextResponse.json(
       { error: 'kind 参数必须是 tv 或 movie' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (pageLimit < 1 || pageLimit > 100) {
     return NextResponse.json(
       { error: 'pageSize 必须在 1-100 之间' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (pageStart < 0) {
     return NextResponse.json(
       { error: 'pageStart 不能小于 0' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -65,11 +65,13 @@ export async function GET(request: Request) {
 
   try {
     console.log(`[豆瓣分类] 请求URL: ${target}`);
-    
+
     // 调用豆瓣 API
     const doubanData = await fetchDoubanData<DoubanCategoryApiResponse>(target);
-    
-    console.log(`[豆瓣分类] 成功获取数据，项目数: ${doubanData.items?.length || 0}`);
+
+    console.log(
+      `[豆瓣分类] 成功获取数据，项目数: ${doubanData.items?.length || 0}`,
+    );
 
     // 转换数据格式
     const list: DoubanItem[] = doubanData.items.map((item) => ({
@@ -98,13 +100,13 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error(`[豆瓣分类] 请求失败: ${target}`, (error as Error).message);
     return NextResponse.json(
-      { 
-        error: '获取豆瓣数据失败', 
+      {
+        error: '获取豆瓣数据失败',
         details: (error as Error).message,
         url: target,
-        params: { kind, category, type, pageLimit, pageStart }
+        params: { kind, category, type, pageLimit, pageStart },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

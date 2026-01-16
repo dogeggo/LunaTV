@@ -38,7 +38,7 @@ export function useImagePreload(imageUrls: string[], enabled = true) {
 
       // Check if already exists in DOM using safe CSS.escape
       const existing = document.head.querySelector(
-        `link[rel="preload"][href="${CSS.escape(cleanUrl)}"]`
+        `link[rel="preload"][href="${CSS.escape(cleanUrl)}"]`,
       );
       if (existing) {
         preloadedUrls.add(cleanUrl);

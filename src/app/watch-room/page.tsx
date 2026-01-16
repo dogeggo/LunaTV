@@ -1,23 +1,26 @@
 // 观影室首页 - 选项卡式界面
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
-  Users,
-  UserPlus,
   List as ListIcon,
   Lock,
-  RefreshCw,
-  Video,
   LogOut,
   Play,
+  RefreshCw,
+  UserPlus,
+  Users,
+  Video,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useWatchRoomContext } from '@/components/WatchRoomProvider';
-import PageLayout from '@/components/PageLayout';
+import { useEffect, useState } from 'react';
+
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
+
+import PageLayout from '@/components/PageLayout';
 import MiniVideoCard from '@/components/watch-room/MiniVideoCard';
-import type { Room, PlayState } from '@/types/watch-room.types';
+import { useWatchRoomContext } from '@/components/WatchRoomProvider';
+
+import type { PlayState, Room } from '@/types/watch-room.types';
 
 type TabType = 'create' | 'join' | 'list';
 

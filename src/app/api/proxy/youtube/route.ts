@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   if (!videoId) {
     return NextResponse.json(
       { error: 'Missing videoId parameter' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(apiUrl, {
       headers: {
         'User-Agent': 'LunaTV/1.0 (https://github.com/yourusername/LunaTV)',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       next: {
         // 缓存1小时（视频信息不常变）
@@ -37,12 +37,12 @@ export async function GET(request: NextRequest) {
       if (response.status === 404) {
         return NextResponse.json(
           { error: 'Video not found or unavailable' },
-          { status: 404 }
+          { status: 404 },
         );
       }
       return NextResponse.json(
         { error: `YouTube API returned ${response.status}` },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     console.error('YouTube API proxy error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch from YouTube API' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

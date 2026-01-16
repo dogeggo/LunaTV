@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 export const runtime = 'nodejs';
@@ -36,13 +37,14 @@ export async function GET(request: Request) {
 
     // 构建请求头
     const fetchHeaders: HeadersInit = {
-      'Referer': sourceOrigin + '/',
-      'Origin': sourceOrigin,
+      Referer: sourceOrigin + '/',
+      Origin: sourceOrigin,
       'User-Agent': DEFAULT_USER_AGENT,
-      'Accept': 'video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5',
+      Accept:
+        'video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5',
       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       'Accept-Encoding': 'identity;q=1, *;q=0',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     };
 
     // 如果客户端发送了 Range 请求，转发给目标服务器
@@ -76,7 +78,7 @@ export async function GET(request: Request) {
 
       headers.set(
         'Cache-Control',
-        'public, max-age=1800, stale-while-revalidate=900, must-revalidate'
+        'public, max-age=1800, stale-while-revalidate=900, must-revalidate',
       );
       headers.set('Access-Control-Allow-Origin', '*');
 
@@ -93,17 +95,20 @@ export async function GET(request: Request) {
           status: videoResponse.status,
           statusText: videoResponse.statusText,
         },
-        { status: videoResponse.status }
+        { status: videoResponse.status },
       );
       // 错误响应不缓存，避免缓存失效的视频链接
-      errorResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      errorResponse.headers.set(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate',
+      );
       return errorResponse;
     }
 
     if (!videoResponse.body) {
       return NextResponse.json(
         { error: 'Video response has no body' },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -129,10 +134,13 @@ export async function GET(request: Request) {
     // trailer URL 有时效性，使用较短的 30 分钟缓存
     headers.set(
       'Cache-Control',
-      'public, max-age=1800, stale-while-revalidate=900, must-revalidate'
+      'public, max-age=1800, stale-while-revalidate=900, must-revalidate',
     );
     // CDN缓存：30分钟 + 15分钟宽限期
-    headers.set('CDN-Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=900');
+    headers.set(
+      'CDN-Cache-Control',
+      'public, s-maxage=1800, stale-while-revalidate=900',
+    );
 
     // 添加 CORS 支持
     headers.set('Access-Control-Allow-Origin', '*');
@@ -154,14 +162,14 @@ export async function GET(request: Request) {
     if (error.name === 'AbortError') {
       return NextResponse.json(
         { error: 'Video fetch timeout (30s)' },
-        { status: 504 }
+        { status: 504 },
       );
     }
 
     console.error('[Video Proxy] Error fetching video:', error.message);
     return NextResponse.json(
       { error: 'Error fetching video', details: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -183,14 +191,14 @@ export async function HEAD(request: Request) {
     const videoResponse = await fetch(videoUrl, {
       method: 'HEAD',
       headers: {
-        'Referer': sourceOrigin + '/',
-        'Origin': sourceOrigin,
-        'User-Agent':
-          DEFAULT_USER_AGENT,
-        'Accept': 'video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5',
+        Referer: sourceOrigin + '/',
+        Origin: sourceOrigin,
+        'User-Agent': DEFAULT_USER_AGENT,
+        Accept:
+          'video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Accept-Encoding': 'identity;q=1, *;q=0',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
 
@@ -208,7 +216,10 @@ export async function HEAD(request: Request) {
     if (lastModified) headers.set('Last-Modified', lastModified);
 
     headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=1800, must-revalidate');
+    headers.set(
+      'Cache-Control',
+      'public, max-age=3600, stale-while-revalidate=1800, must-revalidate',
+    );
 
     return new NextResponse(null, {
       status: videoResponse.status,

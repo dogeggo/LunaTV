@@ -22,7 +22,7 @@ export async function GET() {
     console.error('获取自定义去广告代码失败:', error);
     return NextResponse.json(
       { error: '获取失败', code: '', version: 1 },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

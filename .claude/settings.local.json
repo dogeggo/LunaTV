@@ -1,5 +1,13 @@
 {
   "permissions": {
-    "allow": ["Bash(npx eslint:*)", "Bash(git add:*)", "Bash(git commit:*)"]
+    "allow": [
+      "Bash(npx eslint:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(dir:*)",
+      "Bash(pnpm format)",
+      "Bash(pnpm build)",
+      "Bash(pnpm lint:fix)"
+    ]
   }
 }

@@ -14,8 +14,8 @@ export async function GET() {
         `https://www.bing.com/HPImageArchive.aspx?format=js&idx=${randomIdx}&n=1&mkt=zh-CN`,
         {
           // 不缓存，每次都随机
-          cache: 'no-store'
-        }
+          cache: 'no-store',
+        },
       );
 
       if (!response.ok) {

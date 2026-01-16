@@ -29,7 +29,7 @@ export function TelegramWelcomeModal() {
         setCredentials({
           username: parsed.username,
           password: parsed.password,
-          message: '您已通过 Telegram 成功登录！系统已为您创建账户。'
+          message: '您已通过 Telegram 成功登录！系统已为您创建账户。',
         });
         setShow(true);
 

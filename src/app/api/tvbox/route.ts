@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
-import { getSpiderJar, getCandidates } from '@/lib/spiderJar';
+import { getCandidates, getSpiderJar } from '@/lib/spiderJar';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // Helper function to get base URL with SITE_BASE env support
@@ -18,24 +18,28 @@ function getBaseUrl(request: NextRequest): string {
 }
 
 // 生产环境使用Redis/Upstash/Kvrocks的频率限制
-async function checkRateLimit(ip: string, limit = 60, windowMs = 60000): Promise<boolean> {
+async function checkRateLimit(
+  ip: string,
+  limit = 60,
+  windowMs = 60000,
+): Promise<boolean> {
   const now = Date.now();
   const windowStart = Math.floor(now / windowMs) * windowMs; // 对齐到时间窗口开始
   const key = `tvbox-rate-limit:${ip}:${windowStart}`;
-  
+
   try {
     // 获取当前计数
-    const currentCount = await db.getCache(key) || 0;
-    
+    const currentCount = (await db.getCache(key)) || 0;
+
     if (currentCount >= limit) {
       return false;
     }
-    
+
     // 增加计数并设置过期时间
     const newCount = currentCount + 1;
     const expireSeconds = Math.ceil(windowMs / 1000); // 转换为秒
     await db.setCache(key, newCount, expireSeconds);
-    
+
     return true;
   } catch (error) {
     console.error('Rate limit check failed:', error);
@@ -45,7 +49,7 @@ async function checkRateLimit(ip: string, limit = 60, windowMs = 60000): Promise
 }
 
 // 清理过期的频率限制缓存（内部使用）
-async function cleanExpiredRateLimitCache(): Promise<void> {
+async function _cleanExpiredRateLimitCache(): Promise<void> {
   try {
     await db.clearExpiredCache('tvbox-rate-limit');
     console.log('Cleaned expired TVBox rate limit cache');
@@ -62,7 +66,7 @@ class ConcurrencyLimiter {
 
   async run<T>(fn: () => Promise<T>): Promise<T> {
     while (this.running >= this.maxConcurrent) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     this.running++;
@@ -172,18 +176,25 @@ export async function GET(request: NextRequest) {
     const proxyConfig = config.TVBoxProxyConfig; // 🔑 读取代理配置
 
     // 🔑 新增：基于用户 Token 的身份识别
-    let currentUser: { username: string; tvboxEnabledSources?: string[]; showAdultContent?: boolean } | null = null;
+    let currentUser: {
+      username: string;
+      tvboxEnabledSources?: string[];
+      showAdultContent?: boolean;
+    } | null = null;
 
     // 优先尝试用户专属 Token（支持用户级源限制）
     if (token) {
-      const user = config.UserConfig.Users.find(u => u.tvboxToken === token);
+      const user = config.UserConfig.Users.find((u) => u.tvboxToken === token);
       if (user) {
         currentUser = {
           username: user.username,
           tvboxEnabledSources: user.tvboxEnabledSources,
-          showAdultContent: user.showAdultContent
+          showAdultContent: user.showAdultContent,
         };
-        console.log(`[TVBox] 识别到用户 ${user.username}，源限制:`, user.tvboxEnabledSources || '无限制');
+        console.log(
+          `[TVBox] 识别到用户 ${user.username}，源限制:`,
+          user.tvboxEnabledSources || '无限制',
+        );
       }
     }
 
@@ -192,15 +203,21 @@ export async function GET(request: NextRequest) {
       const validToken = securityConfig.token;
       // 如果不是用户专属 Token，则必须是全局 Token
       if (!currentUser && (!token || token !== validToken)) {
-        return NextResponse.json({
-          error: 'Invalid token. Please add ?token=YOUR_TOKEN to the URL',
-          hint: '请在URL中添加 ?token=你的密钥 参数'
-        }, { status: 401 });
+        return NextResponse.json(
+          {
+            error: 'Invalid token. Please add ?token=YOUR_TOKEN to the URL',
+            hint: '请在URL中添加 ?token=你的密钥 参数',
+          },
+          { status: 401 },
+        );
       }
     }
-    
+
     // IP白名单检查（从数据库配置读取）
-    if (securityConfig?.enableIpWhitelist && securityConfig.allowedIPs.length > 0) {
+    if (
+      securityConfig?.enableIpWhitelist &&
+      securityConfig.allowedIPs.length > 0
+    ) {
       // 获取客户端真实IP - 正确处理x-forwarded-for中的多个IP
       const getClientIP = () => {
         const forwardedFor = request.headers.get('x-forwarded-for');
@@ -208,17 +225,19 @@ export async function GET(request: NextRequest) {
           // x-forwarded-for可能包含多个IP，第一个通常是客户端真实IP
           return forwardedFor.split(',')[0].trim();
         }
-        return request.headers.get('x-real-ip') ||
-               request.headers.get('cf-connecting-ip') ||
-               'unknown';
+        return (
+          request.headers.get('x-real-ip') ||
+          request.headers.get('cf-connecting-ip') ||
+          'unknown'
+        );
       };
 
       const clientIP = getClientIP();
-      
-      const isAllowed = securityConfig.allowedIPs.some(allowedIP => {
+
+      const isAllowed = securityConfig.allowedIPs.some((allowedIP) => {
         const trimmedIP = allowedIP.trim();
         if (trimmedIP === '*') return true;
-        
+
         // 支持CIDR格式检查
         if (trimmedIP.includes('/')) {
           // 简单的CIDR匹配（实际生产环境建议使用专门的库）
@@ -226,28 +245,31 @@ export async function GET(request: NextRequest) {
           const networkParts = network.split('.').map(Number);
           const clientParts = clientIP.split('.').map(Number);
           const maskBits = parseInt(mask, 10);
-          
+
           // 简化的子网匹配逻辑
           if (maskBits >= 24) {
             const networkPrefix = networkParts.slice(0, 3).join('.');
             const clientPrefix = clientParts.slice(0, 3).join('.');
             return networkPrefix === clientPrefix;
           }
-          
+
           return clientIP.startsWith(network.split('.').slice(0, 2).join('.'));
         }
-        
+
         return clientIP === trimmedIP;
       });
-      
+
       if (!isAllowed) {
-        return NextResponse.json({ 
-          error: `Access denied for IP: ${clientIP}`,
-          hint: '该IP地址不在白名单中'
-        }, { status: 403 });
+        return NextResponse.json(
+          {
+            error: `Access denied for IP: ${clientIP}`,
+            hint: '该IP地址不在白名单中',
+          },
+          { status: 403 },
+        );
       }
     }
-    
+
     // 访问频率限制（从数据库配置读取）
     if (securityConfig?.enableRateLimit) {
       // 获取客户端真实IP - 正确处理x-forwarded-for中的多个IP
@@ -256,20 +278,25 @@ export async function GET(request: NextRequest) {
         if (forwardedFor) {
           return forwardedFor.split(',')[0].trim();
         }
-        return request.headers.get('x-real-ip') ||
-               request.headers.get('cf-connecting-ip') ||
-               'unknown';
+        return (
+          request.headers.get('x-real-ip') ||
+          request.headers.get('cf-connecting-ip') ||
+          'unknown'
+        );
       };
 
       const clientIP = getClientIP();
-      
+
       const rateLimit = securityConfig.rateLimit || 60;
-      
+
       if (!(await checkRateLimit(clientIP, rateLimit))) {
-        return NextResponse.json({ 
-          error: 'Rate limit exceeded',
-          hint: `访问频率超限，每分钟最多${rateLimit}次请求`
-        }, { status: 429 });
+        return NextResponse.json(
+          {
+            error: 'Rate limit exceeded',
+            hint: `访问频率超限，每分钟最多${rateLimit}次请求`,
+          },
+          { status: 429 },
+        );
       }
     }
 
@@ -279,11 +306,16 @@ export async function GET(request: NextRequest) {
     const sourceConfigs = config.SourceConfig || [];
 
     if (sourceConfigs.length === 0) {
-      return NextResponse.json({ error: '没有配置任何视频源' }, { status: 500 });
+      return NextResponse.json(
+        { error: '没有配置任何视频源' },
+        { status: 500 },
+      );
     }
 
     // 过滤掉被禁用的源站和没有API地址的源站
-    let enabledSources = sourceConfigs.filter(source => !source.disabled && source.api && source.api.trim() !== '');
+    let enabledSources = sourceConfigs.filter(
+      (source) => !source.disabled && source.api && source.api.trim() !== '',
+    );
 
     // 🔑 成人内容过滤：确定成人内容显示权限，优先级：用户 > 用户组 > 全局
     // 🛡️ 纵深防御第一层：filter 参数控制（默认启用过滤，只有显式传 filter=off 才关闭）
@@ -297,19 +329,25 @@ export async function GET(request: NextRequest) {
       }
       // 如果用户没有设置，检查用户组设置
       else {
-        const user = config.UserConfig.Users.find(u => u.username === currentUser!.username);
+        const user = config.UserConfig.Users.find(
+          (u) => u.username === currentUser!.username,
+        );
         if (user?.tags && user.tags.length > 0 && config.UserConfig.Tags) {
           // 如果用户有多个用户组，只要有一个用户组允许就允许（取并集）
-          const hasAnyTagAllowAdult = user.tags.some(tagName => {
-            const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+          const hasAnyTagAllowAdult = user.tags.some((tagName) => {
+            const tagConfig = config.UserConfig.Tags?.find(
+              (t) => t.name === tagName,
+            );
             return tagConfig?.showAdultContent === true;
           });
           if (hasAnyTagAllowAdult) {
             showAdultContent = true;
           } else {
             // 检查是否有任何用户组明确禁止
-            const hasAnyTagDenyAdult = user.tags.some(tagName => {
-              const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+            const hasAnyTagDenyAdult = user.tags.some((tagName) => {
+              const tagConfig = config.UserConfig.Tags?.find(
+                (t) => t.name === tagName,
+              );
               return tagConfig?.showAdultContent === false;
             });
             if (hasAnyTagDenyAdult) {
@@ -322,8 +360,10 @@ export async function GET(request: NextRequest) {
 
     // 应用过滤逻辑：filter 参数和用户权限都要满足
     if (shouldFilterAdult && !showAdultContent) {
-      enabledSources = enabledSources.filter(source => !source.is_adult);
-      console.log(`[TVBox] 🛡️ 成人内容过滤已启用（filter=${filterParam || 'default'}, showAdultContent=${showAdultContent}），剩余源数量: ${enabledSources.length}`);
+      enabledSources = enabledSources.filter((source) => !source.is_adult);
+      console.log(
+        `[TVBox] 🛡️ 成人内容过滤已启用（filter=${filterParam || 'default'}, showAdultContent=${showAdultContent}），剩余源数量: ${enabledSources.length}`,
+      );
     } else if (!shouldFilterAdult) {
       console.log(`[TVBox] ⚠️ 成人内容过滤已通过 filter=off 显式关闭`);
     } else if (showAdultContent) {
@@ -331,10 +371,17 @@ export async function GET(request: NextRequest) {
     }
 
     // 🔑 新增：应用用户的源限制（如果有）
-    if (currentUser?.tvboxEnabledSources && currentUser.tvboxEnabledSources.length > 0) {
+    if (
+      currentUser?.tvboxEnabledSources &&
+      currentUser.tvboxEnabledSources.length > 0
+    ) {
       const allowedSourceKeys = new Set(currentUser.tvboxEnabledSources);
-      enabledSources = enabledSources.filter(source => allowedSourceKeys.has(source.key));
-      console.log(`[TVBox] 用户 ${currentUser.username} 限制后的源数量: ${enabledSources.length}`);
+      enabledSources = enabledSources.filter((source) =>
+        allowedSourceKeys.has(source.key),
+      );
+      console.log(
+        `[TVBox] 用户 ${currentUser.username} 限制后的源数量: ${enabledSources.length}`,
+      );
     }
 
     // 跟踪全局 spider jar（从 detail 字段中提取）
@@ -347,247 +394,324 @@ export async function GET(request: NextRequest) {
       wallpaper: `${baseUrl}/logo.png`, // 使用项目Logo作为壁纸
 
       // 影视源配置
-      sites: await Promise.all(enabledSources.map(async (source) => {
-        /**
-         * 智能 API 类型检测（参考 DecoTV 优化）
-         * 0: MacCMS XML格式
-         * 1: MacCMS JSON格式
-         * 3: CSP源 (Custom Spider Plugin)
-         */
-        const detectApiType = (api: string): number => {
-          const url = api.toLowerCase().trim();
+      sites: await Promise.all(
+        enabledSources.map(async (source) => {
+          /**
+           * 智能 API 类型检测（参考 DecoTV 优化）
+           * 0: MacCMS XML格式
+           * 1: MacCMS JSON格式
+           * 3: CSP源 (Custom Spider Plugin)
+           */
+          const detectApiType = (api: string): number => {
+            const url = api.toLowerCase().trim();
 
-          // CSP 源（插件源，优先判断）
-          if (url.startsWith('csp_')) return 3;
+            // CSP 源（插件源，优先判断）
+            if (url.startsWith('csp_')) return 3;
 
-          // XML 采集接口 - 更精确匹配
-          if (
-            url.includes('.xml') ||
-            url.includes('xml.php') ||
-            url.includes('api.php/provide/vod/at/xml') ||
-            url.includes('provide/vod/at/xml') ||
-            (url.includes('maccms') && url.includes('xml'))
-          ) {
-            return 0;
-          }
+            // XML 采集接口 - 更精确匹配
+            if (
+              url.includes('.xml') ||
+              url.includes('xml.php') ||
+              url.includes('api.php/provide/vod/at/xml') ||
+              url.includes('provide/vod/at/xml') ||
+              (url.includes('maccms') && url.includes('xml'))
+            ) {
+              return 0;
+            }
 
-          // JSON 采集接口 - 标准苹果CMS格式
-          if (
-            url.includes('.json') ||
-            url.includes('json.php') ||
-            url.includes('api.php/provide/vod') ||
-            url.includes('provide/vod') ||
-            url.includes('api.php') ||
-            url.includes('maccms') ||
-            url.includes('/api/') ||
-            url.match(/\/provide.*vod/) ||
-            url.match(/\/api.*vod/)
-          ) {
+            // JSON 采集接口 - 标准苹果CMS格式
+            if (
+              url.includes('.json') ||
+              url.includes('json.php') ||
+              url.includes('api.php/provide/vod') ||
+              url.includes('provide/vod') ||
+              url.includes('api.php') ||
+              url.includes('maccms') ||
+              url.includes('/api/') ||
+              url.match(/\/provide.*vod/) ||
+              url.match(/\/api.*vod/)
+            ) {
+              return 1;
+            }
+
+            // 默认为JSON类型（苹果CMS最常见）
             return 1;
-          }
-
-          // 默认为JSON类型（苹果CMS最常见）
-          return 1;
-        };
-
-        let type = source.api && typeof source.api === 'string'
-          ? detectApiType(source.api)
-          : 1;
-
-        // 解析 detail 字段：支持 JSON 扩展配置（CSP源、自定义jar等）
-        const detail = (source.detail || '').trim();
-        const siteExt = ''; // 🔑 强制为空，忽略配置中的 ext
-        let siteJar: string | undefined;
-
-        if (detail) {
-          try {
-            const obj = JSON.parse(detail);
-            if (obj) {
-              if (obj.type !== undefined) type = obj.type;
-              if (obj.api) source.api = obj.api;
-              // 🔑 关键修复：强制忽略 ext 字段
-              // 原因：很多源的 ext 是网站首页 URL（如 http://caiji.dyttzyapi.com）
-              // Box-main 会访问这个 URL 并把返回的 HTML 当作 extend 参数传给 API，导致无数据
-              // if (obj.ext !== undefined) {
-              //   siteExt = typeof obj.ext === 'string' ? obj.ext : JSON.stringify(obj.ext);
-              // }
-              if (obj.jar) {
-                siteJar = obj.jar;
-                if (!globalSpiderJar) globalSpiderJar = obj.jar;
-              }
-            }
-          } catch {
-            // 非 JSON 时也不作为 ext 字符串
-            // siteExt = detail;
-          }
-        }
-
-        // CSP 源检测：api 以 csp_ 开头强制为 type 3
-        if (typeof source.api === 'string' && source.api.toLowerCase().startsWith('csp_')) {
-          type = 3;
-        }
-
-        // 根据不同API类型设置优化配置（提升稳定性和切换体验）
-        let siteHeader: Record<string, string> = {};
-        let siteTimeout = 10000; // 默认10秒
-        let siteRetry = 2; // 默认重试2次
-
-        if (type === 0 || type === 1) {
-          // 苹果CMS接口优化配置
-          siteHeader = {
-            'User-Agent':
-              DEFAULT_USER_AGENT,
-            Accept: 'application/json, text/plain, */*',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'Cache-Control': 'no-cache',
-            Connection: 'close', // 避免连接复用问题
           };
-          siteTimeout = 10000; // 10秒超时
-          siteRetry = 2; // 重试2次
-        } else if (type === 3) {
-          // CSP源优化配置
-          siteHeader = {
-            'User-Agent': 'okhttp/3.15',
-            Accept: '*/*',
-            Connection: 'close',
-          };
-          siteTimeout = 15000; // CSP源通常更稳定，设置更长超时
-          siteRetry = 1; // 重试1次
-        }
 
-        // 动态获取源站分类（使用并发控制）
-        let categories: string[] = ["电影", "电视剧", "综艺", "动漫", "纪录片", "短剧"]; // 默认分类
+          let type =
+            source.api && typeof source.api === 'string'
+              ? detectApiType(source.api)
+              : 1;
 
-        categories = await categoriesLimiter.run(async () => {
-          try {
-            // 尝试获取源站的分类数据
-            const categoriesUrl = `${source.api}?ac=list`;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+          // 解析 detail 字段：支持 JSON 扩展配置（CSP源、自定义jar等）
+          const detail = (source.detail || '').trim();
+          const siteExt = ''; // 🔑 强制为空，忽略配置中的 ext
+          let siteJar: string | undefined;
 
-            const response = await fetch(categoriesUrl, {
-              signal: controller.signal,
-              headers: {
-                'User-Agent': 'TVBox/1.0.0'
-              }
-            });
-
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-              const data = await response.json();
-              if (data.class && Array.isArray(data.class)) {
-                return data.class.map((cat: any) => cat.type_name || cat.name).filter((name: string) => name);
-              }
-            }
-          } catch (error) {
-            // 优化的错误处理：区分不同类型的错误
-            if (error instanceof Error) {
-              if (error.name === 'AbortError') {
-                console.warn(`[TVBox] 获取源站 ${source.name} 分类超时(10s)，使用默认分类`);
-              } else if (error.message.includes('JSON') || error.message.includes('parse')) {
-                console.warn(`[TVBox] 源站 ${source.name} 返回的分类数据格式错误，使用默认分类`);
-              } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
-                console.warn(`[TVBox] 无法连接到源站 ${source.name}，使用默认分类`);
-              } else {
-                console.warn(`[TVBox] 获取源站 ${source.name} 分类失败: ${error.message}，使用默认分类`);
-              }
-            } else {
-              console.warn(`[TVBox] 获取源站 ${source.name} 分类失败（未知错误），使用默认分类`);
-            }
-          }
-
-          // 返回默认分类
-          return ["电影", "电视剧", "综艺", "动漫", "纪录片", "短剧"];
-        });
-
-        // 🔑 Cloudflare Worker 代理：为每个源生成唯一的代理路径
-        let finalApi = source.api;
-        if (proxyConfig?.enabled && proxyConfig.proxyUrl) {
-          // 🔍 检查并提取真实 API 地址（如果已有代理，先去除旧代理）
-          let realApiUrl = source.api;
-          const urlMatch = source.api.match(/[?&]url=([^&]+)/);
-          if (urlMatch) {
-            // 已有代理前缀，提取真实 URL
-            realApiUrl = decodeURIComponent(urlMatch[1]);
-            console.log(`[TVBox Proxy] ${source.name}: 检测到旧代理，替换为新代理`);
-          }
-
-          // 提取源的唯一标识符（从真实域名中提取）
-          const extractSourceId = (apiUrl: string): string => {
+          if (detail) {
             try {
-              const url = new URL(apiUrl);
-              const hostname = url.hostname;
-              const parts = hostname.split('.');
-
-              // 如果是 caiji.xxx.com 或 api.xxx.com 格式，取倒数第二部分
-              if (parts.length >= 3 && (parts[0] === 'caiji' || parts[0] === 'api' || parts[0] === 'cj' || parts[0] === 'www')) {
-                return parts[parts.length - 2].toLowerCase().replace(/[^a-z0-9]/g, '');
+              const obj = JSON.parse(detail);
+              if (obj) {
+                if (obj.type !== undefined) type = obj.type;
+                if (obj.api) source.api = obj.api;
+                // 🔑 关键修复：强制忽略 ext 字段
+                // 原因：很多源的 ext 是网站首页 URL（如 http://caiji.dyttzyapi.com）
+                // Box-main 会访问这个 URL 并把返回的 HTML 当作 extend 参数传给 API，导致无数据
+                // if (obj.ext !== undefined) {
+                //   siteExt = typeof obj.ext === 'string' ? obj.ext : JSON.stringify(obj.ext);
+                // }
+                if (obj.jar) {
+                  siteJar = obj.jar;
+                  if (!globalSpiderJar) globalSpiderJar = obj.jar;
+                }
               }
-
-              // 否则取第一部分（去掉 zyapi/zy 等后缀）
-              let name = parts[0].toLowerCase();
-              name = name.replace(/zyapi$/, '').replace(/zy$/, '').replace(/api$/, '');
-              return name.replace(/[^a-z0-9]/g, '') || 'source';
             } catch {
-              return source.key || source.name.replace(/[^a-z0-9]/g, '');
+              // 非 JSON 时也不作为 ext 字符串
+              // siteExt = detail;
             }
+          }
+
+          // CSP 源检测：api 以 csp_ 开头强制为 type 3
+          if (
+            typeof source.api === 'string' &&
+            source.api.toLowerCase().startsWith('csp_')
+          ) {
+            type = 3;
+          }
+
+          // 根据不同API类型设置优化配置（提升稳定性和切换体验）
+          let siteHeader: Record<string, string> = {};
+          let siteTimeout = 10000; // 默认10秒
+          let siteRetry = 2; // 默认重试2次
+
+          if (type === 0 || type === 1) {
+            // 苹果CMS接口优化配置
+            siteHeader = {
+              'User-Agent': DEFAULT_USER_AGENT,
+              Accept: 'application/json, text/plain, */*',
+              'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+              'Cache-Control': 'no-cache',
+              Connection: 'close', // 避免连接复用问题
+            };
+            siteTimeout = 10000; // 10秒超时
+            siteRetry = 2; // 重试2次
+          } else if (type === 3) {
+            // CSP源优化配置
+            siteHeader = {
+              'User-Agent': 'okhttp/3.15',
+              Accept: '*/*',
+              Connection: 'close',
+            };
+            siteTimeout = 15000; // CSP源通常更稳定，设置更长超时
+            siteRetry = 1; // 重试1次
+          }
+
+          // 动态获取源站分类（使用并发控制）
+          let categories: string[] = [
+            '电影',
+            '电视剧',
+            '综艺',
+            '动漫',
+            '纪录片',
+            '短剧',
+          ]; // 默认分类
+
+          categories = await categoriesLimiter.run(async () => {
+            try {
+              // 尝试获取源站的分类数据
+              const categoriesUrl = `${source.api}?ac=list`;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+
+              const response = await fetch(categoriesUrl, {
+                signal: controller.signal,
+                headers: {
+                  'User-Agent': 'TVBox/1.0.0',
+                },
+              });
+
+              clearTimeout(timeoutId);
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.class && Array.isArray(data.class)) {
+                  return data.class
+                    .map((cat: any) => cat.type_name || cat.name)
+                    .filter((name: string) => name);
+                }
+              }
+            } catch (error) {
+              // 优化的错误处理：区分不同类型的错误
+              if (error instanceof Error) {
+                if (error.name === 'AbortError') {
+                  console.warn(
+                    `[TVBox] 获取源站 ${source.name} 分类超时(10s)，使用默认分类`,
+                  );
+                } else if (
+                  error.message.includes('JSON') ||
+                  error.message.includes('parse')
+                ) {
+                  console.warn(
+                    `[TVBox] 源站 ${source.name} 返回的分类数据格式错误，使用默认分类`,
+                  );
+                } else if (
+                  error.message.includes('ENOTFOUND') ||
+                  error.message.includes('ECONNREFUSED')
+                ) {
+                  console.warn(
+                    `[TVBox] 无法连接到源站 ${source.name}，使用默认分类`,
+                  );
+                } else {
+                  console.warn(
+                    `[TVBox] 获取源站 ${source.name} 分类失败: ${error.message}，使用默认分类`,
+                  );
+                }
+              } else {
+                console.warn(
+                  `[TVBox] 获取源站 ${source.name} 分类失败（未知错误），使用默认分类`,
+                );
+              }
+            }
+
+            // 返回默认分类
+            return ['电影', '电视剧', '综艺', '动漫', '纪录片', '短剧'];
+          });
+
+          // 🔑 Cloudflare Worker 代理：为每个源生成唯一的代理路径
+          let finalApi = source.api;
+          if (proxyConfig?.enabled && proxyConfig.proxyUrl) {
+            // 🔍 检查并提取真实 API 地址（如果已有代理，先去除旧代理）
+            let realApiUrl = source.api;
+            const urlMatch = source.api.match(/[?&]url=([^&]+)/);
+            if (urlMatch) {
+              // 已有代理前缀，提取真实 URL
+              realApiUrl = decodeURIComponent(urlMatch[1]);
+              console.log(
+                `[TVBox Proxy] ${source.name}: 检测到旧代理，替换为新代理`,
+              );
+            }
+
+            // 提取源的唯一标识符（从真实域名中提取）
+            const extractSourceId = (apiUrl: string): string => {
+              try {
+                const url = new URL(apiUrl);
+                const hostname = url.hostname;
+                const parts = hostname.split('.');
+
+                // 如果是 caiji.xxx.com 或 api.xxx.com 格式，取倒数第二部分
+                if (
+                  parts.length >= 3 &&
+                  (parts[0] === 'caiji' ||
+                    parts[0] === 'api' ||
+                    parts[0] === 'cj' ||
+                    parts[0] === 'www')
+                ) {
+                  return parts[parts.length - 2]
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]/g, '');
+                }
+
+                // 否则取第一部分（去掉 zyapi/zy 等后缀）
+                let name = parts[0].toLowerCase();
+                name = name
+                  .replace(/zyapi$/, '')
+                  .replace(/zy$/, '')
+                  .replace(/api$/, '');
+                return name.replace(/[^a-z0-9]/g, '') || 'source';
+              } catch {
+                return source.key || source.name.replace(/[^a-z0-9]/g, '');
+              }
+            };
+
+            const sourceId = extractSourceId(realApiUrl);
+            const proxyBaseUrl = proxyConfig.proxyUrl.replace(/\/$/, ''); // 去掉结尾的斜杠
+            finalApi = `${proxyBaseUrl}/p/${sourceId}?url=${encodeURIComponent(realApiUrl)}`;
+            console.log(`[TVBox Proxy] ${source.name}: ✓ 已应用代理`);
+          }
+
+          return {
+            key: source.key || source.name,
+            name: source.name,
+            type: type, // 使用智能判断的type
+            api: finalApi, // 🔑 使用代理后的 API 地址（如果启用）
+            searchable: 1, // 可搜索
+            quickSearch: 1, // 支持快速搜索
+            filterable: 1, // 支持分类筛选
+            changeable: 1, // 允许换源
+            ext: siteExt || '', // 确保始终是字符串（即使是空的）
+            ...(siteJar && { jar: siteJar }), // 站点级 jar 包
+            playerUrl: '', // 站点解析URL
+            hide: 0, // 是否隐藏源站 (1: 隐藏, 0: 显示)
+            categories: categories, // 使用动态获取的分类
+            header: siteHeader, // 优化的请求头
+            timeout: siteTimeout, // 超时时间
+            retry: siteRetry, // 重试次数
           };
-
-          const sourceId = extractSourceId(realApiUrl);
-          const proxyBaseUrl = proxyConfig.proxyUrl.replace(/\/$/, ''); // 去掉结尾的斜杠
-          finalApi = `${proxyBaseUrl}/p/${sourceId}?url=${encodeURIComponent(realApiUrl)}`;
-          console.log(`[TVBox Proxy] ${source.name}: ✓ 已应用代理`);
-        }
-
-        return {
-          key: source.key || source.name,
-          name: source.name,
-          type: type, // 使用智能判断的type
-          api: finalApi, // 🔑 使用代理后的 API 地址（如果启用）
-          searchable: 1, // 可搜索
-          quickSearch: 1, // 支持快速搜索
-          filterable: 1, // 支持分类筛选
-          changeable: 1, // 允许换源
-          ext: siteExt || '', // 确保始终是字符串（即使是空的）
-          ...(siteJar && { jar: siteJar }), // 站点级 jar 包
-          playerUrl: '', // 站点解析URL
-          hide: 0, // 是否隐藏源站 (1: 隐藏, 0: 显示)
-          categories: categories, // 使用动态获取的分类
-          header: siteHeader, // 优化的请求头
-          timeout: siteTimeout, // 超时时间
-          retry: siteRetry, // 重试次数
-        };
-      })),
+        }),
+      ),
 
       // 解析源配置（添加一些常用的解析源）
       parses: [
         {
-          name: "Json并发",
+          name: 'Json并发',
           type: 2,
-          url: "Parallel"
+          url: 'Parallel',
         },
         {
-          name: "Json轮询",
+          name: 'Json轮询',
           type: 2,
-          url: "Sequence"
+          url: 'Sequence',
         },
         {
-          name: "LunaTV内置解析",
+          name: 'LunaTV内置解析',
           type: 1,
           url: `${baseUrl}/api/parse?url=`,
           ext: {
-            flag: ["qiyi", "qq", "letv", "sohu", "youku", "mgtv", "bilibili", "wasu", "xigua", "1905"]
-          }
-        }
+            flag: [
+              'qiyi',
+              'qq',
+              'letv',
+              'sohu',
+              'youku',
+              'mgtv',
+              'bilibili',
+              'wasu',
+              'xigua',
+              '1905',
+            ],
+          },
+        },
       ],
 
       // 播放标识
       flags: [
-        "youku", "qq", "iqiyi", "qiyi", "letv", "sohu", "tudou", "pptv",
-        "mgtv", "wasu", "bilibili", "le", "duoduozy", "renrenmi", "xigua",
-        "优酷", "腾讯", "爱奇艺", "奇艺", "乐视", "搜狐", "土豆", "PPTV",
-        "芒果", "华数", "哔哩", "1905"
+        'youku',
+        'qq',
+        'iqiyi',
+        'qiyi',
+        'letv',
+        'sohu',
+        'tudou',
+        'pptv',
+        'mgtv',
+        'wasu',
+        'bilibili',
+        'le',
+        'duoduozy',
+        'renrenmi',
+        'xigua',
+        '优酷',
+        '腾讯',
+        '爱奇艺',
+        '奇艺',
+        '乐视',
+        '搜狐',
+        '土豆',
+        'PPTV',
+        '芒果',
+        '华数',
+        '哔哩',
+        '1905',
       ],
 
       // IJK播放器优化配置（软解码 + 硬解码）
@@ -605,13 +729,17 @@ export async function GET(request: NextRequest) {
             { category: 4, name: 'enable-accurate-seek', value: '0' },
             { category: 4, name: 'mediacodec', value: '0' },
             { category: 4, name: 'mediacodec-auto-rotate', value: '0' },
-            { category: 4, name: 'mediacodec-handle-resolution-change', value: '0' },
+            {
+              category: 4,
+              name: 'mediacodec-handle-resolution-change',
+              value: '0',
+            },
             { category: 2, name: 'skip_loop_filter', value: '48' },
             { category: 4, name: 'packet-buffering', value: '0' },
             { category: 1, name: 'analyzeduration', value: '2000000' },
             { category: 1, name: 'probesize', value: '10485760' },
-            { category: 1, name: 'flush_packets', value: '1' }
-          ]
+            { category: 1, name: 'flush_packets', value: '1' },
+          ],
         },
         {
           group: '硬解码',
@@ -626,99 +754,107 @@ export async function GET(request: NextRequest) {
             { category: 4, name: 'enable-accurate-seek', value: '0' },
             { category: 4, name: 'mediacodec', value: '1' },
             { category: 4, name: 'mediacodec-auto-rotate', value: '1' },
-            { category: 4, name: 'mediacodec-handle-resolution-change', value: '1' },
+            {
+              category: 4,
+              name: 'mediacodec-handle-resolution-change',
+              value: '1',
+            },
             { category: 2, name: 'skip_loop_filter', value: '48' },
             { category: 4, name: 'packet-buffering', value: '0' },
             { category: 1, name: 'analyzeduration', value: '2000000' },
-            { category: 1, name: 'probesize', value: '10485760' }
-          ]
-        }
+            { category: 1, name: 'probesize', value: '10485760' },
+          ],
+        },
       ],
 
       // 直播源（合并所有启用的直播源为一个，解决TVBox多源限制）
       lives: (() => {
-        const enabledLives = (config.LiveConfig || []).filter(live => !live.disabled);
+        const enabledLives = (config.LiveConfig || []).filter(
+          (live) => !live.disabled,
+        );
         if (enabledLives.length === 0) return [];
-        
+
         // 如果只有一个源，直接返回
         if (enabledLives.length === 1) {
-          return enabledLives.map(live => ({
+          return enabledLives.map((live) => ({
             name: live.name,
             type: 0,
             url: live.url,
-            epg: live.epg || "",
-            logo: ""
+            epg: live.epg || '',
+            logo: '',
           }));
         }
-        
+
         // 多个源时，创建一个聚合源
-        return [{
-          name: "LunaTV聚合直播",
-          type: 0,
-          url: `${baseUrl}/api/live/merged`, // 新的聚合端点
-          epg: enabledLives.find(live => live.epg)?.epg || "",
-          logo: ""
-        }];
+        return [
+          {
+            name: 'LunaTV聚合直播',
+            type: 0,
+            url: `${baseUrl}/api/live/merged`, // 新的聚合端点
+            epg: enabledLives.find((live) => live.epg)?.epg || '',
+            logo: '',
+          },
+        ];
       })(),
 
       // 广告过滤规则
       ads: [
-        "mimg.0c1q0l.cn",
-        "www.googletagmanager.com",
-        "www.google-analytics.com",
-        "mc.usihnbcq.cn",
-        "mg.g1mm3d.cn",
-        "mscs.svaeuzh.cn",
-        "cnzz.hhurm.com",
-        "tp.vinuxhome.com",
-        "cnzz.mmstat.com",
-        "www.baihuillq.com",
-        "s23.cnzz.com",
-        "z3.cnzz.com",
-        "c.cnzz.com",
-        "stj.v1vo.top",
-        "z12.cnzz.com",
-        "img.mosflower.cn",
-        "tips.gamevvip.com",
-        "ehwe.yhdtns.com",
-        "xdn.cqqc3.com",
-        "www.jixunkyy.cn",
-        "sp.chemacid.cn",
-        "hm.baidu.com",
-        "s9.cnzz.com",
-        "z6.cnzz.com",
-        "um.cavuc.com",
-        "mav.mavuz.com",
-        "wofwk.aoidf3.com",
-        "z5.cnzz.com",
-        "xc.hubeijieshikj.cn",
-        "tj.tianwenhu.com",
-        "xg.gars57.cn",
-        "k.jinxiuzhilv.com",
-        "cdn.bootcss.com",
-        "ppl.xunzhuo123.com",
-        "xomk.jiangjunmh.top",
-        "img.xunzhuo123.com",
-        "z1.cnzz.com",
-        "s13.cnzz.com",
-        "xg.huataisangao.cn",
-        "z7.cnzz.com",
-        "z2.cnzz.com",
-        "s96.cnzz.com",
-        "q11.cnzz.com",
-        "thy.dacedsfa.cn",
-        "xg.whsbpw.cn",
-        "s19.cnzz.com",
-        "z8.cnzz.com",
-        "s4.cnzz.com",
-        "f5w.as12df.top",
-        "ae01.alicdn.com",
-        "www.92424.cn",
-        "k.wudejia.com",
-        "vivovip.mmszxc.top",
-        "qiu.xixiqiu.com",
-        "cdnjs.hnfenxun.com",
-        "cms.qdwght.com"
+        'mimg.0c1q0l.cn',
+        'www.googletagmanager.com',
+        'www.google-analytics.com',
+        'mc.usihnbcq.cn',
+        'mg.g1mm3d.cn',
+        'mscs.svaeuzh.cn',
+        'cnzz.hhurm.com',
+        'tp.vinuxhome.com',
+        'cnzz.mmstat.com',
+        'www.baihuillq.com',
+        's23.cnzz.com',
+        'z3.cnzz.com',
+        'c.cnzz.com',
+        'stj.v1vo.top',
+        'z12.cnzz.com',
+        'img.mosflower.cn',
+        'tips.gamevvip.com',
+        'ehwe.yhdtns.com',
+        'xdn.cqqc3.com',
+        'www.jixunkyy.cn',
+        'sp.chemacid.cn',
+        'hm.baidu.com',
+        's9.cnzz.com',
+        'z6.cnzz.com',
+        'um.cavuc.com',
+        'mav.mavuz.com',
+        'wofwk.aoidf3.com',
+        'z5.cnzz.com',
+        'xc.hubeijieshikj.cn',
+        'tj.tianwenhu.com',
+        'xg.gars57.cn',
+        'k.jinxiuzhilv.com',
+        'cdn.bootcss.com',
+        'ppl.xunzhuo123.com',
+        'xomk.jiangjunmh.top',
+        'img.xunzhuo123.com',
+        'z1.cnzz.com',
+        's13.cnzz.com',
+        'xg.huataisangao.cn',
+        'z7.cnzz.com',
+        'z2.cnzz.com',
+        's96.cnzz.com',
+        'q11.cnzz.com',
+        'thy.dacedsfa.cn',
+        'xg.whsbpw.cn',
+        's19.cnzz.com',
+        'z8.cnzz.com',
+        's4.cnzz.com',
+        'f5w.as12df.top',
+        'ae01.alicdn.com',
+        'www.92424.cn',
+        'k.wudejia.com',
+        'vivovip.mmszxc.top',
+        'qiu.xixiqiu.com',
+        'cdnjs.hnfenxun.com',
+        'cms.qdwght.com',
       ],
 
       // DoH (DNS over HTTPS) 配置 - 解决 DNS 污染问题
@@ -726,19 +862,19 @@ export async function GET(request: NextRequest) {
         {
           name: '阿里DNS',
           url: 'https://dns.alidns.com/dns-query',
-          ips: ['223.5.5.5', '223.6.6.6']
+          ips: ['223.5.5.5', '223.6.6.6'],
         },
         {
           name: '腾讯DNS',
           url: 'https://doh.pub/dns-query',
-          ips: ['119.29.29.29', '119.28.28.28']
+          ips: ['119.29.29.29', '119.28.28.28'],
         },
         {
           name: 'Google DNS',
           url: 'https://dns.google/dns-query',
-          ips: ['8.8.8.8', '8.8.4.4']
-        }
-      ]
+          ips: ['8.8.8.8', '8.8.4.4'],
+        },
+      ],
     };
 
     // 使用新的 Spider Jar 管理逻辑（下载真实 jar + 缓存）
@@ -754,7 +890,9 @@ export async function GET(request: NextRequest) {
     } else {
       // 远程失败，使用本地代理端点（确保100%可用）
       finalSpiderUrl = `${baseUrl}/api/proxy/spider.jar;md5;${jarInfo.md5}`;
-      console.warn(`[Spider] 远程 jar 获取失败，使用本地代理: ${finalSpiderUrl.split(';')[0]}`);
+      console.warn(
+        `[Spider] 远程 jar 获取失败，使用本地代理: ${finalSpiderUrl.split(';')[0]}`,
+      );
     }
 
     // 如果用户源配置中有自定义jar，优先使用（但必须是公网地址）
@@ -789,7 +927,9 @@ export async function GET(request: NextRequest) {
         spider: tvboxConfig.spider,
         sites: tvboxConfig.sites,
         lives: tvboxConfig.lives,
-        parses: [{ name: '默认解析', type: 0, url: `${baseUrl}/api/parse?url=` }],
+        parses: [
+          { name: '默认解析', type: 0, url: `${baseUrl}/api/parse?url=` },
+        ],
       } as TVBoxConfig;
     } else if (mode === 'fast' || mode === 'optimize') {
       // 快速切换优化模式：专门针对资源源切换体验优化
@@ -806,8 +946,7 @@ export async function GET(request: NextRequest) {
             fastSite.header = { 'User-Agent': 'okhttp/3.15' };
           } else {
             fastSite.header = {
-              'User-Agent':
-                DEFAULT_USER_AGENT,
+              'User-Agent': DEFAULT_USER_AGENT,
               Connection: 'close',
             };
           }
@@ -859,8 +998,18 @@ export async function GET(request: NextRequest) {
           { name: '线路四', type: 0, url: 'https://www.8090g.cn/?url=' },
         ],
         flags: [
-          'youku', 'qq', 'iqiyi', 'qiyi', 'letv', 'sohu', 'tudou', 'pptv',
-          'mgtv', 'wasu', 'bilibili', 'renrenmi',
+          'youku',
+          'qq',
+          'iqiyi',
+          'qiyi',
+          'letv',
+          'sohu',
+          'tudou',
+          'pptv',
+          'mgtv',
+          'wasu',
+          'bilibili',
+          'renrenmi',
         ],
         // 影视仓专用播放规则
         rules: [
@@ -901,8 +1050,8 @@ export async function GET(request: NextRequest) {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Content-Type',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
       });
     } else {
       // 返回JSON格式（使用 text/plain 提高 TVBox 分支兼容性）
@@ -912,15 +1061,17 @@ export async function GET(request: NextRequest) {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET',
           'Access-Control-Allow-Headers': 'Content-Type',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
       });
     }
-
   } catch (error) {
     return NextResponse.json(
-      { error: 'TVBox配置生成失败', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'TVBox配置生成失败',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
@@ -933,6 +1084,6 @@ export async function OPTIONS() {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-    }
+    },
   });
 }
