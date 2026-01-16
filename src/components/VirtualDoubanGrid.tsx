@@ -21,6 +21,7 @@ const Grid = dynamic(
 );
 
 import { DoubanItem } from '@/lib/types';
+import { processImageUrl } from '@/lib/utils';
 import { useImagePreload } from '@/hooks/useImagePreload';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 
@@ -98,7 +99,7 @@ export const VirtualDoubanGrid = React.forwardRef<
       );
 
       itemsToPreload.forEach((item) => {
-        if (item.poster) urls.push(item.poster);
+        if (item.poster) urls.push(processImageUrl(item.poster));
       });
 
       return urls;
