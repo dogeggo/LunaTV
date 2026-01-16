@@ -1618,27 +1618,42 @@ export async function isFavorited(
     const cachedFavorites = cacheManager.getCachedFavorites();
 
     if (cachedFavorites) {
-      // 返回缓存数据，同时后台异步更新
-      fetchFromApi<Record<string, Favorite>>(`/api/favorites`)
-        .then((freshData) => {
-          // 只有数据真正不同时才更新缓存
-          if (JSON.stringify(cachedFavorites) !== JSON.stringify(freshData)) {
-            cacheManager.cacheFavorites(freshData);
-            // 触发数据更新事件
-            window.dispatchEvent(
-              new CustomEvent('favoritesUpdated', {
-                detail: freshData,
-              }),
+      // 返回缓存数据，同时后台异步更新（带节流和去重）
+      const now = Date.now();
+
+      // 如果正在同步中，直接复用当前同步任务
+      // 如果距离上次同步时间太短，跳过同步
+      if (
+        !pendingFavoritesSync &&
+        now - lastFavoritesSyncTime > SYNC_THROTTLE_TIME
+      ) {
+        pendingFavoritesSync = fetchFromApi<Record<string, Favorite>>(
+          `/api/favorites`,
+        )
+          .then((freshData) => {
+            // 只有数据真正不同时才更新缓存
+            if (JSON.stringify(cachedFavorites) !== JSON.stringify(freshData)) {
+              cacheManager.cacheFavorites(freshData);
+              // 触发数据更新事件
+              window.dispatchEvent(
+                new CustomEvent('favoritesUpdated', {
+                  detail: freshData,
+                }),
+              );
+            }
+            lastFavoritesSyncTime = Date.now();
+          })
+          .catch((err) => {
+            // 后台同步失败不影响用户使用，静默处理
+            console.warn(
+              '[后台同步] 收藏数据同步失败（不影响使用，已使用缓存数据）:',
+              err,
             );
-          }
-        })
-        .catch((err) => {
-          // 后台同步失败不影响用户使用，静默处理
-          console.warn(
-            '[后台同步] 收藏数据同步失败（不影响使用，已使用缓存数据）:',
-            err,
-          );
-        });
+          })
+          .finally(() => {
+            pendingFavoritesSync = null;
+          });
+      }
 
       return !!cachedFavorites[key];
     } else {
