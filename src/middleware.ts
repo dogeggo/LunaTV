@@ -18,8 +18,9 @@ export async function middleware(request: NextRequest) {
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' 'wasm-unsafe-eval' chrome-extension:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
+    media-src 'self' blob: data: https: http:;
     font-src 'self' data:;
-    connect-src 'self' https:;
+    connect-src 'self' https: http:;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
