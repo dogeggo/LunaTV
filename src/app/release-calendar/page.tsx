@@ -1,19 +1,21 @@
+/* eslint-disable no-console */
 'use client';
 
-import { useEffect, useState } from 'react';
 import {
   Calendar,
-  Filter,
-  Search,
+  ChevronUp,
   Clock,
   Film,
-  Tv,
+  Filter,
   MapPin,
+  Search,
   Tag,
-  ChevronUp,
+  Tv,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { ReleaseCalendarItem, ReleaseCalendarResult } from '@/lib/types';
+
 import PageLayout from '@/components/PageLayout';
 
 export default function ReleaseCalendarPage() {
@@ -311,7 +313,7 @@ export default function ReleaseCalendarPage() {
         top: 0,
         behavior: 'smooth',
       });
-    } catch (e) {
+    } catch {
       // 降级方案
       document.body.scrollTop = 0;
       document.documentElement.scrollTop = 0;
@@ -668,7 +670,7 @@ export default function ReleaseCalendarPage() {
                               ⏰ 即将上映
                             </span>
                           )}
-                          {isPast && (
+                          {isPast && !isToday && (
                             <span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'>
                               ✅ 已上映
                             </span>
@@ -819,11 +821,11 @@ export default function ReleaseCalendarPage() {
                             currentMonth,
                             1,
                           );
-                          const lastDay = new Date(
-                            currentYear,
-                            currentMonth + 1,
-                            0,
-                          );
+                          // const lastDay = new Date(
+                          //   currentYear,
+                          //   currentMonth + 1,
+                          //   0,
+                          // );
                           const startDate = new Date(firstDay);
                           startDate.setDate(
                             startDate.getDate() - firstDay.getDay(),
@@ -1141,7 +1143,7 @@ export default function ReleaseCalendarPage() {
                       ),
                     )
                       .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([date, items], index) => {
+                      .map(([date, items]) => {
                         const today = new Date();
                         const currentDate = new Date(date);
                         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;

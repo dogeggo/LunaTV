@@ -1,27 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, no-console */
+/* eslint-disable no-console */
 
 'use client';
 
 import {
+  Calendar,
   ChevronRight,
   Film,
-  Tv,
-  Calendar,
-  Sparkles,
   Play,
+  Sparkles,
   Trash2,
+  Tv,
 } from 'lucide-react';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Suspense, useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import { Suspense, useEffect, useRef, useState } from 'react';
 
 import {
   BangumiCalendarData,
   GetBangumiCalendarData,
 } from '@/lib/bangumi.client';
-import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
-import { cleanExpiredCache } from '@/lib/shortdrama-cache';
-import { ShortDramaItem, ReleaseCalendarItem } from '@/lib/types';
 // 客户端收藏 API
 import {
   clearAllFavorites,
@@ -30,13 +27,15 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanCategories, getDoubanDetails } from '@/lib/douban.client';
+import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
+import { cleanExpiredCache } from '@/lib/shortdrama-cache';
+import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
 import { DoubanItem } from '@/lib/types';
-import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
 import PageLayout from '@/components/PageLayout';
 import SectionTitle from '@/components/SectionTitle';
-import SkeletonCard from '@/components/SkeletonCard';
 import { useSite } from '@/components/SiteProvider';
+import SkeletonCard from '@/components/SkeletonCard';
 
 // 🚀 性能优化：使用动态导入延迟加载重型组件，显著提升导航响应速度
 const CapsuleSwitch = dynamic(() => import('@/components/CapsuleSwitch'), {
@@ -111,18 +110,11 @@ function HomeClient() {
   >([]);
   const [loading, setLoading] = useState(true);
   const { announcement } = useSite();
-  const [username, setUsername] = useState<string>('');
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
 
   // 合并初始化逻辑 - 优化性能，减少重渲染
   useEffect(() => {
-    // 获取用户名
-    const authInfo = getAuthInfoFromBrowserCookie();
-    if (authInfo?.username) {
-      setUsername(authInfo.username);
-    }
-
     // 读取清空确认设置
     if (typeof window !== 'undefined') {
       const savedRequireClearConfirmation = localStorage.getItem(
@@ -279,13 +271,13 @@ function HomeClient() {
               () => {
                 if (isMountedRef.current) loadMovieDetails();
               },
-              { timeout: 5000 },
+              { timeout: 3000 },
             );
             idleCallbacksRef.current.push(id);
           } else {
             const id = setTimeout(() => {
               if (isMountedRef.current) loadMovieDetails();
-            }, 3000);
+            }, 1000);
             timeoutsRef.current.push(id);
           }
         } else {
@@ -346,13 +338,13 @@ function HomeClient() {
               () => {
                 if (isMountedRef.current) loadTvDetails();
               },
-              { timeout: 5000 },
+              { timeout: 3000 },
             );
             idleCallbacksRef.current.push(id);
           } else {
             const id = setTimeout(() => {
               if (isMountedRef.current) loadTvDetails();
-            }, 3000);
+            }, 1000);
             timeoutsRef.current.push(id);
           }
         } else {
@@ -403,13 +395,13 @@ function HomeClient() {
                 () => {
                   if (isMountedRef.current) loadVarietyDetails();
                 },
-                { timeout: 5000 },
+                { timeout: 3000 },
               );
               idleCallbacksRef.current.push(id);
             } else {
               const id = setTimeout(() => {
                 if (isMountedRef.current) loadVarietyDetails();
-              }, 3000);
+              }, 1000);
               timeoutsRef.current.push(id);
             }
           }
@@ -458,13 +450,13 @@ function HomeClient() {
                 () => {
                   if (isMountedRef.current) loadAnimeDetails();
                 },
-                { timeout: 5000 },
+                { timeout: 3000 },
               );
               idleCallbacksRef.current.push(id);
             } else {
               const id = setTimeout(() => {
                 if (isMountedRef.current) loadAnimeDetails();
-              }, 3000);
+              }, 1000);
               timeoutsRef.current.push(id);
             }
           }
@@ -514,13 +506,13 @@ function HomeClient() {
               () => {
                 if (isMountedRef.current) loadDramaDetails();
               },
-              { timeout: 5000 },
+              { timeout: 3000 },
             );
             idleCallbacksRef.current.push(id);
           } else {
             const id = setTimeout(() => {
               if (isMountedRef.current) loadDramaDetails();
-            }, 3000);
+            }, 1000);
             timeoutsRef.current.push(id);
           }
         } else {
@@ -582,13 +574,13 @@ function HomeClient() {
               () => {
                 if (isMountedRef.current) loadBangumiDetails();
               },
-              { timeout: 5000 },
+              { timeout: 3000 },
             );
             idleCallbacksRef.current.push(id);
           } else {
             const id = setTimeout(() => {
               if (isMountedRef.current) loadBangumiDetails();
-            }, 3000);
+            }, 1000);
             timeoutsRef.current.push(id);
           }
         } else {
@@ -798,10 +790,6 @@ function HomeClient() {
           // 如果没填满10个，按优先级补充（但限制今日上映总数）
           if (selectedItems.length < maxTotal) {
             const remaining = maxTotal - selectedItems.length;
-            const currentTodayCount = selectedItems.filter(
-              (i: ReleaseCalendarItem) => i.releaseDate === todayStr,
-            ).length;
-
             // 优先从近期7天补充
             const additionalSeven = nextSevenDays.slice(
               sevenDayQuota,
@@ -1334,70 +1322,74 @@ function HomeClient() {
             // 首页视图
             <>
               {/* Hero Banner 轮播 */}
-              {!loading && (hotMovies.length > 0 || hotTvShows.length > 0 || hotVarietyShows.length > 0 || hotShortDramas.length > 0) && (
-                <section className='mb-8'>
-                  <HeroBanner
-                    items={[
-                      // 豆瓣电影
-                      ...hotMovies.slice(0, 2).map((movie) => ({
-                        id: movie.id,
-                        title: movie.title,
-                        poster: movie.poster,
-                        backdrop: movie.backdrop,
-                        trailerUrl: movie.trailerUrl,
-                        description: movie.plot_summary,
-                        year: movie.year,
-                        rate: movie.rate,
-                        douban_id: Number(movie.id),
-                        type: 'movie',
-                      })),
-                      // 豆瓣电视剧
-                      ...hotTvShows.slice(0, 2).map((show) => ({
-                        id: show.id,
-                        title: show.title,
-                        poster: show.poster,
-                        backdrop: show.backdrop,
-                        trailerUrl: show.trailerUrl,
-                        description: show.plot_summary,
-                        year: show.year,
-                        rate: show.rate,
-                        douban_id: Number(show.id),
-                        type: 'tv',
-                      })),
-                      // 豆瓣综艺
-                      ...hotVarietyShows.slice(0, 1).map((show) => ({
-                        id: show.id,
-                        title: show.title,
-                        poster: show.poster,
-                        backdrop: show.backdrop,
-                        trailerUrl: show.trailerUrl,
-                        description: show.plot_summary,
-                        year: show.year,
-                        rate: show.rate,
-                        douban_id: Number(show.id),
-                        type: 'variety',
-                      })),
-                      // 豆瓣动漫
-                      ...hotAnime.slice(0, 1).map((anime) => ({
-                        id: anime.id,
-                        title: anime.title,
-                        poster: anime.poster,
-                        backdrop: anime.backdrop,
-                        trailerUrl: anime.trailerUrl,
-                        description: anime.plot_summary,
-                        year: anime.year,
-                        rate: anime.rate,
-                        douban_id: Number(anime.id),
-                        type: 'anime',
-                      }))
-                    ]}
-                    autoPlayInterval={8000}
-                    showControls={true}
-                    showIndicators={true}
-                    enableVideo={true}
-                  />
-                </section>
-              )}
+              {!loading &&
+                (hotMovies.length > 0 ||
+                  hotTvShows.length > 0 ||
+                  hotVarietyShows.length > 0 ||
+                  hotShortDramas.length > 0) && (
+                  <section className='mb-8'>
+                    <HeroBanner
+                      items={[
+                        // 豆瓣电影
+                        ...hotMovies.slice(0, 2).map((movie) => ({
+                          id: movie.id,
+                          title: movie.title,
+                          poster: movie.poster,
+                          backdrop: movie.backdrop,
+                          trailerUrl: movie.trailerUrl,
+                          description: movie.plot_summary,
+                          year: movie.year,
+                          rate: movie.rate,
+                          douban_id: Number(movie.id),
+                          type: 'movie',
+                        })),
+                        // 豆瓣电视剧
+                        ...hotTvShows.slice(0, 2).map((show) => ({
+                          id: show.id,
+                          title: show.title,
+                          poster: show.poster,
+                          backdrop: show.backdrop,
+                          trailerUrl: show.trailerUrl,
+                          description: show.plot_summary,
+                          year: show.year,
+                          rate: show.rate,
+                          douban_id: Number(show.id),
+                          type: 'tv',
+                        })),
+                        // 豆瓣综艺
+                        ...hotVarietyShows.slice(0, 1).map((show) => ({
+                          id: show.id,
+                          title: show.title,
+                          poster: show.poster,
+                          backdrop: show.backdrop,
+                          trailerUrl: show.trailerUrl,
+                          description: show.plot_summary,
+                          year: show.year,
+                          rate: show.rate,
+                          douban_id: Number(show.id),
+                          type: 'variety',
+                        })),
+                        // 豆瓣动漫
+                        ...hotAnime.slice(0, 1).map((anime) => ({
+                          id: anime.id,
+                          title: anime.title,
+                          poster: anime.poster,
+                          backdrop: anime.backdrop,
+                          trailerUrl: anime.trailerUrl,
+                          description: anime.plot_summary,
+                          year: anime.year,
+                          rate: anime.rate,
+                          douban_id: Number(anime.id),
+                          type: 'anime',
+                        })),
+                      ]}
+                      autoPlayInterval={8000}
+                      showControls={true}
+                      showIndicators={true}
+                      enableVideo={true}
+                    />
+                  </section>
+                )}
 
               {/* 继续观看 */}
               <ContinueWatching />
