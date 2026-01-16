@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 
 import {
   BangumiCalendarData,
@@ -71,6 +71,27 @@ const ConfirmDialog = dynamic(
 );
 
 function HomeClient() {
+  // Refs for cleanup
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const idleCallbacksRef = useRef<number[]>([]);
+  const isMountedRef = useRef(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Cleanup all pending timers and callbacks
+      timeoutsRef.current.forEach(clearTimeout);
+      idleCallbacksRef.current.forEach((id) => {
+        if ('cancelIdleCallback' in window) {
+          (window as any).cancelIdleCallback(id);
+        }
+      });
+      timeoutsRef.current = [];
+      idleCallbacksRef.current = [];
+    };
+  }, []);
+
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
@@ -254,9 +275,18 @@ function HomeClient() {
 
           // 🚀 增加延迟时间，让用户有更多时间进行导航
           if ('requestIdleCallback' in window) {
-            requestIdleCallback(loadMovieDetails, { timeout: 5000 });
+            const id = requestIdleCallback(
+              () => {
+                if (isMountedRef.current) loadMovieDetails();
+              },
+              { timeout: 5000 },
+            );
+            idleCallbacksRef.current.push(id);
           } else {
-            setTimeout(loadMovieDetails, 3000);
+            const id = setTimeout(() => {
+              if (isMountedRef.current) loadMovieDetails();
+            }, 3000);
+            timeoutsRef.current.push(id);
           }
         } else {
           console.warn(
@@ -312,9 +342,18 @@ function HomeClient() {
           };
 
           if ('requestIdleCallback' in window) {
-            requestIdleCallback(loadTvDetails, { timeout: 5000 });
+            const id = requestIdleCallback(
+              () => {
+                if (isMountedRef.current) loadTvDetails();
+              },
+              { timeout: 5000 },
+            );
+            idleCallbacksRef.current.push(id);
           } else {
-            setTimeout(loadTvDetails, 3000);
+            const id = setTimeout(() => {
+              if (isMountedRef.current) loadTvDetails();
+            }, 3000);
+            timeoutsRef.current.push(id);
           }
         } else {
           console.warn(
@@ -360,9 +399,18 @@ function HomeClient() {
             };
 
             if ('requestIdleCallback' in window) {
-              requestIdleCallback(loadVarietyDetails, { timeout: 5000 });
+              const id = requestIdleCallback(
+                () => {
+                  if (isMountedRef.current) loadVarietyDetails();
+                },
+                { timeout: 5000 },
+              );
+              idleCallbacksRef.current.push(id);
             } else {
-              setTimeout(loadVarietyDetails, 3000);
+              const id = setTimeout(() => {
+                if (isMountedRef.current) loadVarietyDetails();
+              }, 3000);
+              timeoutsRef.current.push(id);
             }
           }
         } else {
@@ -406,9 +454,18 @@ function HomeClient() {
             };
 
             if ('requestIdleCallback' in window) {
-              requestIdleCallback(loadAnimeDetails, { timeout: 5000 });
+              const id = requestIdleCallback(
+                () => {
+                  if (isMountedRef.current) loadAnimeDetails();
+                },
+                { timeout: 5000 },
+              );
+              idleCallbacksRef.current.push(id);
             } else {
-              setTimeout(loadAnimeDetails, 3000);
+              const id = setTimeout(() => {
+                if (isMountedRef.current) loadAnimeDetails();
+              }, 3000);
+              timeoutsRef.current.push(id);
             }
           }
         } else {
@@ -453,9 +510,18 @@ function HomeClient() {
           };
 
           if ('requestIdleCallback' in window) {
-            requestIdleCallback(loadDramaDetails, { timeout: 5000 });
+            const id = requestIdleCallback(
+              () => {
+                if (isMountedRef.current) loadDramaDetails();
+              },
+              { timeout: 5000 },
+            );
+            idleCallbacksRef.current.push(id);
           } else {
-            setTimeout(loadDramaDetails, 3000);
+            const id = setTimeout(() => {
+              if (isMountedRef.current) loadDramaDetails();
+            }, 3000);
+            timeoutsRef.current.push(id);
           }
         } else {
           console.warn('获取热门短剧失败:', shortDramasData.reason);
@@ -512,9 +578,18 @@ function HomeClient() {
           };
 
           if ('requestIdleCallback' in window) {
-            requestIdleCallback(loadBangumiDetails, { timeout: 5000 });
+            const id = requestIdleCallback(
+              () => {
+                if (isMountedRef.current) loadBangumiDetails();
+              },
+              { timeout: 5000 },
+            );
+            idleCallbacksRef.current.push(id);
           } else {
-            setTimeout(loadBangumiDetails, 3000);
+            const id = setTimeout(() => {
+              if (isMountedRef.current) loadBangumiDetails();
+            }, 3000);
+            timeoutsRef.current.push(id);
           }
         } else {
           console.warn(

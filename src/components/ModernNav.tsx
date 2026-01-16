@@ -151,7 +151,6 @@ export default function ModernNav() {
                   key={item.label}
                   href={item.href}
                   useTransitionNav
-                  onClick={() => setActive(item.href)}
                   className='group relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 whitespace-nowrap shrink-0'
                 >
                   {/* Active indicator */}
@@ -237,7 +236,6 @@ export default function ModernNav() {
                     href={item.href}
                     useTransitionNav
                     onClick={() => {
-                      setActive(item.href);
                       setShowMoreMenu(false);
                     }}
                     className='flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 active:scale-95 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
@@ -293,7 +291,6 @@ export default function ModernNav() {
                 key={item.label}
                 href={item.href}
                 useTransitionNav
-                onClick={() => setActive(item.href)}
                 className='flex flex-col items-center justify-center min-w-[60px] flex-1 py-2 px-1 transition-all duration-200 active:scale-95'
               >
                 <Icon
