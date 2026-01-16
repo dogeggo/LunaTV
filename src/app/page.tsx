@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Suspense, useEffect, useState } from 'react';
 
 import {
@@ -32,20 +33,49 @@ import { getDoubanCategories, getDoubanDetails } from '@/lib/douban.client';
 import { DoubanItem } from '@/lib/types';
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 
-import CapsuleSwitch from '@/components/CapsuleSwitch';
-import ContinueWatching from '@/components/ContinueWatching';
-import HeroBanner from '@/components/HeroBanner';
 import PageLayout from '@/components/PageLayout';
-import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
-import ShortDramaCard from '@/components/ShortDramaCard';
 import SkeletonCard from '@/components/SkeletonCard';
 import { useSite } from '@/components/SiteProvider';
-import { TelegramWelcomeModal } from '@/components/TelegramWelcomeModal';
-import VideoCard from '@/components/VideoCard';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+
+// 🚀 性能优化：使用动态导入延迟加载重型组件，显著提升导航响应速度
+const CapsuleSwitch = dynamic(() => import('@/components/CapsuleSwitch'), {
+  ssr: false,
+});
+const ContinueWatching = dynamic(
+  () => import('@/components/ContinueWatching'),
+  { ssr: false },
+);
+const HeroBanner = dynamic(() => import('@/components/HeroBanner'), {
+  ssr: false,
+});
+const ScrollableRow = dynamic(() => import('@/components/ScrollableRow'), {
+  ssr: false,
+});
+const ShortDramaCard = dynamic(() => import('@/components/ShortDramaCard'), {
+  ssr: false,
+});
+const TelegramWelcomeModal = dynamic(
+  () =>
+    import('@/components/TelegramWelcomeModal').then(
+      (mod) => mod.TelegramWelcomeModal,
+    ),
+  { ssr: false },
+);
+const VideoCard = dynamic(() => import('@/components/VideoCard'), {
+  ssr: false,
+});
+const ConfirmDialog = dynamic(
+  () => import('@/components/ConfirmDialog').then((mod) => mod.ConfirmDialog),
+  { ssr: false },
+);
 
 function HomeClient() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'home' | 'favorites'>('home');
   const [hotMovies, setHotMovies] = useState<DoubanItem[]>([]);
   const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
@@ -850,6 +880,21 @@ function HomeClient() {
     setShowAnnouncement(false);
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
+
+  if (!isMounted) {
+    return (
+      <PageLayout>
+        <div className='flex items-center justify-center min-h-[50vh]'>
+          <div className='flex flex-col items-center gap-4'>
+            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
+              正在进入首页...
+            </p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
