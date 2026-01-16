@@ -1,4 +1,3 @@
-
 'use client';
 
 import Hls from 'hls.js';
@@ -5853,7 +5852,20 @@ function PlayPageClient() {
         // 监听播放器错误
         artPlayerRef.current.on('error', (err: any) => {
           console.error('播放器错误:', err);
+
+          // 详细错误信息记录
+          if (err.target && err.target.error) {
+            console.error(
+              '详细播放器错误:',
+              err.target.error.code,
+              err.target.error.message,
+            );
+          } else if (err.detail && err.detail.error) {
+            console.error('详细播放器错误 (err.detail):', err.detail.error);
+          }
+
           if (artPlayerRef.current.currentTime > 0) {
+            console.warn('播放器在播放过程中发生错误，但已暂停处理。');
             return;
           }
         });
