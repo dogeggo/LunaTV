@@ -166,23 +166,23 @@ export const VirtualDoubanGrid = React.forwardRef<
 
       // 模拟异步加载
       setTimeout(() => {
-        setVisibleItemCount((prev) => {
-          const newCount = Math.min(
-            prev + LOAD_MORE_BATCH_SIZE,
-            totalItemCount,
-          );
+        const newCount = Math.min(
+          visibleItemCount + LOAD_MORE_BATCH_SIZE,
+          totalItemCount,
+        );
 
-          // 如果虚拟数据即将用完，触发服务器数据加载
-          if (newCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore) {
-            onLoadMore();
-          }
+        setVisibleItemCount(newCount);
 
-          return newCount;
-        });
+        // 如果虚拟数据即将用完，触发服务器数据加载
+        if (newCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore) {
+          onLoadMore();
+        }
+
         setIsVirtualLoadingMore(false);
       }, 100);
     }, [
       isVirtualLoadingMore,
+      visibleItemCount,
       totalItemCount,
       hasMore,
       isLoadingMore,
