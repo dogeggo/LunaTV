@@ -114,8 +114,6 @@ export async function GET(request: Request) {
         { status: 504 },
       );
     }
-
-    console.error('[Image Proxy] Error fetching image:', error.message);
     return NextResponse.json(
       { error: 'Error fetching image', details: error.message },
       { status: 500 },

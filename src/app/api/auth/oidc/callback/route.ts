@@ -55,15 +55,6 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
-    console.log(
-      '[OIDC Callback] Params - code:',
-      !!code,
-      'state:',
-      !!state,
-      'error:',
-      error,
-    );
-
     // 使用环境变量SITE_BASE，或从请求头获取真实的origin
     let origin: string;
     if (process.env.SITE_BASE) {

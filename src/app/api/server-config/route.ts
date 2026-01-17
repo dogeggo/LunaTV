@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
   console.log('server-config called: ', request.url);
 
   const config = await getConfig();
-  console.log('TelegramAuthConfig:', config.TelegramAuthConfig);
 
   const result: any = {
     SiteName: config.SiteConfig.SiteName,

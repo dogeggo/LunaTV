@@ -135,35 +135,16 @@ function LoginPageClient() {
   useEffect(() => {
     const fetchTelegramConfig = async () => {
       try {
-        console.log('[Login] Fetching server config...');
         const response = await fetch('/api/server-config');
         const data = await response.json();
-        console.log('[Login] Server config received:', data);
-        console.log('[Login] TelegramAuthConfig:', data.TelegramAuthConfig);
         if (data.TelegramAuthConfig?.enabled) {
-          console.log('[Login] Telegram is enabled!');
           setTelegramEnabled(true);
-        } else {
-          console.log('[Login] Telegram is NOT enabled');
         }
-
-        // 检查 OIDC 配置
-        console.log('[Login] OIDCConfig:', data.OIDCConfig);
-        console.log('[Login] OIDCProviders:', data.OIDCProviders);
-
         // 优先使用新的多 Provider 配置
         if (data.OIDCProviders && data.OIDCProviders.length > 0) {
           console.log('[Login] Multiple OIDC providers enabled!');
           setOidcProviders(data.OIDCProviders);
           setOidcEnabled(true);
-        } else if (data.OIDCConfig?.enabled) {
-          // 向后兼容：旧的单 Provider 配置
-          console.log('[Login] OIDC is enabled!');
-          setOidcEnabled(true);
-          setOidcButtonText(data.OIDCConfig.buttonText || '使用OIDC登录');
-          setOidcIssuer(data.OIDCConfig.issuer || '');
-        } else {
-          console.log('[Login] OIDC is NOT enabled');
         }
       } catch (error) {
         console.log('Failed to fetch server config:', error);
@@ -223,7 +204,6 @@ function LoginPageClient() {
 
   // 生成 Telegram 登录链接
   const handleTelegramLogin = async () => {
-    console.log('[Frontend] Telegram login clicked');
     setError(null);
 
     // 验证 Telegram 用户名

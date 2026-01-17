@@ -24,6 +24,7 @@ export async function proxy(request: NextRequest) {
     object-src 'none';
     base-uri 'self';
     form-action 'self';
+    frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com;
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
@@ -120,7 +121,9 @@ async function handleAuthentication(
   const authInfo = getAuthInfoFromCookie(request);
 
   if (!authInfo) {
-    console.log(`[Middleware ${requestId}] No auth info, failing auth`);
+    console.log(
+      `[Middleware ${requestId}] No auth info, failing auth for: ${pathname}`,
+    );
     return handleAuthFailure(request, pathname);
   }
 
