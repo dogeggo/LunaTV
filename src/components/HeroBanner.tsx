@@ -67,6 +67,10 @@ export default function HeroBanner({
     return {};
   });
 
+  // 🎯 使用 useRef 跟踪已请求和正在请求中的 trailer ID，避免重复请求
+  const requestedTrailersRef = useRef<Set<string | number>>(new Set());
+  const requestingTrailersRef = useRef<Set<string | number>>(new Set());
+
   // 处理图片 URL，使用代理绕过防盗链
   const getProxiedImageUrl = (url: string) => {
     if (url?.includes('douban') || url?.includes('doubanio')) {
@@ -96,7 +100,20 @@ export default function HeroBanner({
 
   // 刷新过期的trailer URL（通过后端代理调用豆瓣移动端API，绕过缓存）
   const refreshTrailerUrl = useCallback(async (doubanId: number | string) => {
+    // 🎯 防重复请求：如果正在请求中或已请求过，直接返回
+    if (requestingTrailersRef.current.has(doubanId)) {
+      console.log('[HeroBanner] 跳过重复请求:', doubanId);
+      return null;
+    }
+
+    if (requestedTrailersRef.current.has(doubanId)) {
+      console.log('[HeroBanner] 已请求过该 trailer，跳过:', doubanId);
+      return null;
+    }
+
     try {
+      // 标记为正在请求中
+      requestingTrailersRef.current.add(doubanId);
       console.log('[HeroBanner] 检测到trailer URL过期，重新获取:', doubanId);
 
       // 🎯 调用专门的刷新API（不使用缓存，直接调用豆瓣移动端API）
@@ -112,6 +129,9 @@ export default function HeroBanner({
       const data = await response.json();
       if (data.code === 200 && data.data?.trailerUrl) {
         console.log('[HeroBanner] 成功获取新的trailer URL');
+
+        // 标记为已请求
+        requestedTrailersRef.current.add(doubanId);
 
         // 更新 state 并保存到 localStorage
         setRefreshedTrailerUrls((prev) => {
@@ -139,6 +159,9 @@ export default function HeroBanner({
       }
     } catch (error) {
       console.error('[HeroBanner] 刷新trailer URL异常:', error);
+    } finally {
+      // 移除正在请求中的标记
+      requestingTrailersRef.current.delete(doubanId);
     }
     return null;
   }, []);
@@ -225,15 +248,6 @@ export default function HeroBanner({
   const backgroundImage =
     getHDBackdrop(currentItem.backdrop) || currentItem.poster;
 
-  // 🔍 调试日志
-  console.log('[HeroBanner] 当前项目:', {
-    title: currentItem.title,
-    hasBackdrop: !!currentItem.backdrop,
-    hasTrailer: !!currentItem.trailerUrl,
-    trailerUrl: currentItem.trailerUrl,
-    enableVideo,
-  });
-
   // 🎯 检查并刷新缺失的 trailer URL（组件挂载时）
   useEffect(() => {
     const checkAndRefreshMissingTrailers = async () => {
@@ -244,10 +258,6 @@ export default function HeroBanner({
           !item.trailerUrl &&
           !refreshedTrailerUrls[item.douban_id]
         ) {
-          console.log(
-            '[HeroBanner] 检测到缺失的 trailer，尝试获取:',
-            item.title,
-          );
           await refreshTrailerUrl(item.douban_id);
         }
       }
@@ -256,7 +266,8 @@ export default function HeroBanner({
     // 延迟执行，避免阻塞初始渲染
     const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
     return () => clearTimeout(timer);
-  }, [items, refreshedTrailerUrls, refreshTrailerUrl]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]); // 🎯 只依赖 items，避免循环触发
 
   return (
     <div
@@ -365,7 +376,6 @@ export default function HeroBanner({
                       }
                     }}
                     onLoadedData={(e) => {
-                      console.log('[HeroBanner] 视频加载成功:', item.title);
                       setVideoLoaded(true); // 视频加载完成，淡入显示
                       // 确保视频开始播放
                       const video = e.currentTarget;

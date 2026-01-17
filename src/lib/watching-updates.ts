@@ -11,7 +11,9 @@ import {
 const WATCHING_UPDATES_CACHE_KEY = 'moontv_watching_updates';
 const LAST_CHECK_TIME_KEY = 'moontv_last_update_check';
 const ORIGINAL_EPISODES_CACHE_KEY = 'moontv_original_episodes'; // 新增：记录观看时的总集数
+const COMPLETED_SERIES_CACHE_KEY = 'moontv_completed_series'; // 新增：已完结剧集缓存
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
+const COMPLETED_SERIES_CACHE_DURATION = Infinity; // 已完结剧集永久缓存
 
 // 防重复修复标记
 const fixingRecords = new Set<string>();
@@ -70,6 +72,56 @@ interface _ExtendedPlayRecord extends PlayRecord {
 
 // 全局事件监听器
 const updateListeners = new Set<(hasUpdates: boolean) => void>();
+
+/**
+ * 检查剧集是否已完结
+ */
+function isSeriesCompleted(record: PlayRecord): boolean {
+  if (!record.remarks) return false;
+
+  const completedKeywords = ['已完结', '完结', '全集', '完'];
+  return completedKeywords.some((keyword) => record.remarks?.includes(keyword));
+}
+
+/**
+ * 获取已完结剧集的缓存信息
+ */
+function getCompletedSeriesCache(): Record<
+  string,
+  { episodes: number; timestamp: number }
+> {
+  try {
+    if (typeof localStorage === 'undefined') return {};
+
+    const cached = localStorage.getItem(COMPLETED_SERIES_CACHE_KEY);
+    if (!cached) return {};
+
+    return JSON.parse(cached);
+  } catch (error) {
+    console.error('读取已完结剧集缓存失败:', error);
+    return {};
+  }
+}
+
+/**
+ * 保存已完结剧集的缓存信息
+ */
+function saveCompletedSeriesCache(recordKey: string, episodes: number): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+
+    const cache = getCompletedSeriesCache();
+    cache[recordKey] = {
+      episodes,
+      timestamp: Date.now(),
+    };
+
+    localStorage.setItem(COMPLETED_SERIES_CACHE_KEY, JSON.stringify(cache));
+    console.log(`✅ 已完结剧集缓存已保存: ${recordKey} = ${episodes}集`);
+  } catch (error) {
+    console.error('保存已完结剧集缓存失败:', error);
+  }
+}
 
 /**
  * 检查追番更新
@@ -283,7 +335,7 @@ export async function checkWatchingUpdates(
 }
 
 /**
- * 检查单个剧集的更新状态（调用真实API）
+ * 检查单个剧集的更新状态(调用真实API)
  */
 async function checkSingleRecordUpdate(
   record: PlayRecord,
@@ -297,6 +349,35 @@ async function checkSingleRecordUpdate(
   latestEpisodes: number;
 }> {
   try {
+    // 🚀 优化：检查是否为已完结剧集
+    const recordKey = generateStorageKey(
+      storageSourceName || record.source_name,
+      videoId,
+    );
+    const isCompleted = isSeriesCompleted(record);
+    const completedCache = getCompletedSeriesCache();
+
+    if (isCompleted && completedCache[recordKey]) {
+      // 使用已完结剧集的缓存数据
+      const cachedEpisodes = completedCache[recordKey].episodes;
+      console.log(
+        `📦 ${record.title} 是已完结剧集，使用缓存集数: ${cachedEpisodes}集`,
+      );
+
+      const hasContinueWatching = record.index < cachedEpisodes;
+      const remainingEpisodes = hasContinueWatching
+        ? cachedEpisodes - record.index
+        : 0;
+
+      return {
+        hasUpdate: false, // 已完结剧集不会有新集数
+        hasContinueWatching,
+        newEpisodes: 0,
+        remainingEpisodes,
+        latestEpisodes: cachedEpisodes,
+      };
+    }
+
     let sourceKey = record.source_name;
 
     // 先尝试获取可用数据源进行映射
@@ -435,6 +516,11 @@ async function checkSingleRecordUpdate(
       保护后集数: protectedTotalEpisodes,
       当前观看到: record.index,
     });
+
+    // 🚀 优化：如果是已完结剧集，保存到缓存中
+    if (isSeriesCompleted(record)) {
+      saveCompletedSeriesCache(recordKey, protectedTotalEpisodes);
+    }
 
     return {
       hasUpdate,

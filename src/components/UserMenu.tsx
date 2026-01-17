@@ -36,8 +36,6 @@ import type { Favorite } from '@/lib/types';
 import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 import {
-  checkWatchingUpdates,
-  getCachedWatchingUpdates,
   getDetailedWatchingUpdates,
   subscribeToWatchingUpdatesEvent,
   type WatchingUpdate,
@@ -426,35 +424,11 @@ export const UserMenu: React.FC = () => {
         }
       };
 
-      // 页面初始化时强制检查一次更新（绕过缓存限制）
-      const forceInitialCheck = async () => {
-        console.log('页面初始化，强制检查更新...');
-        try {
-          // 🔧 修复：直接使用 forceRefresh=true，不再手动操作 localStorage
-          // 因为 kvrocks 模式使用内存缓存，删除 localStorage 无效
-          await checkWatchingUpdates(true);
-
-          // 更新UI
-          updateWatchingUpdates();
-          console.log('页面初始化更新检查完成');
-        } catch (error) {
-          console.error('页面初始化检查更新失败:', error);
-          // 失败时仍然尝试从缓存加载
-          updateWatchingUpdates();
-        }
-      };
-
-      // 先尝试从缓存加载，然后强制检查
-      const cachedUpdates = getCachedWatchingUpdates();
-      if (cachedUpdates) {
-        console.log('发现缓存数据，先加载缓存');
-        updateWatchingUpdates();
-      }
-
-      // 🔧 修复：延迟1秒后在后台执行更新检查，避免阻塞页面初始加载
-      setTimeout(() => {
-        forceInitialCheck();
-      }, 1000);
+      // 🚀 优化：移除页面初始化时的强制检查
+      // 只在首页的 ContinueWatching 组件中检查更新
+      // UserMenu 只负责显示缓存的更新状态
+      console.log('UserMenu: 从缓存加载 watching-updates 数据');
+      updateWatchingUpdates();
 
       // 订阅更新事件
       const unsubscribe = subscribeToWatchingUpdatesEvent(() => {
@@ -667,21 +641,10 @@ export const UserMenu: React.FC = () => {
 
     // 如果是打开菜单，立即检查更新（不受缓存限制）
     if (willOpen && authInfo?.username && storageType !== 'localstorage') {
-      console.log('打开菜单时强制检查更新...');
+      console.log('打开菜单，从缓存读取更新状态...');
       try {
-        // 暂时清除缓存时间，强制检查一次
-        const lastCheckTime = localStorage.getItem('moontv_last_update_check');
-        localStorage.removeItem('moontv_last_update_check');
-
-        // 执行检查
-        await checkWatchingUpdates();
-
-        // 恢复缓存时间（如果之前有的话）
-        if (lastCheckTime) {
-          localStorage.setItem('moontv_last_update_check', lastCheckTime);
-        }
-
-        // 更新UI状态
+        // 🚀 优化：只读取缓存，不主动触发更新检查
+        // 更新检查只在首页进行
         const updates = getDetailedWatchingUpdates();
         setWatchingUpdates(updates);
 
@@ -698,7 +661,7 @@ export const UserMenu: React.FC = () => {
           setHasUnreadUpdates(false);
         }
 
-        console.log('菜单打开时的更新检查完成');
+        console.log('菜单打开时的缓存读取完成');
       } catch (error) {
         console.error('菜单打开时检查更新失败:', error);
       }

@@ -10,7 +10,6 @@ import { PlayRecord, ReleaseCalendarItem } from '@/lib/types';
 import {
   checkWatchingUpdates,
   forceClearWatchingUpdatesCache,
-  getCachedWatchingUpdates,
   getDetailedWatchingUpdates,
   markUpdatesAsViewed,
   type WatchingUpdate,
@@ -486,14 +485,14 @@ const PlayStatsPage: React.FC = () => {
   useEffect(() => {
     if (authInfo) {
       const checkUpdates = async () => {
-        const cached = getCachedWatchingUpdates();
-        if (cached) {
-          const details = getDetailedWatchingUpdates();
+        // 🚀 优化：只使用缓存数据，不主动触发更新检查
+        // 更新检查只在首页进行，其他页面只读取缓存
+        const details = getDetailedWatchingUpdates();
+        if (details) {
           setWatchingUpdates(details);
+          console.log('play-stats: 使用缓存的 watchingUpdates 数据');
         } else {
-          await checkWatchingUpdates();
-          const details = getDetailedWatchingUpdates();
-          setWatchingUpdates(details);
+          console.log('play-stats: 缓存为空，等待首页触发更新检查');
         }
       };
 

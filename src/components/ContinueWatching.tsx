@@ -114,7 +114,8 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
         console.log('ContinueWatching: 使用缓存数据');
       }
 
-      // 如果缓存为空，主动检查一次
+      // 🚀 优化：只在缓存为空时才主动检查更新
+      // 不再每次组件加载都检查，减少不必要的 API 请求
       if (!updates) {
         console.log('ContinueWatching: 缓存为空，主动检查更新...');
         try {
@@ -125,6 +126,8 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
         } catch (error) {
           console.error('ContinueWatching: 主动检查更新失败:', error);
         }
+      } else {
+        console.log('ContinueWatching: 缓存有效，跳过检查更新');
       }
     };
 
