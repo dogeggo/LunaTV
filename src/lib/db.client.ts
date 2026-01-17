@@ -2610,7 +2610,6 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
 
           if (response.ok) {
             const responseData = await response.json();
-            console.log(`API响应数据:`, responseData);
 
             // 更新localStorage中的上次播放进度和更新时间
             localStorage.setItem(lastProgressKey, record.play_time.toString());

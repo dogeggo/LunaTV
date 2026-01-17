@@ -203,10 +203,6 @@ export async function POST(request: NextRequest) {
       totalMovies: currentStats.totalMovies || currentStats.totalPlays || 1,
     };
 
-    // 更新统计数据（这里需要扩展存储层支持）
-    // TODO: 需要在存储层添加 updateUserStats 方法
-    console.log('更新用户统计数据:', updatedStats);
-
     return NextResponse.json({
       success: true,
       userStats: updatedStats,

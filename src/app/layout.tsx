@@ -11,8 +11,6 @@ import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
-import ChatFloatingWindow from '../components/watch-room/ChatFloatingWindow';
-import { WatchRoomProvider } from '../components/WatchRoomProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -113,6 +111,7 @@ export default async function RootLayout({
         {/* 将配置序列化后直接写入脚本，浏览器端可通过 window.RUNTIME_CONFIG 获取 */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `window.RUNTIME_CONFIG = ${JSON.stringify(runtimeConfig)};`,
           }}
@@ -128,15 +127,12 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <DownloadProvider>
-            <WatchRoomProvider>
-              <SiteProvider siteName={siteName} announcement={announcement}>
-                <SessionTracker />
-                {children}
-                <GlobalErrorIndicator />
-              </SiteProvider>
-              <DownloadPanel />
-              <ChatFloatingWindow />
-            </WatchRoomProvider>
+            <SiteProvider siteName={siteName} announcement={announcement}>
+              <SessionTracker />
+              {children}
+              <GlobalErrorIndicator />
+            </SiteProvider>
+            <DownloadPanel />
           </DownloadProvider>
         </ThemeProvider>
       </body>

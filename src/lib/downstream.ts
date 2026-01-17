@@ -159,9 +159,6 @@ export async function searchFromApi(
     let results: SearchResult[] = [];
     let pageCountFromFirst = 0;
 
-    // 调试：输出搜索变体
-    console.log(`[DEBUG] 搜索变体 for "${query}":`, searchVariants);
-
     // 快速策略：优先使用第一个变体（原始查询），如果找到足够结果就停止
     const seenIds = new Set<string>(); // 用于去重
     let foundEnoughResults = false;
@@ -170,10 +167,6 @@ export async function searchFromApi(
       const variant = searchVariants[i];
       const apiUrl =
         apiBaseUrl + API_CONFIG.search.path + encodeURIComponent(variant);
-
-      console.log(
-        `[DEBUG] 尝试搜索变体 ${i + 1}/${searchVariants.length}: "${variant}"`,
-      );
 
       try {
         // 使用新的缓存搜索函数处理第一页
@@ -186,10 +179,6 @@ export async function searchFromApi(
         );
 
         if (firstPageResult.results.length > 0) {
-          console.log(
-            `[DEBUG] 变体 "${variant}" 找到 ${firstPageResult.results.length} 个结果`,
-          );
-
           // 去重添加结果
           firstPageResult.results.forEach((result) => {
             const uniqueKey = `${result.source}_${result.id}`;
@@ -206,12 +195,9 @@ export async function searchFromApi(
 
           // 优化：如果第一个变体找到了足够多的结果（≥5个），就停止搜索其他变体
           if (i === 0 && results.length >= 5) {
-            console.log(`[DEBUG] 第一个变体找到足够结果，跳过其他变体`);
             foundEnoughResults = true;
             break;
           }
-        } else {
-          console.log(`[DEBUG] 变体 "${variant}" 无结果`);
         }
       } catch (error) {
         console.log(`[DEBUG] 变体 "${variant}" 搜索失败:`, error);

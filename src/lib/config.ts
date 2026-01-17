@@ -693,8 +693,6 @@ function applyVideoProxy(sites: ApiSite[], config: AdminConfig): ApiSite[] {
     const sourceId = extractSourceId(realApiUrl);
     const proxiedApi = `${proxyBaseUrl}/p/${sourceId}?url=${encodeURIComponent(realApiUrl)}`;
 
-    console.log(`[Video Proxy] ${source.name}: ✓ Applied proxy`);
-
     return {
       ...source,
       api: proxiedApi,

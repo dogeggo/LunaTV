@@ -62,7 +62,6 @@ import {
   TVBoxTokenCell,
   TVBoxTokenModal,
 } from '@/components/TVBoxTokenManager';
-import WatchRoomConfig from '@/components/WatchRoomConfig';
 import YouTubeConfig from '@/components/YouTubeConfig';
 
 // 统一按钮样式系统
@@ -7277,7 +7276,6 @@ function AdminPageClient() {
     shortDramaConfig: false,
     downloadConfig: false,
     customAdFilter: false,
-    watchRoomConfig: false,
     tvboxSecurityConfig: false,
     telegramAuthConfig: false,
     oidcAuthConfig: false,
@@ -7577,21 +7575,6 @@ function AdminPageClient() {
                 config={config}
                 refreshConfig={fetchConfig}
               />
-            </CollapsibleTab>
-
-            {/* 观影室配置标签 */}
-            <CollapsibleTab
-              title='观影室配置'
-              icon={
-                <Users
-                  size={20}
-                  className='text-indigo-600 dark:text-indigo-400'
-                />
-              }
-              isExpanded={expandedTabs.watchRoomConfig}
-              onToggle={() => toggleTab('watchRoomConfig')}
-            >
-              <WatchRoomConfig config={config} refreshConfig={fetchConfig} />
             </CollapsibleTab>
 
             {/* TVBox安全配置标签 */}
