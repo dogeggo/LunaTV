@@ -268,7 +268,7 @@ function HomeClient() {
           // 避免因 idleCallback 优先级过低或切换页面导致的加载中断
           const id = setTimeout(() => {
             if (isMountedRef.current) loadMovieDetails();
-          }, 1000);
+          }, 500);
           timeoutsRef.current.push(id);
         } else {
           console.warn(
@@ -325,7 +325,7 @@ function HomeClient() {
 
           const id = setTimeout(() => {
             if (isMountedRef.current) loadTvDetails();
-          }, 1000);
+          }, 600);
           timeoutsRef.current.push(id);
         } else {
           console.warn(
@@ -372,7 +372,7 @@ function HomeClient() {
 
             const id = setTimeout(() => {
               if (isMountedRef.current) loadVarietyDetails();
-            }, 1000);
+            }, 700);
             timeoutsRef.current.push(id);
           }
         } else {
@@ -417,7 +417,7 @@ function HomeClient() {
 
             const id = setTimeout(() => {
               if (isMountedRef.current) loadAnimeDetails();
-            }, 1000);
+            }, 800);
             timeoutsRef.current.push(id);
           }
         } else {
@@ -463,7 +463,7 @@ function HomeClient() {
 
           const id = setTimeout(() => {
             if (isMountedRef.current) loadDramaDetails();
-          }, 1000);
+          }, 900);
           timeoutsRef.current.push(id);
         } else {
           console.warn('获取热门短剧失败:', shortDramasData.reason);
