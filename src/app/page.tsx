@@ -173,7 +173,7 @@ function HomeClient() {
 
     const fetchRecommendData = async () => {
       try {
-        setLoading(true);
+        setLoading(false);
 
         // 并行获取热门电影、热门剧集、热门综艺、热门动漫、热门短剧和即将上映
         const [
@@ -808,8 +808,6 @@ function HomeClient() {
         }
       } catch (error) {
         console.error('获取推荐数据失败:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
