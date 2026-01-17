@@ -28,10 +28,6 @@ export async function GET(request: NextRequest) {
           (p) => p.id === providerId && p.enabled,
         );
       }
-      console.log(
-        '[OIDC Login] Found provider from OIDCProviders:',
-        oidcConfig,
-      );
     }
 
     // 检查是否启用OIDC登录

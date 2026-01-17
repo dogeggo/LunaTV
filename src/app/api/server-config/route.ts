@@ -8,7 +8,7 @@ import { CURRENT_VERSION } from '@/lib/version';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  console.log('server-config called: ', request.url);
+  console.log('server-config request: ', request.url);
 
   const config = await getConfig();
 
@@ -30,10 +30,7 @@ export async function GET(request: NextRequest) {
       requestWriteAccess: config.TelegramAuthConfig.requestWriteAccess ?? false,
       // 注意：不返回 botToken，保护敏感信息
     };
-  } else {
-    console.log('Telegram config is NOT enabled or missing');
   }
-
   // 添加 OIDC 登录配置（仅公开必要信息）
   // 优先使用新的多 Provider 配置
   if (config.OIDCProviders && config.OIDCProviders.length > 0) {
