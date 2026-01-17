@@ -468,9 +468,6 @@ export function generateSearchVariants(originalQuery: string): string[] {
           !finalVariants.includes(simplifiedVariant)
         ) {
           finalVariants.push(simplifiedVariant);
-          console.log(
-            `[DEBUG] 添加繁转简变体: "${variant}" -> "${simplifiedVariant}"`,
-          );
         }
       }
     }

@@ -22,10 +22,6 @@ async function fetchTrailerWithRetry(
     // 先尝试 movie 端点
     let mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
 
-    console.log(
-      `[refresh-trailer] 开始请求影片 ${id}${retryCount > 0 ? ` (重试 ${retryCount}/${MAX_RETRIES})` : ''}`,
-    );
-
     // 创建 AbortController 用于超时控制
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
@@ -89,7 +85,6 @@ async function fetchTrailerWithRetry(
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;
-
     // 超时或网络错误，尝试重试
     if (
       error instanceof Error &&

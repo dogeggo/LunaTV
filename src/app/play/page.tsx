@@ -94,6 +94,7 @@ function PlayPageClient() {
   const [shortdramaDetails, setShortdramaDetails] = useState<any>(null);
   const [loadingShortdramaDetails, setLoadingShortdramaDetails] =
     useState(false);
+  const loadingShortdramaDetailsRef = useRef(false);
 
   // 网盘搜索状态
   const [netdiskResults, setNetdiskResults] = useState<{
@@ -527,12 +528,19 @@ function PlayPageClient() {
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {
+    // 如果没有ID或已经有数据，直接返回
+    if (!shortdramaId || shortdramaDetails) {
+      return;
+    }
+
+    const abortController = new AbortController();
     const loadShortdramaDetails = async () => {
-      if (!shortdramaId || loadingShortdramaDetails || shortdramaDetails) {
-        return;
-      }
+      // 避免重复请求
+      if (loadingShortdramaDetailsRef.current) return;
 
       setLoadingShortdramaDetails(true);
+      loadingShortdramaDetailsRef.current = true;
+
       try {
         // 传递 name 参数以支持备用API fallback
         const dramaTitle =
@@ -542,20 +550,37 @@ function PlayPageClient() {
           : '';
         const response = await fetch(
           `/api/shortdrama/detail?id=${shortdramaId}&episode=1${titleParam}`,
+          { signal: abortController.signal },
         );
         if (response.ok) {
           const data = await response.json();
-          setShortdramaDetails(data);
+          // 再次检查是否被中断，避免设置状态
+          if (!abortController.signal.aborted) {
+            setShortdramaDetails(data);
+          }
         }
-      } catch (error) {
-        console.error('Failed to load shortdrama details:', error);
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error('Failed to load shortdrama details:', error);
+        }
       } finally {
-        setLoadingShortdramaDetails(false);
+        if (!abortController.signal.aborted) {
+          setLoadingShortdramaDetails(false);
+          loadingShortdramaDetailsRef.current = false;
+        }
       }
     };
 
     loadShortdramaDetails();
-  }, [shortdramaId, loadingShortdramaDetails, shortdramaDetails]);
+
+    // 清理函数：取消请求
+    return () => {
+      abortController.abort();
+      loadingShortdramaDetailsRef.current = false;
+    };
+    // 移除 loadingShortdramaDetails 依赖，防止循环触发
+    // 移除 shortdramaDetails 依赖，防止获得数据后再次触发（虽然有内部检查，但作为依赖项不合适）
+  }, [shortdramaId, searchParams]);
 
   // 自动网盘搜索：当有视频标题时可以随时搜索
   useEffect(() => {
@@ -2607,9 +2632,7 @@ function PlayPageClient() {
             console.warn('⚠️ 集数切换后弹幕插件不存在，跳过弹幕加载');
             return;
           }
-
           const externalDanmu = await loadExternalDanmu(); // 这里会检查开关状态
-          console.log('🔄 集数变化后外部弹幕加载结果:', externalDanmu);
 
           // 再次确认插件状态
           if (artPlayerRef.current?.plugins?.artplayerPluginDanmuku) {
@@ -2622,21 +2645,17 @@ function PlayPageClient() {
                 '条',
               );
               plugin.load(externalDanmu);
-
               // 恢复弹幕插件的状态
               if (danmuPluginStateRef.current) {
                 if (!danmuPluginStateRef.current.isHide) {
                   plugin.show();
                 }
               }
-
               if (artPlayerRef.current) {
                 artPlayerRef.current.notice.show = `已加载 ${externalDanmu.length} 条弹幕`;
               }
             } else {
-              console.log('📭 集数变化后没有弹幕数据可加载');
               plugin.load(); // 不传参数，确保清空弹幕
-
               if (artPlayerRef.current) {
                 artPlayerRef.current.notice.show = '暂无弹幕数据';
               }
@@ -2693,17 +2712,11 @@ function PlayPageClient() {
     const fetchSourcesData = async (query: string): Promise<SearchResult[]> => {
       // 使用智能搜索变体获取全部源信息
       try {
-        console.log('开始智能搜索，原始查询:', query);
         const searchVariants = generateSearchVariants(query.trim());
-        console.log('生成的搜索变体:', searchVariants);
-
         const allResults: SearchResult[] = [];
         let bestResults: SearchResult[] = [];
-
         // 依次尝试每个搜索变体，采用早期退出策略
         for (const variant of searchVariants) {
-          console.log('尝试搜索变体:', variant);
-
           const response = await fetch(
             `/api/search?q=${encodeURIComponent(variant)}`,
           );
@@ -2715,9 +2728,7 @@ function PlayPageClient() {
 
           if (data.results && data.results.length > 0) {
             allResults.push(...data.results);
-
             // 移除早期退出策略，让downstream的相关性评分发挥作用
-
             // 处理搜索结果，使用智能模糊匹配（与downstream评分逻辑保持一致）
             const filteredResults = data.results.filter(
               (result: SearchResult) => {
@@ -2729,7 +2740,6 @@ function PlayPageClient() {
                 ) {
                   return result.douban_id === videoDoubanIdRef.current;
                 }
-
                 const queryTitle = videoTitleRef.current
                   .replaceAll(' ', '')
                   .toLowerCase();
@@ -2758,11 +2768,9 @@ function PlayPageClient() {
                   ? (searchType === 'tv' && result.episodes.length > 1) ||
                     (searchType === 'movie' && result.episodes.length === 1)
                   : true;
-
                 return titleMatch && yearMatch && typeMatch;
               },
             );
-
             if (filteredResults.length > 0) {
               console.log(
                 `变体 "${variant}" 找到 ${filteredResults.length} 个精确匹配结果`,

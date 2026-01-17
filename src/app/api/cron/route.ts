@@ -207,7 +207,6 @@ async function refreshRecordAndFavorites() {
             return detail;
           })
           .catch((err) => {
-            console.error(`获取视频详情失败 (${source}+${id}):`, err);
             return null;
           });
       }
@@ -252,11 +251,9 @@ async function refreshRecordAndFavorites() {
                 original_episodes: record.original_episodes,
               });
             }
-
             processedRecords++;
           } catch (err) {
-            console.error(`处理播放记录失败 (${key}):`, err);
-            // 继续处理下一个记录
+            console.error(`处理播放记录失败(${user}) (${key}):`, err);
           }
         }
       } catch (err) {
@@ -309,7 +306,9 @@ async function refreshRecordAndFavorites() {
           }
         }
 
-        console.log(`收藏处理完成: ${processedFavorites}/${totalFavorites}`);
+        console.log(
+          `收藏处理完成(${user}): ${processedFavorites}/${totalFavorites}`,
+        );
       } catch (err) {
         console.error(`获取用户收藏失败 (${user}):`, err);
       }
