@@ -29,30 +29,11 @@ interface OIDCProvider {
 }
 
 interface OIDCAuthConfigProps {
-  config: {
-    enabled: boolean;
-    enableRegistration: boolean;
-    issuer: string;
-    authorizationEndpoint: string;
-    tokenEndpoint: string;
-    userInfoEndpoint: string;
-    clientId: string;
-    clientSecret: string;
-    buttonText: string;
-    minTrustLevel: number;
-  };
-  providers?: OIDCProvider[];
-  onSave: (config: OIDCAuthConfigProps['config']) => Promise<void>;
-  onSaveProviders?: (providers: OIDCProvider[]) => Promise<void>;
+  providers: OIDCProvider[];
+  onSave: (providers: OIDCProvider[]) => Promise<void>;
 }
 
-export function OIDCAuthConfig({
-  config,
-  providers = [],
-  onSave,
-  onSaveProviders,
-}: OIDCAuthConfigProps) {
-  const [localConfig, setLocalConfig] = useState(config);
+export function OIDCAuthConfig({ providers, onSave }: OIDCAuthConfigProps) {
   const [localProviders, setLocalProviders] =
     useState<OIDCProvider[]>(providers);
   const [editingProvider, setEditingProvider] = useState<OIDCProvider | null>(
@@ -66,9 +47,8 @@ export function OIDCAuthConfig({
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    setLocalConfig(config);
     setLocalProviders(providers);
-  }, [config, providers]);
+  }, [providers]);
 
   useEffect(() => {
     const changed =
@@ -80,11 +60,7 @@ export function OIDCAuthConfig({
     setSaving(true);
     setMessage(null);
     try {
-      if (onSaveProviders) {
-        await onSaveProviders(localProviders);
-      } else {
-        await onSave(localConfig);
-      }
+      await onSave(localProviders);
       setMessage({ type: 'success', text: '保存成功' });
       setHasChanges(false);
       setTimeout(() => setMessage(null), 3000);

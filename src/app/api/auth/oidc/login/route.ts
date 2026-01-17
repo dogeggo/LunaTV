@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
     const config = await getConfig();
 
     console.log('[OIDC Login] Provider ID requested:', providerId);
-    console.log('[OIDC Login] OIDCProviders config:', config.OIDCProviders);
-    console.log('[OIDC Login] OIDCAuthConfig config:', config.OIDCAuthConfig);
 
     // 优先使用新的多 Provider 配置
     let oidcConfig = null;
@@ -34,10 +32,6 @@ export async function GET(request: NextRequest) {
         '[OIDC Login] Found provider from OIDCProviders:',
         oidcConfig,
       );
-    } else if (config.OIDCAuthConfig) {
-      // 向后兼容：使用旧的单 Provider 配置
-      oidcConfig = config.OIDCAuthConfig;
-      console.log('[OIDC Login] Using legacy OIDCAuthConfig:', oidcConfig);
     }
 
     // 检查是否启用OIDC登录

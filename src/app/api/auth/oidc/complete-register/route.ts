@@ -104,9 +104,6 @@ export async function POST(request: NextRequest) {
       } else {
         oidcConfig = config.OIDCProviders.find((p) => p.id === providerId);
       }
-    } else if (config.OIDCAuthConfig) {
-      // 向后兼容：使用旧的单 Provider 配置
-      oidcConfig = config.OIDCAuthConfig;
     }
 
     // 检查是否启用OIDC注册

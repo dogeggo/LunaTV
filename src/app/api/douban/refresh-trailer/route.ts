@@ -50,7 +50,6 @@ async function fetchTrailerWithRetry(
 
     // 如果是 3xx 重定向，说明可能是电视剧，尝试 tv 端点
     if (response.status >= 300 && response.status < 400) {
-      console.log(`[refresh-trailer] 检测到重定向，尝试 TV 端点`);
       mobileApiUrl = `https://m.douban.com/rexxar/api/v2/tv/${id}`;
 
       const tvController = new AbortController();
@@ -75,9 +74,6 @@ async function fetchTrailerWithRetry(
     }
 
     const fetchTime = Date.now() - startTime;
-    console.log(
-      `[refresh-trailer] 影片 ${id} 请求完成，耗时: ${fetchTime}ms, 状态: ${response.status}`,
-    );
 
     if (!response.ok) {
       throw new Error(`豆瓣API返回错误: ${response.status}`);
@@ -90,12 +86,6 @@ async function fetchTrailerWithRetry(
       console.warn(`[refresh-trailer] 影片 ${id} 没有预告片数据`);
       throw new Error('该影片没有预告片');
     }
-
-    const totalTime = Date.now() - startTime;
-    console.log(
-      `[refresh-trailer] 影片 ${id} 成功获取trailer URL，总耗时: ${totalTime}ms`,
-    );
-
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;
@@ -110,23 +100,10 @@ async function fetchTrailerWithRetry(
       );
 
       if (retryCount < MAX_RETRIES) {
-        console.warn(
-          `[refresh-trailer] ${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})...`,
-        );
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
         return fetchTrailerWithRetry(id, retryCount + 1);
-      } else {
-        console.error(
-          `[refresh-trailer] 影片 ${id} 重试次数已达上限，放弃请求`,
-        );
       }
-    } else {
-      console.error(
-        `[refresh-trailer] 影片 ${id} 发生错误 (耗时: ${failTime}ms):`,
-        error,
-      );
     }
-
     throw error;
   }
 }

@@ -52,14 +52,6 @@ export async function GET(request: NextRequest) {
     if (enabledProviders.length > 0) {
       result.OIDCProviders = enabledProviders;
     }
-  } else if (config.OIDCAuthConfig?.enabled) {
-    // 向后兼容：旧的单 Provider 配置
-    result.OIDCConfig = {
-      enabled: true,
-      buttonText: config.OIDCAuthConfig.buttonText || '使用OIDC登录',
-      issuer: config.OIDCAuthConfig.issuer, // 用于provider检测（公开信息，不敏感）
-      // 注意：不返回 ClientSecret、Endpoints 等敏感信息
-    };
   }
 
   return NextResponse.json(result);

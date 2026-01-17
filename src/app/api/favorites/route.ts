@@ -62,9 +62,6 @@ export async function GET(request: NextRequest) {
 
     // 性能监控日志
     const durationSeconds = (duration / 1000).toFixed(2);
-    console.log(
-      `[收藏性能] 用户: ${authInfo.username} | 收藏数: ${count} | 耗时: ${durationSeconds}s (${duration}ms)`,
-    );
 
     // 性能警告 - 根据不同耗时输出不同级别的日志
     if (duration > 25000) {

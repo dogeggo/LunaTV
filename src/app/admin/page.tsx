@@ -7655,43 +7655,13 @@ function AdminPageClient() {
                 onToggle={() => toggleTab('oidcAuthConfig')}
               >
                 <OIDCAuthConfig
-                  config={
-                    config?.OIDCAuthConfig || {
-                      enabled: false,
-                      enableRegistration: false,
-                      issuer: '',
-                      authorizationEndpoint: '',
-                      tokenEndpoint: '',
-                      userInfoEndpoint: '',
-                      clientId: '',
-                      clientSecret: '',
-                      buttonText: '',
-                      minTrustLevel: 0,
-                    }
-                  }
                   providers={config?.OIDCProviders || []}
-                  onSave={async (newConfig) => {
-                    if (!config) return;
-                    await fetch('/api/admin/config', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        ...config,
-                        OIDCAuthConfig: newConfig,
-                      }),
-                    });
-                    await fetchConfig();
-                  }}
-                  onSaveProviders={async (newProviders) => {
+                  onSave={async (newProviders) => {
                     if (!config) return;
                     const updatedConfig = {
                       ...config,
                       OIDCProviders: newProviders,
                     };
-                    // 如果切换到多provider模式，删除旧的单provider配置
-                    if (newProviders.length > 0) {
-                      delete updatedConfig.OIDCAuthConfig;
-                    }
                     await fetch('/api/admin/config', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
