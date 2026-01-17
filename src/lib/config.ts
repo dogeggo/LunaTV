@@ -336,6 +336,8 @@ export function clearConfigCache(): void {
 export async function configSelfCheck(
   adminConfig: AdminConfig,
 ): Promise<AdminConfig> {
+  let hasChanges = false;
+
   // 确保必要的属性存在和初始化
   if (!adminConfig.UserConfig) {
     adminConfig.UserConfig = { AllowRegister: true, Users: [] };
@@ -366,6 +368,8 @@ export async function configSelfCheck(
         if (existingUserConfig && existingUserConfig.createdAt) {
           return existingUserConfig;
         }
+
+        hasChanges = true;
 
         // 新用户或配置不完整，从数据库获取详细信息
         let createdAt = Date.now();
@@ -595,6 +599,14 @@ export async function configSelfCheck(
     seenLiveKeys.add(live.key);
     return true;
   });
+
+  if (hasChanges) {
+    try {
+      await db.saveAdminConfig(adminConfig);
+    } catch (e) {
+      console.error('保存配置失败:', e);
+    }
+  }
 
   return adminConfig;
 }
