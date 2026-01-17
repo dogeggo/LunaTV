@@ -173,9 +173,7 @@ function HomeClient() {
 
     const fetchRecommendData = async () => {
       try {
-        // 🚀 性能优化：立即设置 loading=false，让页面可以立即响应用户交互
-        // 数据加载将在后台进行，不阻塞导航
-        setLoading(false);
+        setLoading(true);
 
         // 并行获取热门电影、热门剧集、热门综艺、热门动漫、热门短剧和即将上映
         const [
@@ -810,9 +808,9 @@ function HomeClient() {
         }
       } catch (error) {
         console.error('获取推荐数据失败:', error);
+      } finally {
+        setLoading(false);
       }
-      // 🚀 性能优化：移除 finally 块中的 setLoading(false)
-      // loading 状态已在函数开始时设置为 false
     };
 
     fetchRecommendData();
