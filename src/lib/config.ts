@@ -12,6 +12,7 @@ export interface ApiSite {
   api: string;
   name: string;
   detail?: string;
+  is_adult?: boolean;
 }
 
 export interface LiveCfg {
@@ -70,61 +71,64 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
   // 合并文件中的源信息
   const apiSitesFromFile = Object.entries(fileConfig.api_site || []);
 
-  // 只保留 from='custom' 的源（用户手动添加的），删除旧的 from='config' 的源
-  const currentApiSites = new Map(
-    (adminConfig.SourceConfig || [])
-      .filter((s) => s.from === 'custom')
-      .map((s) => [s.key, s]),
+  // 1. 建立旧源索引 (包括 custom 和 config)
+  const existingSourcesMap = new Map(
+    (adminConfig.SourceConfig || []).map((s) => [s.key, s]),
   );
 
-  // 添加新订阅中的所有源
+  const finalApiSites: any[] = [];
+
+  // 2. 只遍历文件中的源，确保以配置文件为准，不在文件中的源将被丢弃
   apiSitesFromFile.forEach(([key, site]) => {
-    const existingSource = currentApiSites.get(key);
+    const existingSource = existingSourcesMap.get(key);
     if (existingSource) {
-      // 如果 custom 源的 key 和订阅源冲突，保留 custom 源，但更新其信息
+      // 如果源已存在（无论是 custom 还是 config），更新其信息以匹配配置文件
       existingSource.name = site.name;
       existingSource.api = site.api;
       existingSource.detail = site.detail;
-      // 保持 from='custom'，因为用户手动添加过
+      existingSource.is_adult = site.is_adult;
+      // 保持原有的 from 和 disabled 状态
+      finalApiSites.push(existingSource);
     } else {
       // 添加新的订阅源
-      currentApiSites.set(key, {
+      finalApiSites.push({
         key,
         name: site.name,
         api: site.api,
         detail: site.detail,
+        is_adult: site.is_adult || false,
         from: 'config',
         disabled: false,
       });
     }
   });
 
-  // 将 Map 转换回数组
-  adminConfig.SourceConfig = Array.from(currentApiSites.values());
+  adminConfig.SourceConfig = finalApiSites;
 
   // 覆盖 CustomCategories
   const customCategoriesFromFile = fileConfig.custom_category || [];
 
-  // 只保留 from='custom' 的自定义分类，删除旧的 from='config' 的分类
-  const currentCustomCategories = new Map(
-    (adminConfig.CustomCategories || [])
-      .filter((c) => c.from === 'custom')
-      .map((c) => [c.query + c.type, c]),
+  // 1. 建立旧分类索引
+  const existingCategoriesMap = new Map(
+    (adminConfig.CustomCategories || []).map((c) => [c.query + c.type, c]),
   );
 
-  // 添加新订阅中的所有自定义分类
+  const finalCategories: any[] = [];
+
+  // 2. 只遍历文件中的分类
   customCategoriesFromFile.forEach((category) => {
     const key = category.query + category.type;
-    const existedCategory = currentCustomCategories.get(key);
+    const existedCategory = existingCategoriesMap.get(key);
     if (existedCategory) {
-      // 如果 custom 分类和订阅分类冲突，保留 custom，但更新信息
+      // 更新信息
       existedCategory.name = category.name;
       existedCategory.query = category.query;
       existedCategory.type = category.type;
-      // 保持 from='custom'
+      // 保持原有的 from 和 disabled 状态
+      finalCategories.push(existedCategory);
     } else {
       // 添加新的订阅分类
-      currentCustomCategories.set(key, {
+      finalCategories.push({
         name: category.name,
         type: category.type,
         query: category.query,
@@ -134,36 +138,38 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 将 Map 转换回数组
-  adminConfig.CustomCategories = Array.from(currentCustomCategories.values());
+  adminConfig.CustomCategories = finalCategories;
 
   const livesFromFile = Object.entries(fileConfig.lives || []);
 
-  // 只保留 from='custom' 的直播源，删除旧的 from='config' 的直播源
-  const currentLives = new Map(
-    (adminConfig.LiveConfig || [])
-      .filter((l) => l.from === 'custom')
-      .map((l) => [l.key, l]),
+  // 1. 建立旧直播源索引
+  const existingLivesMap = new Map(
+    (adminConfig.LiveConfig || []).map((l) => [l.key, l]),
   );
 
-  // 添加新订阅中的所有直播源
+  const finalLives: any[] = [];
+
+  // 2. 只遍历文件中的直播源
   livesFromFile.forEach(([key, site]) => {
-    const existingLive = currentLives.get(key);
+    const existingLive = existingLivesMap.get(key);
     if (existingLive) {
-      // 如果 custom 直播源和订阅直播源冲突，保留 custom，但更新信息
+      // 更新信息
       existingLive.name = site.name;
       existingLive.url = site.url;
       existingLive.ua = site.ua;
       existingLive.epg = site.epg;
-      // 保持 from='custom'
+      existingLive.isTvBox = site.isTvBox;
+      // 保持原有的 from 和 disabled 状态
+      finalLives.push(existingLive);
     } else {
       // 添加新的订阅直播源
-      currentLives.set(key, {
+      finalLives.push({
         key,
         name: site.name,
         url: site.url,
         ua: site.ua,
         epg: site.epg,
+        isTvBox: site.isTvBox,
         channelNumber: 0,
         from: 'config',
         disabled: false,
@@ -171,8 +177,7 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     }
   });
 
-  // 将 Map 转换回数组
-  adminConfig.LiveConfig = Array.from(currentLives.values());
+  adminConfig.LiveConfig = finalLives;
 
   return adminConfig;
 }
@@ -257,6 +262,7 @@ async function getInitConfig(
       name: site.name,
       api: site.api,
       detail: site.detail,
+      is_adult: site.is_adult || false,
       from: 'config',
       disabled: false,
     });
