@@ -179,17 +179,13 @@ async function refreshConfig() {
 async function refreshRecordAndFavorites() {
   try {
     const users = await db.getAllUsers();
-    console.log('📋 数据库中的用户列表:', users);
 
     if (process.env.USERNAME && !users.includes(process.env.USERNAME)) {
       users.push(process.env.USERNAME);
-      console.log(`➕ 添加环境变量用户: ${process.env.USERNAME}`);
     }
-
     console.log('📋 最终处理用户列表:', users);
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();
-
     // 获取详情 Promise（带缓存和错误处理）
     const getDetail = async (
       source: string,
@@ -219,12 +215,6 @@ async function refreshRecordAndFavorites() {
     };
 
     for (const user of users) {
-      console.log(`开始处理用户: ${user}`);
-
-      // 检查用户是否真的存在
-      const userExists = await db.checkUserExist(user);
-      console.log(`用户 ${user} 是否存在: ${userExists}`);
-
       // 播放记录
       try {
         const playRecords = await db.getAllPlayRecords(user);
@@ -261,9 +251,6 @@ async function refreshRecordAndFavorites() {
                 // 🔑 关键修复：保留原始集数，避免被Cron任务覆盖
                 original_episodes: record.original_episodes,
               });
-              console.log(
-                `更新播放记录: ${record.title} (${record.total_episodes} -> ${episodeCount})`,
-              );
             }
 
             processedRecords++;
@@ -272,8 +259,6 @@ async function refreshRecordAndFavorites() {
             // 继续处理下一个记录
           }
         }
-
-        console.log(`播放记录处理完成: ${processedRecords}/${totalRecords}`);
       } catch (err) {
         console.error(`获取用户播放记录失败 (${user}):`, err);
       }
@@ -338,21 +323,10 @@ async function refreshRecordAndFavorites() {
 
 async function cleanupInactiveUsers() {
   try {
-    console.log('🔧 正在获取配置...');
     const config = await getConfig();
-    console.log('✅ 配置获取成功');
 
     // 清理策略：基于登入时间而不是播放记录
     // 删除条件：注册时间 >= X天 且 (从未登入 或 最后登入时间 >= X天)
-
-    // 预热 Redis 连接，避免冷启动
-    console.log('🔥 预热数据库连接...');
-    try {
-      await db.getAllUsers();
-      console.log('✅ 数据库连接预热成功');
-    } catch (warmupErr) {
-      console.warn('⚠️ 数据库连接预热失败:', warmupErr);
-    }
 
     // 检查是否启用自动清理功能
     const autoCleanupEnabled =
@@ -364,24 +338,18 @@ async function cleanupInactiveUsers() {
     );
 
     if (!autoCleanupEnabled) {
-      console.log('⏭️ 自动清理非活跃用户功能已禁用，跳过清理任务');
       return;
     }
 
     console.log('🧹 开始清理非活跃用户...');
 
     const allUsers = config.UserConfig.Users;
-    console.log('✅ 获取用户列表成功，共', allUsers.length, '个用户');
 
     const envUsername = process.env.USERNAME;
-    console.log('✅ 环境变量用户名:', envUsername);
 
     const cutoffTime = Date.now() - inactiveUserDays * 24 * 60 * 60 * 1000;
-    console.log('✅ 计算截止时间成功:', new Date(cutoffTime).toISOString());
 
     let deletedCount = 0;
-
-    console.log('📊 即将开始用户循环...');
 
     for (const user of allUsers) {
       try {
@@ -389,18 +357,13 @@ async function cleanupInactiveUsers() {
 
         // 跳过管理员和owner用户
         if (user.role === 'admin' || user.role === 'owner') {
-          console.log(`  ⏭️ 跳过管理员用户: ${user.username}`);
           continue;
         }
-
         // 跳过环境变量中的用户
         if (user.username === envUsername) {
-          console.log(`  ⏭️ 跳过环境变量用户: ${user.username}`);
           continue;
         }
-
         // 检查用户是否存在于数据库
-        console.log(`  🔍 检查用户是否存在于数据库: ${user.username}`);
         let userExists = true;
         try {
           userExists = (await Promise.race([
@@ -409,7 +372,6 @@ async function cleanupInactiveUsers() {
               setTimeout(() => reject(new Error('checkUserExist超时')), 5000),
             ),
           ])) as boolean;
-          console.log(`  📝 用户存在状态: ${userExists}`);
         } catch (err) {
           console.error(`  ❌ 检查用户存在状态失败: ${err}, 跳过该用户`);
           continue;
@@ -421,9 +383,7 @@ async function cleanupInactiveUsers() {
           );
           continue;
         }
-
         // 获取用户统计信息（5秒超时）
-        console.log(`  📊 获取用户统计信息: ${user.username}`);
         let userStats;
         try {
           userStats = (await Promise.race([
@@ -442,7 +402,6 @@ async function cleanupInactiveUsers() {
           console.error(`  ❌ 获取用户统计失败: ${err}, 跳过该用户`);
           continue;
         }
-
         // 🔥 简化逻辑：只检查最后登入时间是否超过阈值
         // 适用于所有用户类型（普通、Telegram、OIDC）
         // 因为所有用户注册时都会自动记录登入时间，不存在"从未登入"的情况
@@ -470,7 +429,6 @@ async function cleanupInactiveUsers() {
           if (userIndex !== -1) {
             config.UserConfig.Users.splice(userIndex, 1);
           }
-
           deletedCount++;
         } else {
           const reason =
@@ -488,12 +446,8 @@ async function cleanupInactiveUsers() {
     if (deletedCount > 0) {
       await db.saveAdminConfig(config);
       console.log(`✨ 清理完成，共删除 ${deletedCount} 个非活跃用户`);
-    } else {
-      console.log('✨ 清理完成，无需删除任何用户');
     }
-
     // 优化活跃用户的统计显示（等级系统）
-    console.log('🎯 开始优化活跃用户等级显示...');
     await optimizeActiveUserLevels();
   } catch (err) {
     console.error('🚫 清理非活跃用户任务失败:', err);

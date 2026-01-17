@@ -536,26 +536,29 @@ export const UserMenu: React.FC = () => {
       authInfo?.username &&
       storageType !== 'localstorage'
     ) {
-      const loadFavorites = async () => {
-        try {
-          const favoritesData = await getAllFavorites();
-          const favoritesArray = Object.entries(favoritesData).map(
-            ([key, favorite]) => ({
-              ...(favorite as Favorite),
-              key,
-            }),
-          );
-          // 按保存时间降序排列
-          const sortedFavorites = favoritesArray.sort(
-            (a, b) => b.save_time - a.save_time,
-          );
-          setFavorites(sortedFavorites);
-        } catch (error) {
-          console.error('加载收藏失败:', error);
-        }
-      };
+      // 🚀 性能优化：延迟加载收藏数据，避免阻塞页面渲染
+      const timer = setTimeout(() => {
+        const loadFavorites = async () => {
+          try {
+            const favoritesData = await getAllFavorites();
+            const favoritesArray = Object.entries(favoritesData).map(
+              ([key, favorite]) => ({
+                ...(favorite as Favorite),
+                key,
+              }),
+            );
+            // 按保存时间降序排列
+            const sortedFavorites = favoritesArray.sort(
+              (a, b) => b.save_time - a.save_time,
+            );
+            setFavorites(sortedFavorites);
+          } catch (error) {
+            console.error('加载收藏失败:', error);
+          }
+        };
 
-      loadFavorites();
+        loadFavorites();
+      }, 500); // 延迟500ms执行
 
       // 监听收藏更新事件
       const unsubscribe = subscribeToDataUpdates(
@@ -577,6 +580,7 @@ export const UserMenu: React.FC = () => {
       );
 
       return () => {
+        clearTimeout(timer);
         unsubscribe();
       };
     }

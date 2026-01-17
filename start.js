@@ -50,7 +50,7 @@ const intervalId = setInterval(() => {
         () => {
           executeCronJob();
         },
-        60 * 60 * 1000,
+        120 * 60 * 1000,
       ); // 每小时执行一次
     }
   });

@@ -135,6 +135,9 @@ export default function SkipController({
   // 🔥 新增：防止集数切换后立即触发的冷却时间
   const episodeSwitchCooldownRef = useRef<number>(0);
 
+  // 优化：使用 ref 记录上次检查的时间，避免每帧都触发检查
+  const lastCheckTimeRef = useRef<number>(0);
+
   // 🔑 使用 ref 来存储 batchSettings，避免触发不必要的重新渲染
   const batchSettingsRef = useRef(batchSettings);
 
@@ -936,7 +939,12 @@ export default function SkipController({
   // 监听播放时间变化
   useEffect(() => {
     if (currentTime > 0) {
-      checkSkipSegment(currentTime);
+      // 优化：只有当时间变化超过 1 秒时才检查，避免过于频繁的计算
+      // 也可以防止日志刷屏
+      if (Math.abs(currentTime - lastCheckTimeRef.current) > 1) {
+        checkSkipSegment(currentTime);
+        lastCheckTimeRef.current = currentTime;
+      }
     }
   }, [currentTime, checkSkipSegment]);
 
@@ -953,6 +961,7 @@ export default function SkipController({
     setCurrentSkipSegment(null);
     // 🔥 清除已处理标记，允许新集数重新处理
     lastProcessedSegmentRef.current = null;
+    lastCheckTimeRef.current = 0; // 重置检查时间
     // 🔥 设置冷却时间，防止新集数立即触发自动跳过
     episodeSwitchCooldownRef.current = Date.now();
     console.log(

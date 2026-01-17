@@ -29,6 +29,8 @@ function ShortDramaCard({
   const showEpisodeCount = drama.episode_count > 1;
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
   const [favorited, setFavorited] = useState(false); // 收藏状态
+  // 🚀 性能优化：延迟加载收藏状态
+  const [shouldCheckStatus, setShouldCheckStatus] = useState(false);
 
   // 短剧的source固定为shortdrama
   const source = 'shortdrama';
@@ -36,6 +38,8 @@ function ShortDramaCard({
 
   // 检查收藏状态
   useEffect(() => {
+    if (!shouldCheckStatus) return;
+
     const fetchFavoriteStatus = async () => {
       try {
         const fav = await isFavorited(source, id);
@@ -58,7 +62,7 @@ function ShortDramaCard({
     );
 
     return unsubscribe;
-  }, [source, id]);
+  }, [source, id, shouldCheckStatus]);
 
   // 处理收藏切换
   const handleToggleFavorite = useCallback(
@@ -107,6 +111,9 @@ function ShortDramaCard({
   return (
     <div
       className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-30 hover:shadow-2xl`}
+      onMouseEnter={() => setShouldCheckStatus(true)}
+      onTouchStart={() => setShouldCheckStatus(true)}
+      onFocus={() => setShouldCheckStatus(true)}
     >
       <Link
         href={`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`}

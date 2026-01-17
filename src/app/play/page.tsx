@@ -3621,25 +3621,31 @@ function PlayPageClient() {
   // 每当 source 或 id 变化时检查收藏状态（支持豆瓣/Bangumi等虚拟源）
   useEffect(() => {
     if (!currentSource || !currentId) return;
-    (async () => {
-      try {
-        const favorites = await getAllFavorites();
 
-        // 检查多个可能的收藏key
-        const possibleKeys = [
-          `${currentSource}+${currentId}`, // 当前真实播放源
-          videoDoubanId ? `douban+${videoDoubanId}` : null, // 豆瓣收藏
-          videoDoubanId ? `bangumi+${videoDoubanId}` : null, // Bangumi收藏
-          shortdramaId ? `shortdrama+${shortdramaId}` : null, // 短剧收藏
-        ].filter(Boolean);
+    // 🚀 性能优化：延迟检查收藏状态，避免首屏阻塞
+    const timer = setTimeout(() => {
+      (async () => {
+        try {
+          const favorites = await getAllFavorites();
 
-        // 检查是否任一key已被收藏
-        const fav = possibleKeys.some((key) => !!favorites[key as string]);
-        setFavorited(fav);
-      } catch (err) {
-        console.error('检查收藏状态失败:', err);
-      }
-    })();
+          // 检查多个可能的收藏key
+          const possibleKeys = [
+            `${currentSource}+${currentId}`, // 当前真实播放源
+            videoDoubanId ? `douban+${videoDoubanId}` : null, // 豆瓣收藏
+            videoDoubanId ? `bangumi+${videoDoubanId}` : null, // Bangumi收藏
+            shortdramaId ? `shortdrama+${shortdramaId}` : null, // 短剧收藏
+          ].filter(Boolean);
+
+          // 检查是否任一key已被收藏
+          const fav = possibleKeys.some((key) => !!favorites[key as string]);
+          setFavorited(fav);
+        } catch (err) {
+          console.error('检查收藏状态失败:', err);
+        }
+      })();
+    }, 500); // 延迟500ms
+
+    return () => clearTimeout(timer);
   }, [currentSource, currentId, videoDoubanId, shortdramaId]);
 
   // 监听收藏数据更新事件（支持豆瓣/Bangumi等虚拟源）
@@ -3760,19 +3766,17 @@ function PlayPageClient() {
             contentType = 'shortdrama';
           }
 
+          // 更新收藏
           await saveFavorite(favSource, favId, {
-            title:
-              videoTitleRef.current || detail.title || favoriteToUpdate.title,
-            source_name:
-              detail.source_name || favoriteToUpdate.source_name || '',
-            year: detail.year || favoriteToUpdate.year || '',
-            cover: detail.poster || favoriteToUpdate.cover || '',
+            ...favoriteToUpdate,
             total_episodes: realEpisodes,
-            save_time: favoriteToUpdate.save_time || Date.now(),
-            search_title: favoriteToUpdate.search_title || searchTitle,
-            releaseDate: favoriteToUpdate.releaseDate,
-            remarks: favoriteToUpdate.remarks,
+            source_name: detail.source_name || favoriteToUpdate.source_name,
             type: contentType,
+            // 如果没有 search_title，尝试使用当前视频标题
+            search_title:
+              favoriteToUpdate.search_title ||
+              videoTitle ||
+              favoriteToUpdate.title,
           });
 
           console.log('✅ 收藏数据更新成功');
@@ -3783,7 +3787,14 @@ function PlayPageClient() {
     };
 
     updateFavoriteData();
-  }, [detail, currentSource, currentId, videoDoubanId, searchTitle]);
+  }, [
+    detail,
+    currentSource,
+    currentId,
+    videoDoubanId,
+    searchTitle,
+    videoTitle,
+  ]);
 
   // 切换收藏
   const handleToggleFavorite = async () => {

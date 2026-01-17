@@ -110,7 +110,7 @@ const SYNC_THROTTLE_TIME = 10000; // 10秒内不重复触发后台同步
 let pendingPlayRecordsSync: Promise<void> | null = null;
 let lastPlayRecordsSyncTime = 0;
 
-let pendingFavoritesSync: Promise<void> | null = null;
+let pendingFavoritesRequest: Promise<Record<string, Favorite>> | null = null;
 let lastFavoritesSyncTime = 0;
 
 let pendingSearchHistorySync: Promise<void> | null = null;
@@ -1414,17 +1414,14 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedFavorites();
 
-    if (cachedData) {
-      // 返回缓存数据，同时后台异步更新（带节流和去重）
-      const now = Date.now();
+    // 检查是否需要发起后台同步
+    const now = Date.now();
+    const shouldSync = now - lastFavoritesSyncTime > SYNC_THROTTLE_TIME;
 
-      // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
-      // 如果距离上次同步时间太短，跳过同步
-      if (
-        !pendingFavoritesSync &&
-        now - lastFavoritesSyncTime > SYNC_THROTTLE_TIME
-      ) {
-        pendingFavoritesSync = fetchFromApi<Record<string, Favorite>>(
+    if (cachedData) {
+      // 1. 如果有缓存，检查是否需要后台同步
+      if (shouldSync && !pendingFavoritesRequest) {
+        pendingFavoritesRequest = fetchFromApi<Record<string, Favorite>>(
           `/api/favorites`,
         )
           .then((freshData) => {
@@ -1439,6 +1436,7 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
               );
             }
             lastFavoritesSyncTime = Date.now();
+            return freshData;
           })
           .catch((err) => {
             // 后台同步失败不影响用户使用，静默处理
@@ -1446,25 +1444,41 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
               '[后台同步] 收藏数据同步失败（不影响使用，已使用缓存数据）:',
               err,
             );
+            return cachedData;
           })
           .finally(() => {
-            pendingFavoritesSync = null;
+            pendingFavoritesRequest = null;
           });
       }
 
+      // 始终优先返回缓存数据
       return cachedData;
     } else {
-      // 缓存为空，直接从 API 获取并缓存
-      try {
-        const freshData =
-          await fetchFromApi<Record<string, Favorite>>(`/api/favorites`);
-        cacheManager.cacheFavorites(freshData);
-        return freshData;
-      } catch (err) {
-        console.error('获取收藏失败:', err);
-        triggerGlobalError('获取收藏失败');
-        return {};
+      // 2. 缓存为空，必须从 API 获取
+      if (pendingFavoritesRequest) {
+        // 如果已有请求在进行中，复用它
+        return pendingFavoritesRequest;
       }
+
+      // 发起新请求
+      pendingFavoritesRequest = fetchFromApi<Record<string, Favorite>>(
+        `/api/favorites`,
+      )
+        .then((freshData) => {
+          cacheManager.cacheFavorites(freshData);
+          lastFavoritesSyncTime = Date.now();
+          return freshData;
+        })
+        .catch((err) => {
+          console.error('获取收藏失败:', err);
+          triggerGlobalError('获取收藏失败');
+          return {};
+        })
+        .finally(() => {
+          pendingFavoritesRequest = null;
+        });
+
+      return pendingFavoritesRequest;
     }
   }
 
@@ -1612,66 +1626,6 @@ export async function isFavorited(
   id: string,
 ): Promise<boolean> {
   const key = generateStorageKey(source, id);
-
-  // 数据库存储模式：使用混合缓存策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
-    const cachedFavorites = cacheManager.getCachedFavorites();
-
-    if (cachedFavorites) {
-      // 返回缓存数据，同时后台异步更新（带节流和去重）
-      const now = Date.now();
-
-      // 如果正在同步中，直接复用当前同步任务
-      // 如果距离上次同步时间太短，跳过同步
-      if (
-        !pendingFavoritesSync &&
-        now - lastFavoritesSyncTime > SYNC_THROTTLE_TIME
-      ) {
-        pendingFavoritesSync = fetchFromApi<Record<string, Favorite>>(
-          `/api/favorites`,
-        )
-          .then((freshData) => {
-            // 只有数据真正不同时才更新缓存
-            if (JSON.stringify(cachedFavorites) !== JSON.stringify(freshData)) {
-              cacheManager.cacheFavorites(freshData);
-              // 触发数据更新事件
-              window.dispatchEvent(
-                new CustomEvent('favoritesUpdated', {
-                  detail: freshData,
-                }),
-              );
-            }
-            lastFavoritesSyncTime = Date.now();
-          })
-          .catch((err) => {
-            // 后台同步失败不影响用户使用，静默处理
-            console.warn(
-              '[后台同步] 收藏数据同步失败（不影响使用，已使用缓存数据）:',
-              err,
-            );
-          })
-          .finally(() => {
-            pendingFavoritesSync = null;
-          });
-      }
-
-      return !!cachedFavorites[key];
-    } else {
-      // 缓存为空，直接从 API 获取并缓存
-      try {
-        const freshData =
-          await fetchFromApi<Record<string, Favorite>>(`/api/favorites`);
-        cacheManager.cacheFavorites(freshData);
-        return !!freshData[key];
-      } catch (err) {
-        console.error('检查收藏状态失败:', err);
-        triggerGlobalError('检查收藏状态失败');
-        return false;
-      }
-    }
-  }
-
-  // localStorage 模式
   const allFavorites = await getAllFavorites();
   return !!allFavorites[key];
 }

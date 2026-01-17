@@ -102,6 +102,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       null,
     ); // 搜索结果的收藏状态
 
+    // 🚀 性能优化：延迟加载收藏状态
+    // 仅在 hover、聚焦或进入收藏页面时才检查收藏状态，减少首屏 API 请求
+    const [shouldCheckStatus, setShouldCheckStatus] = useState(
+      from === 'favorite',
+    );
+
     // 🚀 React 19 useOptimistic - 乐观更新收藏状态，提供即时UI反馈
     const [optimisticFavorited, setOptimisticFavorited] = useOptimistic(
       favorited,
@@ -181,7 +187,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       // 豆瓣内容和非搜索页面需要检查收藏状态
       const shouldCheckFavorite = from !== 'search';
 
-      if (!shouldCheckFavorite || !actualSource || !actualId) return;
+      if (
+        !shouldCheckFavorite ||
+        !actualSource ||
+        !actualId ||
+        !shouldCheckStatus
+      )
+        return;
 
       const fetchFavoriteStatus = async () => {
         try {
@@ -206,7 +218,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       );
 
       return unsubscribe;
-    }, [from, actualSource, actualId, isUpcoming]);
+    }, [from, actualSource, actualId, isUpcoming, shouldCheckStatus]);
 
     // 🚀 使用 useOptimistic 优化收藏功能 - React 19 新特性
     const handleToggleFavorite = useCallback(
@@ -765,6 +777,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           {/* 海报容器 */}
           <div
             className={`relative aspect-[2/3] overflow-hidden rounded-lg ${origin === 'live' ? 'ring-1 ring-gray-300/80 dark:ring-gray-600/80' : ''}`}
+            onMouseEnter={() => setShouldCheckStatus(true)}
+            onTouchStart={() => setShouldCheckStatus(true)}
+            onFocus={() => setShouldCheckStatus(true)}
             style={
               {
                 WebkitUserSelect: 'none',

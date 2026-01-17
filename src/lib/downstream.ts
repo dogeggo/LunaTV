@@ -209,8 +209,6 @@ export async function searchFromApi(
       return [];
     }
 
-    console.log(`[DEBUG] 最终找到 ${results.length} 个唯一结果`);
-
     // 使用原始查询进行后续分页
     query = searchVariants[0];
 

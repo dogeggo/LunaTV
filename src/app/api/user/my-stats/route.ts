@@ -141,8 +141,6 @@ export async function GET(request: NextRequest) {
 // POST 方法：更新用户统计数据（用于智能观看时间统计）
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/user/my-stats - 开始处理请求');
-
     // 从 cookie 获取用户信息
     const authInfo = getAuthInfoFromCookie(request);
     if (!authInfo || !authInfo.username) {
