@@ -432,10 +432,7 @@ async function checkSingleRecordUpdate(
     });
 
     // 获取观看时的原始总集数（不会被自动更新影响）
-    const recordKey = generateStorageKey(
-      storageSourceName || record.source_name,
-      videoId,
-    );
+    // recordKey 已在函数开头定义，这里直接使用
     const originalTotalEpisodes = await getOriginalEpisodes(
       record,
       videoId,
