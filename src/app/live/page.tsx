@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Box, Tab, Tabs } from '@mui/material';
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { debounce } from '@/lib/channel-search';
 import {
@@ -223,119 +222,120 @@ function LivePageClient() {
   const [enableDvrMode, setEnableDvrMode] = useState(false); // 用户手动启用DVR模式
 
   // EPG数据清洗函数 - 去除重叠的节目，保留时间较短的，只显示今日节目
-  const cleanEpgData = (
-    programs: Array<{ start: string; end: string; title: string }>,
-  ) => {
-    if (!programs || programs.length === 0) return programs;
+  const cleanEpgData = useCallback(
+    (programs: Array<{ start: string; end: string; title: string }>) => {
+      if (!programs || programs.length === 0) return programs;
 
-    // 获取今日日期（只考虑年月日，忽略时间）
-    const today = new Date();
-    const todayStart = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-    );
-    const todayEnd = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1,
-    );
-
-    // 首先过滤出今日的节目（包括跨天节目）
-    const todayPrograms = programs.filter((program) => {
-      const programStart = parseCustomTimeFormat(program.start);
-      const programEnd = parseCustomTimeFormat(program.end);
-
-      // 获取节目的日期范围
-      const programStartDate = new Date(
-        programStart.getFullYear(),
-        programStart.getMonth(),
-        programStart.getDate(),
+      // 获取今日日期（只考虑年月日，忽略时间）
+      const today = new Date();
+      const todayStart = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
       );
-      const programEndDate = new Date(
-        programEnd.getFullYear(),
-        programEnd.getMonth(),
-        programEnd.getDate(),
+      const todayEnd = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1,
       );
 
-      // 如果节目的开始时间或结束时间在今天，或者节目跨越今天，都算作今天的节目
-      return (
-        (programStartDate >= todayStart && programStartDate < todayEnd) || // 开始时间在今天
-        (programEndDate >= todayStart && programEndDate < todayEnd) || // 结束时间在今天
-        (programStartDate < todayStart && programEndDate >= todayEnd) // 节目跨越今天（跨天节目）
-      );
-    });
+      // 首先过滤出今日的节目（包括跨天节目）
+      const todayPrograms = programs.filter((program) => {
+        const programStart = parseCustomTimeFormat(program.start);
+        const programEnd = parseCustomTimeFormat(program.end);
 
-    // 按开始时间排序
-    const sortedPrograms = [...todayPrograms].sort((a, b) => {
-      const startA = parseCustomTimeFormat(a.start).getTime();
-      const startB = parseCustomTimeFormat(b.start).getTime();
-      return startA - startB;
-    });
+        // 获取节目的日期范围
+        const programStartDate = new Date(
+          programStart.getFullYear(),
+          programStart.getMonth(),
+          programStart.getDate(),
+        );
+        const programEndDate = new Date(
+          programEnd.getFullYear(),
+          programEnd.getMonth(),
+          programEnd.getDate(),
+        );
 
-    const cleanedPrograms: Array<{
-      start: string;
-      end: string;
-      title: string;
-    }> = [];
+        // 如果节目的开始时间或结束时间在今天，或者节目跨越今天，都算作今天的节目
+        return (
+          (programStartDate >= todayStart && programStartDate < todayEnd) || // 开始时间在今天
+          (programEndDate >= todayStart && programEndDate < todayEnd) || // 结束时间在今天
+          (programStartDate < todayStart && programEndDate >= todayEnd) // 节目跨越今天（跨天节目）
+        );
+      });
 
-    for (let i = 0; i < sortedPrograms.length; i++) {
-      const currentProgram = sortedPrograms[i];
-      const currentStart = parseCustomTimeFormat(currentProgram.start);
-      const currentEnd = parseCustomTimeFormat(currentProgram.end);
+      // 按开始时间排序
+      const sortedPrograms = [...todayPrograms].sort((a, b) => {
+        const startA = parseCustomTimeFormat(a.start).getTime();
+        const startB = parseCustomTimeFormat(b.start).getTime();
+        return startA - startB;
+      });
 
-      // 检查是否与已添加的节目重叠
-      let hasOverlap = false;
+      const cleanedPrograms: Array<{
+        start: string;
+        end: string;
+        title: string;
+      }> = [];
 
-      for (const existingProgram of cleanedPrograms) {
-        const existingStart = parseCustomTimeFormat(existingProgram.start);
-        const existingEnd = parseCustomTimeFormat(existingProgram.end);
+      for (let i = 0; i < sortedPrograms.length; i++) {
+        const currentProgram = sortedPrograms[i];
+        const currentStart = parseCustomTimeFormat(currentProgram.start);
+        const currentEnd = parseCustomTimeFormat(currentProgram.end);
 
-        // 检查时间重叠（考虑完整的日期和时间）
-        if (
-          (currentStart >= existingStart && currentStart < existingEnd) || // 当前节目开始时间在已存在节目时间段内
-          (currentEnd > existingStart && currentEnd <= existingEnd) || // 当前节目结束时间在已存在节目时间段内
-          (currentStart <= existingStart && currentEnd >= existingEnd) // 当前节目完全包含已存在节目
-        ) {
-          hasOverlap = true;
-          break;
-        }
-      }
+        // 检查是否与已添加的节目重叠
+        let hasOverlap = false;
 
-      // 如果没有重叠，则添加该节目
-      if (!hasOverlap) {
-        cleanedPrograms.push(currentProgram);
-      } else {
-        // 如果有重叠，检查是否需要替换已存在的节目
-        for (let j = 0; j < cleanedPrograms.length; j++) {
-          const existingProgram = cleanedPrograms[j];
+        for (const existingProgram of cleanedPrograms) {
           const existingStart = parseCustomTimeFormat(existingProgram.start);
           const existingEnd = parseCustomTimeFormat(existingProgram.end);
 
-          // 检查是否与当前节目重叠（考虑完整的日期和时间）
+          // 检查时间重叠（考虑完整的日期和时间）
           if (
-            (currentStart >= existingStart && currentStart < existingEnd) ||
-            (currentEnd > existingStart && currentEnd <= existingEnd) ||
-            (currentStart <= existingStart && currentEnd >= existingEnd)
+            (currentStart >= existingStart && currentStart < existingEnd) || // 当前节目开始时间在已存在节目时间段内
+            (currentEnd > existingStart && currentEnd <= existingEnd) || // 当前节目结束时间在已存在节目时间段内
+            (currentStart <= existingStart && currentEnd >= existingEnd) // 当前节目完全包含已存在节目
           ) {
-            // 计算节目时长
-            const currentDuration =
-              currentEnd.getTime() - currentStart.getTime();
-            const existingDuration =
-              existingEnd.getTime() - existingStart.getTime();
-
-            // 如果当前节目时间更短，则替换已存在的节目
-            if (currentDuration < existingDuration) {
-              cleanedPrograms[j] = currentProgram;
-            }
+            hasOverlap = true;
             break;
           }
         }
-      }
-    }
 
-    return cleanedPrograms;
-  };
+        // 如果没有重叠，则添加该节目
+        if (!hasOverlap) {
+          cleanedPrograms.push(currentProgram);
+        } else {
+          // 如果有重叠，检查是否需要替换已存在的节目
+          for (let j = 0; j < cleanedPrograms.length; j++) {
+            const existingProgram = cleanedPrograms[j];
+            const existingStart = parseCustomTimeFormat(existingProgram.start);
+            const existingEnd = parseCustomTimeFormat(existingProgram.end);
+
+            // 检查是否与当前节目重叠（考虑完整的日期和时间）
+            if (
+              (currentStart >= existingStart && currentStart < existingEnd) ||
+              (currentEnd > existingStart && currentEnd <= existingEnd) ||
+              (currentStart <= existingStart && currentEnd >= existingEnd)
+            ) {
+              // 计算节目时长
+              const currentDuration =
+                currentEnd.getTime() - currentStart.getTime();
+              const existingDuration =
+                existingEnd.getTime() - existingStart.getTime();
+
+              // 如果当前节目时间更短，则替换已存在的节目
+              if (currentDuration < existingDuration) {
+                cleanedPrograms[j] = currentProgram;
+              }
+              break;
+            }
+          }
+        }
+      }
+
+      return cleanedPrograms;
+    },
+    [],
+  );
 
   // 播放器引用
   const artPlayerRef = useRef<any>(null);
@@ -345,6 +345,46 @@ function LivePageClient() {
   const groupContainerRef = useRef<HTMLDivElement>(null);
   const groupButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const channelListRef = useRef<HTMLDivElement>(null);
+
+  // 自动获取节目单信息
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadEpg = async () => {
+      if (!currentChannel || !currentSource || !currentChannel.tvgId) {
+        setEpgData(null);
+        return;
+      }
+
+      setIsEpgLoading(true);
+      try {
+        const response = await fetch(
+          `/api/live/epg?source=${currentSource.key}&tvgId=${currentChannel.tvgId}`,
+        );
+        if (response.ok && !isCancelled) {
+          const result = await response.json();
+          if (result.success && !isCancelled) {
+            // 清洗EPG数据，去除重叠的节目
+            const cleanedData = {
+              ...result.data,
+              programs: cleanEpgData(result.data.programs),
+            };
+            setEpgData(cleanedData);
+          }
+        }
+      } catch (error) {
+        if (!isCancelled) console.error('获取节目单信息失败:', error);
+      } finally {
+        if (!isCancelled) setIsEpgLoading(false);
+      }
+    };
+
+    loadEpg();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentChannel?.id, currentSource?.key, cleanEpgData]);
 
   // -----------------------------------------------------------------------------
   // 工具函数（Utils）
@@ -842,35 +882,6 @@ function LivePageClient() {
     setTimeout(() => {
       scrollToChannel(channel);
     }, 100);
-
-    // 获取节目单信息
-    if (channel.tvgId && currentSource) {
-      try {
-        setIsEpgLoading(true); // 开始加载 EPG 数据
-        const response = await fetch(
-          `/api/live/epg?source=${currentSource.key}&tvgId=${channel.tvgId}`,
-        );
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            // 清洗EPG数据，去除重叠的节目
-            const cleanedData = {
-              ...result.data,
-              programs: cleanEpgData(result.data.programs),
-            };
-            setEpgData(cleanedData);
-          }
-        }
-      } catch (error) {
-        console.error('获取节目单信息失败:', error);
-      } finally {
-        setIsEpgLoading(false); // 无论成功失败都结束加载状态
-      }
-    } else {
-      // 如果没有 tvgId 或 currentSource，清空 EPG 数据
-      setEpgData(null);
-      setIsEpgLoading(false);
-    }
   };
 
   // 滚动到指定频道位置的函数
