@@ -177,8 +177,9 @@ export abstract class BaseRedisStorage implements IStorage {
   }
 
   // ---------- 播放记录 ----------
-  private prKey(user: string, key: string) {
-    return `u:${user}:pr:${key}`; // u:username:pr:source+id
+  // 使用 Hash 结构存储所有播放记录，提升性能
+  private prHashKey(user: string) {
+    return `u:${user}:playrecords`; // 单个 Hash 存储所有播放记录
   }
 
   async getPlayRecord(
@@ -186,7 +187,7 @@ export abstract class BaseRedisStorage implements IStorage {
     key: string,
   ): Promise<PlayRecord | null> {
     const val = await this.withRetry(() =>
-      this.client.get(this.prKey(userName, key)),
+      this.client.hGet(this.prHashKey(userName), key),
     );
     return val ? (JSON.parse(val) as PlayRecord) : null;
   }
@@ -197,44 +198,39 @@ export abstract class BaseRedisStorage implements IStorage {
     record: PlayRecord,
   ): Promise<void> {
     await this.withRetry(() =>
-      this.client.set(this.prKey(userName, key), JSON.stringify(record)),
+      this.client.hSet(this.prHashKey(userName), key, JSON.stringify(record)),
     );
   }
 
   async getAllPlayRecords(
     userName: string,
   ): Promise<Record<string, PlayRecord>> {
-    const pattern = `u:${userName}:pr:*`;
-    const keys: string[] = await this.withRetry(() =>
-      this.client.keys(pattern),
+    const allRecords = await this.withRetry(() =>
+      this.client.hGetAll(this.prHashKey(userName)),
     );
-    if (keys.length === 0) return {};
-    const values = await this.withRetry(() => this.client.mGet(keys));
+
     const result: Record<string, PlayRecord> = {};
-    keys.forEach((fullKey: string, idx: number) => {
-      const raw = values[idx];
-      if (raw) {
-        const rec = JSON.parse(raw) as PlayRecord;
-        // 截取 source+id 部分
-        const keyPart = ensureString(fullKey.replace(`u:${userName}:pr:`, ''));
-        result[keyPart] = rec;
+    for (const [key, value] of Object.entries(allRecords)) {
+      if (value) {
+        result[key] = JSON.parse(value) as PlayRecord;
       }
-    });
+    }
     return result;
   }
 
   async deletePlayRecord(userName: string, key: string): Promise<void> {
-    await this.withRetry(() => this.client.del(this.prKey(userName, key)));
+    await this.withRetry(() => this.client.hDel(this.prHashKey(userName), key));
   }
 
   // ---------- 收藏 ----------
-  private favKey(user: string, key: string) {
-    return `u:${user}:fav:${key}`;
+  // 使用 Hash 结构存储所有收藏，提升性能
+  private favHashKey(user: string) {
+    return `u:${user}:favorites`; // 单个 Hash 存储所有收藏
   }
 
   async getFavorite(userName: string, key: string): Promise<Favorite | null> {
     const val = await this.withRetry(() =>
-      this.client.get(this.favKey(userName, key)),
+      this.client.hGet(this.favHashKey(userName), key),
     );
     return val ? (JSON.parse(val) as Favorite) : null;
   }
@@ -245,31 +241,32 @@ export abstract class BaseRedisStorage implements IStorage {
     favorite: Favorite,
   ): Promise<void> {
     await this.withRetry(() =>
-      this.client.set(this.favKey(userName, key), JSON.stringify(favorite)),
+      this.client.hSet(
+        this.favHashKey(userName),
+        key,
+        JSON.stringify(favorite),
+      ),
     );
   }
 
   async getAllFavorites(userName: string): Promise<Record<string, Favorite>> {
-    const pattern = `u:${userName}:fav:*`;
-    const keys: string[] = await this.withRetry(() =>
-      this.client.keys(pattern),
+    const allFavorites = await this.withRetry(() =>
+      this.client.hGetAll(this.favHashKey(userName)),
     );
-    if (keys.length === 0) return {};
-    const values = await this.withRetry(() => this.client.mGet(keys));
+
     const result: Record<string, Favorite> = {};
-    keys.forEach((fullKey: string, idx: number) => {
-      const raw = values[idx];
-      if (raw) {
-        const fav = JSON.parse(raw) as Favorite;
-        const keyPart = ensureString(fullKey.replace(`u:${userName}:fav:`, ''));
-        result[keyPart] = fav;
+    for (const [key, value] of Object.entries(allFavorites)) {
+      if (value) {
+        result[key] = JSON.parse(value) as Favorite;
       }
-    });
+    }
     return result;
   }
 
   async deleteFavorite(userName: string, key: string): Promise<void> {
-    await this.withRetry(() => this.client.del(this.favKey(userName, key)));
+    await this.withRetry(() =>
+      this.client.hDel(this.favHashKey(userName), key),
+    );
   }
 
   // ---------- 用户注册 / 登录 ----------
@@ -318,23 +315,11 @@ export abstract class BaseRedisStorage implements IStorage {
     // 删除搜索历史
     await this.withRetry(() => this.client.del(this.shKey(userName)));
 
-    // 删除播放记录
-    const playRecordPattern = `u:${userName}:pr:*`;
-    const playRecordKeys = await this.withRetry(() =>
-      this.client.keys(playRecordPattern),
-    );
-    if (playRecordKeys.length > 0) {
-      await this.withRetry(() => this.client.del(playRecordKeys));
-    }
+    // 删除播放记录 (新 Hash 结构)
+    await this.withRetry(() => this.client.del(this.prHashKey(userName)));
 
-    // 删除收藏夹
-    const favoritePattern = `u:${userName}:fav:*`;
-    const favoriteKeys = await this.withRetry(() =>
-      this.client.keys(favoritePattern),
-    );
-    if (favoriteKeys.length > 0) {
-      await this.withRetry(() => this.client.del(favoriteKeys));
-    }
+    // 删除收藏夹 (新 Hash 结构)
+    await this.withRetry(() => this.client.del(this.favHashKey(userName)));
 
     // 删除跳过片头片尾配置
     const skipConfigPattern = `u:${userName}:skip:*`;
