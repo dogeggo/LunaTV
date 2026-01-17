@@ -347,82 +347,69 @@ export async function configSelfCheck(
     adminConfig.UserConfig.Users = [];
   }
 
-  // 🔥 关键修复：每次都从数据库获取最新的用户列表
+  // 🔥 优化：只在必要时从数据库同步用户信息
   try {
     const dbUsers = await db.getAllUsers();
     const ownerUser = process.env.USERNAME;
 
-    // 创建用户列表：保留数据库中存在的用户的配置信息
+    // 建立现有用户配置的索引，提高查找效率
+    const existingUsersMap = new Map(
+      (adminConfig.UserConfig.Users || []).map((u) => [u.username, u]),
+    );
+
+    // 创建用户列表：优先使用现有配置，只为新用户或配置缺失的用户查询数据库
     const updatedUsers = await Promise.all(
       dbUsers.map(async (username) => {
-        // 查找现有配置中是否有这个用户
-        const existingUserConfig = adminConfig.UserConfig.Users.find(
-          (u) => u.username === username,
-        );
+        const existingUserConfig = existingUsersMap.get(username);
 
-        if (existingUserConfig) {
-          // 保留现有配置
+        // 如果存在完整的用户配置（包含必要字段），直接复用
+        if (existingUserConfig && existingUserConfig.createdAt) {
           return existingUserConfig;
-        } else {
-          // 新用户，创建默认配置
-          let createdAt = Date.now();
-          let oidcSub: string | undefined;
-          let tags: string[] | undefined;
-          let role: 'owner' | 'admin' | 'user' =
-            username === ownerUser ? 'owner' : 'user';
-          let banned = false;
-          let enabledApis: string[] | undefined;
-
-          try {
-            // 从数据库V2获取用户信息（OIDC/新版用户）
-            const userInfoV2 = await db.getUserInfoV2(username);
-            console.log(
-              `=== configSelfCheck: 用户 ${username} 数据库信息 ===`,
-              userInfoV2,
-            );
-            if (userInfoV2) {
-              createdAt = userInfoV2.createdAt || Date.now();
-              oidcSub = userInfoV2.oidcSub;
-              tags = userInfoV2.tags;
-              role = userInfoV2.role || role;
-              banned = userInfoV2.banned || false;
-              enabledApis = userInfoV2.enabledApis;
-              console.log(
-                `=== configSelfCheck: 用户 ${username} tags ===`,
-                tags,
-              );
-            }
-          } catch (err) {
-            console.warn(`获取用户 ${username} 信息失败:`, err);
-          }
-
-          const newUserConfig: any = {
-            username,
-            role,
-            banned,
-            createdAt,
-          };
-
-          if (oidcSub) {
-            newUserConfig.oidcSub = oidcSub;
-          }
-          if (tags && tags.length > 0) {
-            newUserConfig.tags = tags;
-            console.log(
-              `=== configSelfCheck: 用户 ${username} 最终配置包含tags ===`,
-              newUserConfig.tags,
-            );
-          } else {
-            console.log(
-              `=== configSelfCheck: 用户 ${username} 没有tags (tags=${tags}) ===`,
-            );
-          }
-          if (enabledApis && enabledApis.length > 0) {
-            newUserConfig.enabledApis = enabledApis;
-          }
-
-          return newUserConfig;
         }
+
+        // 新用户或配置不完整，从数据库获取详细信息
+        let createdAt = Date.now();
+        let oidcSub: string | undefined;
+        let tags: string[] | undefined;
+        let role: 'owner' | 'admin' | 'user' =
+          username === ownerUser ? 'owner' : 'user';
+        let banned = false;
+        let enabledApis: string[] | undefined;
+
+        try {
+          // 从数据库V2获取用户信息（OIDC/新版用户）
+          const userInfoV2 = await db.getUserInfoV2(username);
+          if (userInfoV2) {
+            createdAt = userInfoV2.createdAt || Date.now();
+            oidcSub = userInfoV2.oidcSub;
+            tags = userInfoV2.tags;
+            role = userInfoV2.role || role;
+            banned = userInfoV2.banned || false;
+            enabledApis = userInfoV2.enabledApis;
+          }
+          console.warn(`获取用户 ${username} 信息成功:`, userInfoV2);
+        } catch (err) {
+          console.warn(`获取用户 ${username} 信息失败:`, err);
+        }
+
+        const newUserConfig: any = {
+          username,
+          role,
+          banned,
+          createdAt,
+        };
+
+        if (oidcSub) {
+          newUserConfig.oidcSub = oidcSub;
+        }
+        if (tags && tags.length > 0) {
+          newUserConfig.tags = tags;
+        }
+        if (enabledApis && enabledApis.length > 0) {
+          newUserConfig.enabledApis = enabledApis;
+        }
+
+        return newUserConfig;
       }),
     );
 
@@ -566,13 +553,15 @@ export async function configSelfCheck(
       user.role = 'user';
     }
   });
-  // 重新添加回站长
+  // 重新添加回站长（保留完整配置）
   adminConfig.UserConfig.Users.unshift({
     username: ownerUser!,
     role: 'owner',
     banned: false,
+    createdAt: originOwnerCfg?.createdAt || Date.now(),
     enabledApis: originOwnerCfg?.enabledApis || undefined,
     tags: originOwnerCfg?.tags || undefined,
+    oidcSub: originOwnerCfg?.oidcSub || undefined,
   });
 
   // 采集源去重

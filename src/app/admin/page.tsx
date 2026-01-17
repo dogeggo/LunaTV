@@ -904,6 +904,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
       await refreshConfig();
     } catch (err) {
       showError(err instanceof Error ? err.message : '操作失败', showAlert);
+      throw err; // 向上抛出错误，让调用方知道操作失败
     }
   };
 

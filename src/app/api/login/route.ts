@@ -70,6 +70,9 @@ async function generateAuthCookie(
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[Login] 收到登录请求');
+    console.log('[Login] STORAGE_TYPE:', STORAGE_TYPE);
+
     // 本地 / localStorage 模式——仅校验固定密码
     if (STORAGE_TYPE === 'localstorage') {
       const envPassword = process.env.PASSWORD;
@@ -126,19 +129,30 @@ export async function POST(req: NextRequest) {
 
     // 数据库 / redis 模式——校验用户名并尝试连接数据库
     const { username, password } = await req.json();
+    console.log('[Login] Redis 模式登录');
+    console.log('[Login] 收到的用户名:', username);
+    console.log('[Login] 是否提供密码:', !!password);
 
     if (!username || typeof username !== 'string') {
+      console.log('[Login] 用户名验证失败');
       return NextResponse.json({ error: '用户名不能为空' }, { status: 400 });
     }
     if (!password || typeof password !== 'string') {
+      console.log('[Login] 密码验证失败');
       return NextResponse.json({ error: '密码不能为空' }, { status: 400 });
     }
 
     // 可能是站长，直接读环境变量
+    console.log('[Login] 检查是否为站长账号');
+    console.log('[Login] 环境变量 USERNAME:', process.env.USERNAME);
+    console.log('[Login] 用户名匹配:', username === process.env.USERNAME);
+    console.log('[Login] 密码匹配:', password === process.env.PASSWORD);
+
     if (
       username === process.env.USERNAME &&
       password === process.env.PASSWORD
     ) {
+      console.log('[Login] 站长登录成功');
       // 验证成功，设置认证cookie
       const response = NextResponse.json({ ok: true });
       const cookieValue = await generateAuthCookie(
