@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
 interface YouTubeVideo {
@@ -28,6 +27,7 @@ interface YouTubeVideoCardProps {
 const YouTubeVideoCard = ({ video }: YouTubeVideoCardProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleEmbedPlay = () => {
     setIsPlaying(true);
@@ -38,6 +38,19 @@ const YouTubeVideoCard = ({ video }: YouTubeVideoCardProps) => {
       `https://www.youtube.com/watch?v=${video.id.videoId}`,
       '_blank',
     );
+  };
+
+  const handleImageError = () => {
+    console.error(
+      'YouTube缩略图加载失败:',
+      video.snippet.thumbnails.medium.url,
+    );
+    setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log('YouTube缩略图加载成功:', video.snippet.thumbnails.medium.url);
+    setImageLoaded(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -91,13 +104,23 @@ const YouTubeVideoCard = ({ video }: YouTubeVideoCardProps) => {
           </div>
         ) : (
           <>
+            {/* 加载状态指示器 */}
+            {!imageLoaded && !imageError && (
+              <div className='absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700'>
+                <div className='w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin'></div>
+              </div>
+            )}
+
             {!imageError ? (
-              <Image
+              <img
                 src={video.snippet.thumbnails.medium.url}
                 alt={video.snippet.title}
-                fill
-                className='object-cover'
-                onError={() => setImageError(true)}
+                className='w-full h-full object-cover'
+                onError={handleImageError}
+                onLoad={handleImageLoad}
+                loading='lazy'
+                referrerPolicy='no-referrer'
+                crossOrigin='anonymous'
               />
             ) : (
               <div className='w-full h-full flex items-center justify-center bg-gray-300 dark:bg-gray-600'>
@@ -115,7 +138,7 @@ const YouTubeVideoCard = ({ video }: YouTubeVideoCardProps) => {
             <div className='absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center group'>
               <button
                 onClick={handleEmbedPlay}
-                className='opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-red-600 hover:bg-red-700 text-white rounded-full p-4 transform hover:scale-110 transition-transform'
+                className='opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white rounded-full p-4 transform hover:scale-110 transition-all duration-300'
                 aria-label='播放视频'
               >
                 <svg
