@@ -568,40 +568,24 @@ function SearchPageClient() {
       },
     );
 
-    // 获取滚动位置的函数 - 专门针对 body 滚动
-    const getScrollTop = () => {
-      return document.body.scrollTop || 0;
-    };
+    // 🚀 性能优化: 移除 RAF 无限循环,只在滚动时检测
+    let ticking = false;
 
-    // 使用 requestAnimationFrame 持续检测滚动位置
-    let isRunning = false;
-    const checkScrollPosition = () => {
-      if (!isRunning) return;
-
-      const scrollTop = getScrollTop();
-      const shouldShow = scrollTop > 300;
-      setShowBackToTop(shouldShow);
-
-      requestAnimationFrame(checkScrollPosition);
-    };
-
-    // 启动持续检测
-    isRunning = true;
-    checkScrollPosition();
-
-    // 监听 body 元素的滚动事件
     const handleScroll = () => {
-      const scrollTop = getScrollTop();
-      setShowBackToTop(scrollTop > 300);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollTop = document.body.scrollTop || 0;
+          setShowBackToTop(scrollTop > 300);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     document.body.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       unsubscribe();
-      isRunning = false; // 停止 requestAnimationFrame 循环
-
-      // 移除 body 滚动事件监听器
       document.body.removeEventListener('scroll', handleScroll);
     };
   }, []);

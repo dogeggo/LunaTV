@@ -29,10 +29,6 @@ async function searchFromCaijiAPI(
   episode?: string | null,
 ): Promise<PlatformUrl[]> {
   try {
-    console.log(
-      `🔎 在caiji.cyou搜索: "${title}", 集数: ${episode || '未指定'}`,
-    );
-
     // 尝试多种标题格式进行搜索
     const searchTitles = [
       title, // 原始标题
@@ -40,15 +36,10 @@ async function searchFromCaijiAPI(
       title.replace(/·/g, ' '), // 中间点替换为空格
       title.replace(/·/g, '-'), // 中间点替换为连字符
     ];
-
     // 去重
     const uniqueTitles = Array.from(new Set(searchTitles));
-    console.log(
-      `🔍 尝试搜索标题变体: ${uniqueTitles.map((t) => `"${t}"`).join(', ')}`,
-    );
 
     for (const searchTitle of uniqueTitles) {
-      console.log(`🔎 搜索标题: "${searchTitle}"`);
       const searchUrl = `https://www.caiji.cyou/api.php/provide/vod/?wd=${encodeURIComponent(searchTitle)}`;
       const response = await fetch(searchUrl, {
         headers: {
@@ -74,10 +65,6 @@ async function searchFromCaijiAPI(
       let exactMatch: any = null;
 
       for (const result of data.list) {
-        console.log(
-          `📋 候选: "${result.vod_name}" (类型: ${result.type_name})`,
-        );
-
         // 标题完全匹配（优先级最高）
         if (result.vod_name === searchTitle || result.vod_name === title) {
           console.log(`🎯 找到完全匹配: "${result.vod_name}"`);
@@ -147,15 +134,12 @@ async function processSelectedResult(
     if (!detailData.list || detailData.list.length === 0) return [];
 
     const videoInfo: any = detailData.list[0];
-    console.log(`🎭 视频详情: "${videoInfo.vod_name}" (${videoInfo.vod_year})`);
 
     const urls: PlatformUrl[] = [];
 
     // 解析播放链接
     if (videoInfo.vod_play_url) {
       const playUrls = videoInfo.vod_play_url.split('#');
-      console.log(`📺 找到 ${playUrls.length} 集`);
-
       // 如果指定了集数，尝试找到对应集数的链接
       let targetUrl = '';
       if (episode && parseInt(episode) > 0) {
@@ -210,7 +194,6 @@ async function processSelectedResult(
         // 统一修复所有平台的链接格式：将.htm转换为.html
         if (targetUrl.endsWith('.htm')) {
           targetUrl = targetUrl.replace(/\.htm$/, '.html');
-          console.log(`🔧 修复${platform}链接格式: ${targetUrl}`);
         }
 
         console.log(`🎯 识别平台: ${platform}, URL: ${targetUrl}`);
