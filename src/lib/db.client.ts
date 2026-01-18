@@ -1024,6 +1024,10 @@ export async function savePlayRecord(
       }),
     );
 
+    // 🔧 修复：更新同步时间戳，防止 getAllPlayRecords 的后台同步在短时间内再次触发事件
+    // 这样可以避免 savePlayRecord 触发事件后，getAllPlayRecords 又触发一次，导致重复更新
+    lastPlayRecordsSyncTime = Date.now();
+
     // 异步同步到数据库
     try {
       await fetchWithAuth('/api/playrecords', {

@@ -18,6 +18,16 @@ export function SessionTracker() {
           return;
         }
 
+        // 检查是否刚从登录页面跳转过来（防止与登录页面的记录产生竞态条件）
+        const lastRecordedLogin = localStorage.getItem('lastRecordedLogin');
+        if (lastRecordedLogin) {
+          const timeSinceLastRecord = Date.now() - parseInt(lastRecordedLogin);
+          // 如果在 5 秒内刚记录过，跳过本次检测（避免重复统计）
+          if (timeSinceLastRecord < 5000) {
+            return;
+          }
+        }
+
         // 检查用户是否已登录（兼容 user_auth 和 auth cookie）
         const authCookie = document.cookie.split(';').find((cookie) => {
           const trimmed = cookie.trim();
@@ -31,8 +41,7 @@ export function SessionTracker() {
           return;
         }
 
-        // 检查上次记录的登入时间
-        const lastRecordedLogin = localStorage.getItem('lastRecordedLogin');
+        // 检查上次记录的登入时间（超过 4 小时视为新会话）
         const now = Date.now();
         const sessionTimeout = 4 * 60 * 60 * 1000; // 4小时
 

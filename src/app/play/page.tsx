@@ -1883,8 +1883,17 @@ function PlayPageClient() {
 
         // 2. 销毁HLS实例
         if (artPlayerRef.current.video.hls) {
-          artPlayerRef.current.video.hls.destroy();
-          console.log('HLS实例已销毁');
+          try {
+            // 先停止加载，避免请求中断导致的网络错误
+            artPlayerRef.current.video.hls.stopLoad();
+            artPlayerRef.current.video.hls.detachMedia();
+            artPlayerRef.current.video.hls.destroy();
+            // 清除 video 元素上的 hls 引用
+            artPlayerRef.current.video.hls = null;
+            console.log('HLS实例已销毁');
+          } catch (hlsError) {
+            console.warn('销毁HLS实例时出错:', hlsError);
+          }
         }
 
         // 3. 销毁ArtPlayer实例 (使用false参数避免DOM清理冲突)
@@ -4161,7 +4170,14 @@ function PlayPageClient() {
               }
 
               if (video.hls) {
-                video.hls.destroy();
+                try {
+                  video.hls.stopLoad();
+                  video.hls.detachMedia();
+                  video.hls.destroy();
+                  video.hls = null;
+                } catch (e) {
+                  console.warn('清理旧HLS实例时出错:', e);
+                }
               }
 
               // 在函数内部重新检测iOS13+设备
@@ -4289,8 +4305,24 @@ function PlayPageClient() {
                 if (data.fatal) {
                   switch (data.type) {
                     case Hls.ErrorTypes.NETWORK_ERROR:
-                      console.log('网络错误，尝试恢复...');
-                      hls.startLoad();
+                      // 检查是否是 manifestLoadError，这通常发生在页面切换后重新进入时
+                      if (
+                        data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR
+                      ) {
+                        console.log('Manifest加载错误，延迟后重试...');
+                        // 延迟重试，给浏览器时间清理之前的连接
+                        setTimeout(() => {
+                          if (hls && !hls.media) return; // 如果 HLS 已被销毁则不重试
+                          try {
+                            hls.loadSource(url);
+                          } catch (e) {
+                            console.warn('重新加载源失败:', e);
+                          }
+                        }, 500);
+                      } else {
+                        console.log('网络错误，尝试恢复...');
+                        hls.startLoad();
+                      }
                       break;
                     case Hls.ErrorTypes.MEDIA_ERROR:
                       console.log('媒体错误，尝试恢复...');
@@ -4321,7 +4353,11 @@ function PlayPageClient() {
                   if (artPlayerRef.current) {
                     resumeTimeRef.current = artPlayerRef.current.currentTime;
                     if (artPlayerRef.current.video.hls) {
-                      artPlayerRef.current.video.hls.destroy();
+                      const hls = artPlayerRef.current.video.hls;
+                      hls.stopLoad();
+                      hls.detachMedia();
+                      hls.destroy();
+                      artPlayerRef.current.video.hls = null;
                     }
                     artPlayerRef.current.destroy(false);
                     artPlayerRef.current = null;
@@ -6029,6 +6065,21 @@ function PlayPageClient() {
 
       // 清理Anime4K
       cleanupAnime4K();
+
+      // 🚀 关键修复：在组件卸载时同步清理 HLS 实例
+      // 必须在 cleanupPlayer 之前同步执行，避免异步导致的网络请求中断问题
+      if (artPlayerRef.current?.video?.hls) {
+        try {
+          const hls = artPlayerRef.current.video.hls;
+          hls.stopLoad();
+          hls.detachMedia();
+          hls.destroy();
+          artPlayerRef.current.video.hls = null;
+          console.log('组件卸载: HLS实例已同步销毁');
+        } catch (e) {
+          console.warn('组件卸载时清理HLS出错:', e);
+        }
+      }
 
       // 销毁播放器实例
       cleanupPlayer();
