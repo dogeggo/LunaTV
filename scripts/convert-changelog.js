@@ -145,25 +145,6 @@ function updateVersionFile(version) {
   }
 }
 
-function updateVersionTs(version) {
-  const versionTsPath = path.join(process.cwd(), 'src/lib/version.ts');
-  try {
-    let content = fs.readFileSync(versionTsPath, 'utf8');
-
-    // 替换 CURRENT_VERSION 常量
-    const updatedContent = content.replace(
-      /const CURRENT_VERSION = ['"`][^'"`]+['"`];/,
-      `const CURRENT_VERSION = '${version}';`,
-    );
-
-    fs.writeFileSync(versionTsPath, updatedContent, 'utf8');
-    console.log(`✅ 已更新 version.ts: ${version}`);
-  } catch (error) {
-    console.error(`❌ 无法更新 version.ts:`, error.message);
-    process.exit(1);
-  }
-}
-
 function main() {
   try {
     const changelogPath = path.join(process.cwd(), 'CHANGELOG');
@@ -202,7 +183,6 @@ function main() {
       // 在 GitHub Actions 中，更新版本文件
       console.log('正在更新版本文件...');
       updateVersionFile(latestVersion);
-      updateVersionTs(latestVersion);
     } else {
       // 在本地运行时，只提示但不更新版本文件
       console.log('🔧 本地运行模式：跳过版本文件更新');

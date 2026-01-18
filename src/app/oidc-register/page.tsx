@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { CURRENT_VERSION } from '@/lib/version';
-
 import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -187,11 +185,6 @@ export default function OIDCRegisterPage() {
             </a>
           </div>
         </form>
-
-        {/* 版本信息 */}
-        <div className='mt-6 sm:mt-8 text-center text-[11px] sm:text-xs text-gray-500 dark:text-gray-400'>
-          v{CURRENT_VERSION}
-        </div>
       </div>
     </div>
   );

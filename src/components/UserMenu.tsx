@@ -31,15 +31,12 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import type { Favorite } from '@/lib/types';
-import { CURRENT_VERSION } from '@/lib/version';
-import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 import {
   getDetailedWatchingUpdates,
   subscribeToWatchingUpdatesEvent,
   type WatchingUpdate,
 } from '@/lib/watching-updates';
 
-import { VersionPanel } from './VersionPanel';
 import VideoCard from './VideoCard';
 
 interface AuthInfo {
@@ -52,7 +49,6 @@ export const UserMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
   const [isWatchingUpdatesOpen, setIsWatchingUpdatesOpen] = useState(false);
   const [isContinueWatchingOpen, setIsContinueWatchingOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -198,10 +194,6 @@ export const UserMenu: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
-
-  // 版本检查相关状态
-  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
-  const [isChecking, setIsChecking] = useState(true);
 
   // 确保组件已挂载
   useEffect(() => {
@@ -353,22 +345,6 @@ export const UserMenu: React.FC = () => {
         setDownloadFormat(savedDownloadFormat);
       }
     }
-  }, []);
-
-  // 版本检查
-  useEffect(() => {
-    const checkUpdate = async () => {
-      try {
-        const status = await checkForUpdates();
-        setUpdateStatus(status);
-      } catch (error) {
-        console.warn('版本检查失败:', error);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
-    checkUpdate();
   }, []);
 
   // 获取观看更新信息
@@ -1179,35 +1155,20 @@ export const UserMenu: React.FC = () => {
             <LogOut className='w-4 h-4' />
             <span className='font-medium'>登出</span>
           </button>
-
           {/* 分割线 */}
           <div className='my-1 border-t border-gray-200 dark:border-gray-700'></div>
 
           {/* 版本信息 */}
-          <button
-            onClick={() => {
-              setIsVersionPanelOpen(true);
-              handleCloseMenu();
-            }}
+          <a
+            href='https://github.com/SzeMeng76/LunaTV'
+            target='_blank'
+            rel='noopener noreferrer'
             className='w-full px-3 py-2 text-center flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-xs'
           >
             <div className='flex items-center gap-1'>
-              <span className='font-mono'>v{CURRENT_VERSION}</span>
-              {!isChecking &&
-                updateStatus &&
-                updateStatus !== UpdateStatus.FETCH_FAILED && (
-                  <div
-                    className={`w-2 h-2 rounded-full -translate-y-2 ${
-                      updateStatus === UpdateStatus.HAS_UPDATE
-                        ? 'bg-yellow-500'
-                        : updateStatus === UpdateStatus.NO_UPDATE
-                          ? 'bg-green-400'
-                          : ''
-                    }`}
-                  ></div>
-                )}
+              <span className='font-mono'>Github Repo</span>
             </div>
-          </button>
+          </a>
         </div>
       </div>
     </>
@@ -2501,8 +2462,7 @@ export const UserMenu: React.FC = () => {
           <User className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' />
         </button>
         {/* 统一更新提醒点：版本更新或剧集更新都显示橙色点 */}
-        {(updateStatus === UpdateStatus.HAS_UPDATE ||
-          (hasUnreadUpdates && totalUpdates > 0)) && (
+        {hasUnreadUpdates && totalUpdates > 0 && (
           <div className='absolute top-[2px] right-[2px] w-2 h-2 bg-yellow-500 rounded-full animate-pulse shadow-lg shadow-yellow-500/50'></div>
         )}
       </div>
@@ -2532,12 +2492,6 @@ export const UserMenu: React.FC = () => {
       {isFavoritesOpen &&
         mounted &&
         createPortal(favoritesPanel, document.body)}
-
-      {/* 版本面板 */}
-      <VersionPanel
-        isOpen={isVersionPanelOpen}
-        onClose={() => setIsVersionPanelOpen(false)}
-      />
     </>
   );
 };

@@ -7,7 +7,6 @@ import { gzip } from 'zlib';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { SimpleCrypto } from '@/lib/crypto';
 import { db } from '@/lib/db';
-import { CURRENT_VERSION } from '@/lib/version';
 
 export const runtime = 'nodejs';
 
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
     // 收集所有数据
     const exportData = {
       timestamp: new Date().toISOString(),
-      serverVersion: CURRENT_VERSION,
+      serverVersion: process.env.npm_package_version || 'unknown',
       data: {
         // 管理员配置
         adminConfig: config,

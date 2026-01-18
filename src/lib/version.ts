@@ -1,4 +1,0 @@
-const CURRENT_VERSION = '5.9.3';
-
-// 导出当前版本号供其他地方使用
-export { CURRENT_VERSION };
