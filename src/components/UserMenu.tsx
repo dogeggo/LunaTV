@@ -119,7 +119,7 @@ export const UserMenu: React.FC = () => {
   const [liveDirectConnect, setLiveDirectConnect] = useState(false);
   const [playerBufferMode, setPlayerBufferMode] = useState<
     'standard' | 'enhanced' | 'max'
-  >('standard');
+  >('enhanced');
   const [doubanDataSource, setDoubanDataSource] = useState('direct');
   const [doubanImageProxyType, setDoubanImageProxyType] = useState('direct');
   const [doubanImageProxyUrl, setDoubanImageProxyUrl] = useState('');
@@ -295,6 +295,9 @@ export const UserMenu: React.FC = () => {
         savedBufferMode === 'max'
       ) {
         setPlayerBufferMode(savedBufferMode);
+      } else {
+        // 如果没有保存的值，设置默认值为 enhanced
+        setPlayerBufferMode('enhanced');
       }
 
       const savedContinueWatchingMinProgress = localStorage.getItem(

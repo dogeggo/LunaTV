@@ -130,9 +130,6 @@ export default function HeroBanner({
       if (data.code === 200 && data.data?.trailerUrl) {
         console.log('[HeroBanner] 成功获取新的trailer URL');
 
-        // 标记为已请求
-        requestedTrailersRef.current.add(doubanId);
-
         // 更新 state 并保存到 localStorage
         setRefreshedTrailerUrls((prev) => {
           const updated = {
@@ -162,6 +159,8 @@ export default function HeroBanner({
     } finally {
       // 移除正在请求中的标记
       requestingTrailersRef.current.delete(doubanId);
+      // 标记为已请求（无论成功与否，本次会话不再重试，防止死循环）
+      requestedTrailersRef.current.add(doubanId);
     }
     return null;
   }, []);
@@ -339,6 +338,15 @@ export default function HeroBanner({
 
                       // 检测是否是403错误（trailer URL过期）
                       if (item.douban_id) {
+                        // 🎯 检查是否已经请求过，避免重复刷新
+                        if (requestedTrailersRef.current.has(item.douban_id)) {
+                          console.log(
+                            '[HeroBanner] 该trailer已请求过刷新，跳过重复请求:',
+                            item.douban_id,
+                          );
+                          return;
+                        }
+
                         // 如果localStorage中有URL，说明之前刷新过，但现在又失败了
                         // 需要清除localStorage中的旧URL，重新刷新
                         if (refreshedTrailerUrls[item.douban_id]) {
@@ -367,7 +375,7 @@ export default function HeroBanner({
                           });
                         }
 
-                        // 重新刷新URL
+                        // 重新刷新URL（只会执行一次，因为 refreshTrailerUrl 内部会标记为已请求）
                         const newUrl = await refreshTrailerUrl(item.douban_id);
                         if (newUrl) {
                           // 重新加载视频
