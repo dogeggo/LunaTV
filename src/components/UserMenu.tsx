@@ -25,7 +25,6 @@ import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import {
-  forceRefreshPlayRecordsCache,
   getAllFavorites,
   getAllPlayRecords,
   type PlayRecord,
@@ -146,27 +145,27 @@ export const UserMenu: React.FC = () => {
   // 豆瓣数据源选项
   const doubanDataSourceOptions = [
     { value: 'direct', label: '直连（服务器直接请求豆瓣）' },
-    { value: 'cors-proxy-zwei', label: 'Cors Proxy By Zwei' },
-    {
-      value: 'cmliussss-cdn-tencent',
-      label: '豆瓣 CDN By CMLiussss（腾讯云）',
-    },
-    { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
-    { value: 'custom', label: '自定义代理' },
+    // { value: 'cors-proxy-zwei', label: 'Cors Proxy By Zwei' },
+    // {
+    //   value: 'cmliussss-cdn-tencent',
+    //   label: '豆瓣 CDN By CMLiussss（腾讯云）',
+    // },
+    // { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
+    // { value: 'custom', label: '自定义代理' },
   ];
 
   // 豆瓣图片代理选项
   const doubanImageProxyTypeOptions = [
     { value: 'direct', label: '直连（浏览器直接请求豆瓣）' },
     { value: 'server', label: '服务器代理（由服务器代理请求豆瓣）' },
-    { value: 'img3', label: '豆瓣官方精品 CDN（阿里云）' },
-    {
-      value: 'cmliussss-cdn-tencent',
-      label: '豆瓣 CDN By CMLiussss（腾讯云）',
-    },
-    { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
-    { value: 'baidu', label: '百度图片代理（境内CDN，Chrome可能触发下载）' },
-    { value: 'custom', label: '自定义代理' },
+    // { value: 'img3', label: '豆瓣官方精品 CDN（阿里云）' },
+    // {
+    //   value: 'cmliussss-cdn-tencent',
+    //   label: '豆瓣 CDN By CMLiussss（腾讯云）',
+    // },
+    // { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
+    // { value: 'baidu', label: '百度图片代理（境内CDN，Chrome可能触发下载）' },
+    // { value: 'custom', label: '自定义代理' },
   ];
 
   // 播放缓冲模式选项
@@ -480,48 +479,11 @@ export const UserMenu: React.FC = () => {
       // 监听播放记录更新事件
       window.addEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
 
-      // 🔥 新增：监听watching-updates事件，与ContinueWatching组件保持一致
-      const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
-        console.log('UserMenu: 收到watching-updates事件');
-
-        // 当检测到新集数更新时，强制刷新播放记录缓存确保数据同步
-        const updates = getDetailedWatchingUpdates();
-        if (updates && updates.hasUpdates && updates.updatedCount > 0) {
-          console.log('UserMenu: 检测到新集数更新，强制刷新播放记录缓存');
-          forceRefreshPlayRecordsCache();
-
-          // 短暂延迟后重新获取播放记录，确保缓存已刷新
-          setTimeout(async () => {
-            const freshRecords = await getAllPlayRecords();
-            const recordsArray = Object.entries(freshRecords).map(
-              ([key, record]) => ({
-                ...record,
-                key,
-              }),
-            );
-            const validPlayRecords = recordsArray.filter((record) => {
-              const progress = getProgress(record);
-              if (record.play_time < 120) return false;
-              if (!enableContinueWatchingFilter) return true;
-              return (
-                progress >= continueWatchingMinProgress &&
-                progress <= continueWatchingMaxProgress
-              );
-            });
-            const sortedRecords = validPlayRecords.sort(
-              (a, b) => b.save_time - a.save_time,
-            );
-            setPlayRecords(sortedRecords.slice(0, 12));
-          }, 100);
-        }
-      });
-
       return () => {
         window.removeEventListener(
           'playRecordsUpdated',
           handlePlayRecordsUpdate,
         );
-        unsubscribeWatchingUpdates(); // 🔥 清理watching-updates订阅
       };
     }
   }, [
@@ -1033,16 +995,6 @@ export const UserMenu: React.FC = () => {
 
   // 计算更新数量（只统计新剧集更新）
   const totalUpdates = watchingUpdates?.updatedCount || 0;
-
-  // 调试信息
-  console.log('UserMenu 更新提醒调试:', {
-    username: authInfo?.username,
-    storageType,
-    watchingUpdates,
-    showWatchingUpdates,
-    hasActualUpdates,
-    totalUpdates,
-  });
 
   // 角色中文映射
   const getRoleText = (role?: string) => {
