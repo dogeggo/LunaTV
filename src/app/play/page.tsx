@@ -4193,15 +4193,6 @@ function PlayPageClient() {
                 // 参考 HLS.js config.ts：移动设备关闭低延迟模式以节省资源
                 lowLatencyMode: !isMobile,
 
-                // 🔧 关键修复：禁用 HTTP 连接复用，避免页面切换后重新进入时的网络错误
-                // ERR_EMPTY_RESPONSE 通常是因为浏览器复用了被中断的连接
-                xhrSetup: function (xhr: XMLHttpRequest, _url: string) {
-                  // 设置 Connection: close 禁用 Keep-Alive，每次请求使用新连接
-                  xhr.setRequestHeader('Connection', 'close');
-                  // 禁用缓存，确保每次都获取最新的 manifest
-                  xhr.setRequestHeader('Cache-Control', 'no-cache');
-                },
-
                 // 🎯 官方推荐的缓冲策略 - iOS13+ 特别优化
                 /* 缓冲长度配置 - 参考 hlsDefaultConfig - 桌面设备应用用户配置 */
                 maxBufferLength: isMobile
