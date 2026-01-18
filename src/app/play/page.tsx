@@ -2957,6 +2957,26 @@ function PlayPageClient() {
           : '🔍 正在搜索播放源...',
       );
 
+      // 🚀 性能优化：提前预加载 ArtPlayer 模块，与数据获取并行执行
+      // 这样可以显著减少首次进入播放页的等待时间
+      const preloadPlayerPromise = Promise.all([
+        import('artplayer'),
+        import('artplayer-plugin-danmuku'),
+      ])
+        .then(
+          ([{ default: Artplayer }, { default: artplayerPluginDanmuku }]) => {
+            // 将导入的模块设置为全局变量供后续使用
+            (window as any).DynamicArtplayer = Artplayer;
+            (window as any).DynamicArtplayerPluginDanmuku =
+              artplayerPluginDanmuku;
+            console.log('✅ ArtPlayer 模块预加载完成');
+          },
+        )
+        .catch((error) => {
+          console.error('⚠️ ArtPlayer 预加载失败:', error);
+          // 预加载失败不影响后续流程，initPlayer 时会重新尝试
+        });
+
       let sourcesInfo: SearchResult[] = [];
 
       // 对于短剧，直接获取详情，跳过搜索
@@ -3062,6 +3082,9 @@ function PlayPageClient() {
 
       setLoadingStage('ready');
       setLoadingMessage('✨ 准备就绪，即将开始播放...');
+
+      // 🚀 等待播放器模块预加载完成（如果还没完成的话）
+      await preloadPlayerPromise;
 
       // 短暂延迟让用户看到完成状态
       setTimeout(() => {
@@ -5941,15 +5964,29 @@ function PlayPageClient() {
     // 动态导入 ArtPlayer 并初始化
     const loadAndInit = async () => {
       try {
-        const [{ default: Artplayer }, { default: artplayerPluginDanmuku }] =
-          await Promise.all([
-            import('artplayer'),
-            import('artplayer-plugin-danmuku'),
-          ]);
+        // 🚀 优先使用已预加载的模块，如果没有则重新导入
+        let Artplayer = (window as any).DynamicArtplayer;
+        let artplayerPluginDanmuku = (window as any)
+          .DynamicArtplayerPluginDanmuku;
 
-        // 将导入的模块设置为全局变量供 initPlayer 使用
-        (window as any).DynamicArtplayer = Artplayer;
-        (window as any).DynamicArtplayerPluginDanmuku = artplayerPluginDanmuku;
+        if (!Artplayer || !artplayerPluginDanmuku) {
+          console.log('⏳ 播放器模块未预加载，正在导入...');
+          const [{ default: ArtplayerModule }, { default: DanmukuModule }] =
+            await Promise.all([
+              import('artplayer'),
+              import('artplayer-plugin-danmuku'),
+            ]);
+
+          Artplayer = ArtplayerModule;
+          artplayerPluginDanmuku = DanmukuModule;
+
+          // 将导入的模块设置为全局变量供 initPlayer 使用
+          (window as any).DynamicArtplayer = Artplayer;
+          (window as any).DynamicArtplayerPluginDanmuku =
+            artplayerPluginDanmuku;
+        } else {
+          console.log('✅ 使用已预加载的播放器模块');
+        }
 
         await initPlayer();
       } catch (error) {
