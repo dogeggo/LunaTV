@@ -542,6 +542,17 @@ function PlayPageClient() {
       loadingShortdramaDetailsRef.current = true;
 
       try {
+        // 尝试从缓存获取
+        const cacheKey = `shortdrama-detail-${shortdramaId}`;
+        const cachedData = await ClientCache.get(cacheKey);
+
+        if (cachedData && !abortController.signal.aborted) {
+          setShortdramaDetails(cachedData);
+          setLoadingShortdramaDetails(false);
+          loadingShortdramaDetailsRef.current = false;
+          return;
+        }
+
         // 传递 name 参数以支持备用API fallback
         const dramaTitle =
           searchParams.get('title') || videoTitleRef.current || '';
@@ -557,6 +568,8 @@ function PlayPageClient() {
           // 再次检查是否被中断，避免设置状态
           if (!abortController.signal.aborted) {
             setShortdramaDetails(data);
+            // 缓存数据，30分钟过期
+            await ClientCache.set(cacheKey, data, 30 * 60);
           }
         }
       } catch (error: any) {
@@ -578,9 +591,10 @@ function PlayPageClient() {
       abortController.abort();
       loadingShortdramaDetailsRef.current = false;
     };
-    // 移除 loadingShortdramaDetails 依赖，防止循环触发
-    // 移除 shortdramaDetails 依赖，防止获得数据后再次触发（虽然有内部检查，但作为依赖项不合适）
-  }, [shortdramaId, searchParams]);
+    // 优化：只依赖 shortdramaId，避免 searchParams 变化导致重复请求
+    // shortdramaId 是从 searchParams 提取的 state，只在组件挂载时设置一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shortdramaId]);
 
   // 自动网盘搜索：当有视频标题时可以随时搜索
   useEffect(() => {
@@ -7828,7 +7842,10 @@ function PlayPageClientWrapper() {
   const searchParams = useSearchParams();
   // 使用 source + id 作为 key，强制在切换源时重新挂载组件
   // 参考：https://github.com/vercel/next.js/issues/2819
-  const key = `${searchParams.get('source')}-${searchParams.get('id')}-${searchParams.get('_reload') || ''}`;
+  // 优化：只在 source 或 id 变化时重新挂载，避免其他参数变化导致不必要的重新挂载
+  const source = searchParams.get('source') || '';
+  const id = searchParams.get('id') || '';
+  const key = `${source}-${id}`;
 
   return <PlayPageClient key={key} />;
 }
