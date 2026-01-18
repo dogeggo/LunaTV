@@ -32,6 +32,7 @@ import { cleanExpiredCache } from '@/lib/shortdrama-cache';
 import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
 import { DoubanItem } from '@/lib/types';
 
+import ArtPlayerPreloader from '@/components/ArtPlayerPreloader';
 import PageLayout from '@/components/PageLayout';
 import SectionTitle from '@/components/SectionTitle';
 import { useSite } from '@/components/SiteProvider';
@@ -109,6 +110,7 @@ function HomeClient() {
     ReleaseCalendarItem[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [secondaryLoading, setSecondaryLoading] = useState(true);
   const { announcement } = useSite();
 
   const [showAnnouncement, setShowAnnouncement] = useState(false);
@@ -173,40 +175,34 @@ function HomeClient() {
 
     const fetchRecommendData = async () => {
       try {
-        setLoading(false);
-
-        // 并行获取热门电影、热门剧集、热门综艺、热门动漫、热门短剧和即将上映
-        const [
-          moviesData,
-          tvShowsData,
-          varietyShowsData,
-          animeData,
-          shortDramasData,
-          bangumiCalendarData,
-          upcomingReleasesData,
-        ] = await Promise.allSettled([
+        // 第一批：核心内容（电影、剧集）- 优先加载，让用户尽快看到首屏内容
+        const [moviesData, tvShowsData] = await Promise.allSettled([
           getDoubanCategories({
             kind: 'movie',
             category: '热门',
             type: '全部',
           }),
           getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
-          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
-          getDoubanCategories({
-            kind: 'tv',
-            category: 'tv',
-            type: 'tv_animation',
-          }),
-          getRecommendedShortDramas(undefined, 8),
-          GetBangumiCalendarData(),
-          fetch('/api/release-calendar?limit=100').then((res) => {
-            if (!res.ok) {
-              console.error('获取即将上映数据失败，状态码:', res.status);
-              return { items: [] };
-            }
-            return res.json();
-          }),
         ]);
+
+        // 定义第二批数据的变量，初始为空或默认值
+        let varietyShowsData: any = {
+          status: 'rejected',
+          reason: 'Not fetched yet',
+        };
+        let animeData: any = { status: 'rejected', reason: 'Not fetched yet' };
+        let shortDramasData: any = {
+          status: 'rejected',
+          reason: 'Not fetched yet',
+        };
+        let bangumiCalendarData: any = {
+          status: 'rejected',
+          reason: 'Not fetched yet',
+        };
+        let upcomingReleasesData: any = {
+          status: 'rejected',
+          reason: 'Not fetched yet',
+        };
 
         // 🚀 性能优化：批量处理所有数据，减少重渲染次数
         // React 19 会自动批量更新这些状态
@@ -327,6 +323,37 @@ function HomeClient() {
               : '数据格式错误',
           );
         }
+
+        // 核心数据加载完毕，取消首屏 Loading
+        setLoading(false);
+
+        // 延迟发起第二批请求，避免阻塞主线程和导航
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // 第二批：次要内容（综艺、动漫、短剧、即将上映）
+        [
+          varietyShowsData,
+          animeData,
+          shortDramasData,
+          bangumiCalendarData,
+          upcomingReleasesData,
+        ] = await Promise.allSettled([
+          getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
+          getDoubanCategories({
+            kind: 'tv',
+            category: 'tv',
+            type: 'tv_animation',
+          }),
+          getRecommendedShortDramas(undefined, 8),
+          GetBangumiCalendarData(),
+          fetch('/api/release-calendar?limit=100').then((res) => {
+            if (!res.ok) {
+              console.error('获取即将上映数据失败，状态码:', res.status);
+              return { items: [] };
+            }
+            return res.json();
+          }),
+        ]);
 
         // 处理综艺数据
         if (
@@ -798,8 +825,13 @@ function HomeClient() {
           );
           setUpcomingReleases([]);
         }
+
+        // 次要数据加载完毕
+        setSecondaryLoading(false);
       } catch (error) {
         console.error('获取推荐数据失败:', error);
+        setLoading(false);
+        setSecondaryLoading(false);
       }
     };
 
@@ -1187,6 +1219,8 @@ function HomeClient() {
 
   return (
     <PageLayout>
+      {/* 预加载播放器模块 */}
+      <ArtPlayerPreloader />
       {/* Telegram 新用户欢迎弹窗 */}
       <TelegramWelcomeModal />
 
@@ -1492,7 +1526,7 @@ function HomeClient() {
               <ContinueWatching />
 
               {/* 即将上映 */}
-              {!loading && processedUpcomingReleases.length > 0 && (
+              {!secondaryLoading && processedUpcomingReleases.length > 0 && (
                 <section className='mb-8'>
                   <div className='mb-4 flex items-center justify-between'>
                     <SectionTitle
@@ -1724,7 +1758,7 @@ function HomeClient() {
                   </Link>
                 </div>
                 <ScrollableRow enableVirtualization={true}>
-                  {loading
+                  {secondaryLoading
                     ? // 加载状态显示灰色占位数据
                       Array.from({ length: 8 }).map((_, index) => (
                         <SkeletonCard key={index} />
@@ -1797,7 +1831,7 @@ function HomeClient() {
                   </Link>
                 </div>
                 <ScrollableRow enableVirtualization={true}>
-                  {loading
+                  {secondaryLoading
                     ? // 加载状态显示灰色占位数据
                       Array.from({ length: 8 }).map((_, index) => (
                         <SkeletonCard key={index} />
@@ -1842,7 +1876,7 @@ function HomeClient() {
                   </Link>
                 </div>
                 <ScrollableRow enableVirtualization={true}>
-                  {loading
+                  {secondaryLoading
                     ? // 加载状态显示灰色占位数据
                       Array.from({ length: 8 }).map((_, index) => (
                         <SkeletonCard key={index} />

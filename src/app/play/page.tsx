@@ -2959,23 +2959,31 @@ function PlayPageClient() {
 
       // 🚀 性能优化：提前预加载 ArtPlayer 模块，与数据获取并行执行
       // 这样可以显著减少首次进入播放页的等待时间
-      const preloadPlayerPromise = Promise.all([
-        import('artplayer'),
-        import('artplayer-plugin-danmuku'),
-      ])
-        .then(
-          ([{ default: Artplayer }, { default: artplayerPluginDanmuku }]) => {
-            // 将导入的模块设置为全局变量供后续使用
-            (window as any).DynamicArtplayer = Artplayer;
-            (window as any).DynamicArtplayerPluginDanmuku =
-              artplayerPluginDanmuku;
-            console.log('✅ ArtPlayer 模块预加载完成');
-          },
-        )
-        .catch((error) => {
-          console.error('⚠️ ArtPlayer 预加载失败:', error);
-          // 预加载失败不影响后续流程，initPlayer 时会重新尝试
-        });
+      // 如果全局变量已存在（由首页预加载），则直接跳过
+      const preloadPlayerPromise =
+        (window as any).DynamicArtplayer &&
+        (window as any).DynamicArtplayerPluginDanmuku
+          ? Promise.resolve()
+          : Promise.all([
+              import('artplayer'),
+              import('artplayer-plugin-danmuku'),
+            ])
+              .then(
+                ([
+                  { default: Artplayer },
+                  { default: artplayerPluginDanmuku },
+                ]) => {
+                  // 将导入的模块设置为全局变量供后续使用
+                  (window as any).DynamicArtplayer = Artplayer;
+                  (window as any).DynamicArtplayerPluginDanmuku =
+                    artplayerPluginDanmuku;
+                  console.log('✅ ArtPlayer 模块预加载完成');
+                },
+              )
+              .catch((error) => {
+                console.error('⚠️ ArtPlayer 预加载失败:', error);
+                // 预加载失败不影响后续流程，initPlayer 时会重新尝试
+              });
 
       let sourcesInfo: SearchResult[] = [];
 
