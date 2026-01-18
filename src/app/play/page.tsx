@@ -4193,6 +4193,15 @@ function PlayPageClient() {
                 // 参考 HLS.js config.ts：移动设备关闭低延迟模式以节省资源
                 lowLatencyMode: !isMobile,
 
+                // 🔧 关键修复：禁用 HTTP 连接复用，避免页面切换后重新进入时的网络错误
+                // ERR_EMPTY_RESPONSE 通常是因为浏览器复用了被中断的连接
+                xhrSetup: function (xhr: XMLHttpRequest, _url: string) {
+                  // 设置 Connection: close 禁用 Keep-Alive，每次请求使用新连接
+                  xhr.setRequestHeader('Connection', 'close');
+                  // 禁用缓存，确保每次都获取最新的 manifest
+                  xhr.setRequestHeader('Cache-Control', 'no-cache');
+                },
+
                 // 🎯 官方推荐的缓冲策略 - iOS13+ 特别优化
                 /* 缓冲长度配置 - 参考 hlsDefaultConfig - 桌面设备应用用户配置 */
                 maxBufferLength: isMobile
@@ -4258,6 +4267,42 @@ function PlayPageClient() {
                   },
                 },
 
+                /* Manifest加载策略 - 解决页面切换后重新进入时的网络错误 */
+                manifestLoadPolicy: {
+                  default: {
+                    maxTimeToFirstByteMs: 8000,
+                    maxLoadTimeMs: 20000,
+                    timeoutRetry: {
+                      maxNumRetry: 3,
+                      retryDelayMs: 500,
+                      maxRetryDelayMs: 2000,
+                    },
+                    errorRetry: {
+                      maxNumRetry: 4,
+                      retryDelayMs: 500,
+                      maxRetryDelayMs: 3000,
+                    },
+                  },
+                },
+
+                /* Playlist加载策略 */
+                playlistLoadPolicy: {
+                  default: {
+                    maxTimeToFirstByteMs: 8000,
+                    maxLoadTimeMs: 20000,
+                    timeoutRetry: {
+                      maxNumRetry: 3,
+                      retryDelayMs: 500,
+                      maxRetryDelayMs: 2000,
+                    },
+                    errorRetry: {
+                      maxNumRetry: 4,
+                      retryDelayMs: 500,
+                      maxRetryDelayMs: 3000,
+                    },
+                  },
+                },
+
                 /* 自定义loader */
                 loader: blockAdEnabledRef.current
                   ? CustomHlsJsLoader
@@ -4309,16 +4354,26 @@ function PlayPageClient() {
                       if (
                         data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR
                       ) {
-                        console.log('Manifest加载错误，延迟后重试...');
+                        // manifestLoadPolicy 已经处理了重试，这里只记录日志
+                        // 如果到达这里说明所有重试都失败了
+                        console.log(
+                          'Manifest加载错误（重试已耗尽），尝试最后一次恢复...',
+                        );
                         // 延迟重试，给浏览器时间清理之前的连接
                         setTimeout(() => {
-                          if (hls && !hls.media) return; // 如果 HLS 已被销毁则不重试
+                          if (!hls || !hls.media) return; // 如果 HLS 已被销毁则不重试
                           try {
-                            hls.loadSource(url);
+                            // 销毁旧实例并重新创建
+                            hls.destroy();
+                            video.hls = null;
+                            // 触发播放器重新初始化
+                            if (artPlayerRef.current) {
+                              artPlayerRef.current.switchUrl(url);
+                            }
                           } catch (e) {
-                            console.warn('重新加载源失败:', e);
+                            console.warn('最终恢复失败:', e);
                           }
-                        }, 500);
+                        }, 1000);
                       } else {
                         console.log('网络错误，尝试恢复...');
                         hls.startLoad();
