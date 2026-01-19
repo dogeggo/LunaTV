@@ -533,6 +533,23 @@ function PlayPageClient() {
       return;
     }
 
+    // 优化：如果当前源就是短剧，initAll 已经会获取详情，从 availableSources 中提取即可
+    // 避免重复请求同一个 API
+    if (currentSource === 'shortdrama' && currentId === shortdramaId) {
+      // 从 availableSources 中查找短剧详情
+      const shortdramaFromSources = availableSources.find(
+        (s) => s.source === 'shortdrama' && s.id === shortdramaId,
+      );
+      if (shortdramaFromSources) {
+        setShortdramaDetails(shortdramaFromSources);
+        return;
+      }
+      // 如果 availableSources 还没加载完，等待下次 effect 触发
+      if (availableSources.length === 0) {
+        return;
+      }
+    }
+
     const abortController = new AbortController();
     const loadShortdramaDetails = async () => {
       // 避免重复请求
@@ -591,10 +608,12 @@ function PlayPageClient() {
       abortController.abort();
       loadingShortdramaDetailsRef.current = false;
     };
-    // 优化：只依赖 shortdramaId，避免 searchParams 变化导致重复请求
-    // shortdramaId 是从 searchParams 提取的 state，只在组件挂载时设置一次
+    // 依赖说明：
+    // - shortdramaId: 短剧ID变化时重新加载
+    // - currentSource/currentId: 用于判断是否可以从 availableSources 复用数据
+    // - availableSources: 当 initAll 加载完成后，从中提取短剧详情
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shortdramaId]);
+  }, [shortdramaId, currentSource, currentId, availableSources]);
 
   // 自动网盘搜索：当有视频标题时可以随时搜索
   useEffect(() => {

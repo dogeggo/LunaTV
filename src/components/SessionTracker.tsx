@@ -13,21 +13,8 @@ export function SessionTracker() {
   useEffect(() => {
     const checkSessionResume = async () => {
       try {
-        // 如果在登录页面，跳过检测（登录页面会自己记录）
-        if (pathname === '/login') {
-          return;
-        }
-
         // 检查是否刚从登录页面跳转过来（防止与登录页面的记录产生竞态条件）
         const lastRecordedLogin = localStorage.getItem('lastRecordedLogin');
-        if (lastRecordedLogin) {
-          const timeSinceLastRecord = Date.now() - parseInt(lastRecordedLogin);
-          // 如果在 5 秒内刚记录过，跳过本次检测（避免重复统计）
-          if (timeSinceLastRecord < 5000) {
-            return;
-          }
-        }
-
         // 检查用户是否已登录（兼容 user_auth 和 auth cookie）
         const authCookie = document.cookie.split(';').find((cookie) => {
           const trimmed = cookie.trim();
@@ -35,12 +22,10 @@ export function SessionTracker() {
             trimmed.startsWith('user_auth=') || trimmed.startsWith('auth=')
           );
         });
-
         if (!authCookie) {
           // 用户未登录，不需要记录
           return;
         }
-
         // 检查上次记录的登入时间（超过 4 小时视为新会话）
         const now = Date.now();
         const sessionTimeout = 4 * 60 * 60 * 1000; // 4小时
