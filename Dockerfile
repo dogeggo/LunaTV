@@ -59,6 +59,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/start.js ./start.js
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# 创建缓存目录并设置权限
+RUN mkdir -p /app/cache/image /app/cache/video && \
+    chown -R nextjs:nodejs /app/cache
+
 # 切换到非特权用户
 USER nextjs
 
