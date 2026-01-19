@@ -54,11 +54,13 @@ export async function GET(request: Request) {
 
     if (fs.existsSync(filePath)) {
       try {
+        console.log(`[ImageCache] HIT: ${filename}`);
         return serveLocalFile(request, filePath);
       } catch (e) {
         console.error('[ImageCache] Error serving local file:', e);
       }
     } else {
+      console.log(`[ImageCache] MISS: ${filename}`);
       // 触发后台下载
       if (!downloadingFiles.has(filename)) {
         downloadingFiles.add(filename);
@@ -140,7 +142,6 @@ export async function GET(request: Request) {
     );
     headers.set('CDN-Cache-Control', 'public, s-maxage=604800');
     headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=604800');
-    headers.set('Netlify-Vary', 'query');
 
     // 添加 CORS 支持
     headers.set('Access-Control-Allow-Origin', '*');
@@ -184,7 +185,6 @@ export async function OPTIONS() {
 async function downloadToCache(url: string, filePath: string, headers: any) {
   const tempPath = `${filePath}.tmp`;
   try {
-    console.log(`[ImageCache] Starting download for: ${url}`);
     const response = await fetch(url, { headers });
     if (!response.ok || !response.body) {
       console.error(`[ImageCache] Failed to fetch source: ${response.status}`);
@@ -225,7 +225,8 @@ function serveLocalFile(request: Request, filePath: string) {
   const stat = fs.statSync(filePath);
   const fileSize = stat.size;
   const mtime = stat.mtime.toUTCString();
-  const etag = `W/"${fileSize.toString(16)}-${stat.mtime.getTime().toString(16)}"`;
+  // 使用强 ETag
+  const etag = `"${fileSize.toString(16)}-${stat.mtime.getTime().toString(16)}"`;
 
   const ifNoneMatch = request.headers.get('if-none-match');
   const ifModifiedSince = request.headers.get('if-modified-since');
@@ -235,7 +236,7 @@ function serveLocalFile(request: Request, filePath: string) {
     return new Response(null, {
       status: 304,
       headers: {
-        'Cache-Control': 'public, max-age=604800, stale-while-revalidate=86400',
+        'Cache-Control': 'public, max-age=604800, immutable',
         'CDN-Cache-Control': 'public, s-maxage=604800',
         ETag: etag,
         'Last-Modified': mtime,
@@ -258,10 +259,7 @@ function serveLocalFile(request: Request, filePath: string) {
   headers.set('Content-Type', contentType);
   headers.set('Content-Length', fileSize.toString());
   headers.set('Access-Control-Allow-Origin', '*');
-  headers.set(
-    'Cache-Control',
-    'public, max-age=604800, stale-while-revalidate=86400',
-  );
+  headers.set('Cache-Control', 'public, max-age=604800, immutable');
   headers.set('CDN-Cache-Control', 'public, s-maxage=604800');
   headers.set('X-Cache-Status', 'HIT');
   headers.set('ETag', etag);

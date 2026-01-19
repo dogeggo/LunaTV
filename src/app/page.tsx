@@ -1464,7 +1464,7 @@ function HomeClient() {
           ) : (
             // 首页视图
             <>
-              {/* Hero Banner 轮播 */}
+              {/* HeroBanner 轮播 */}
               {!loading &&
                 (hotMovies.length > 0 ||
                   hotTvShows.length > 0 ||
