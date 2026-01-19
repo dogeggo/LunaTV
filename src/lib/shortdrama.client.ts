@@ -45,14 +45,15 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
       }
     }
 
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/categories`
       : getApiBase('/categories');
 
-    // 移动端使用内部API，桌面端调用外部API
-    const fetchOptions: RequestInit = isMobile()
+    // 浏览器端使用内部API，服务端调用外部API
+    const fetchOptions: RequestInit = useInternalApi
       ? {
-          // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
+          // 浏览器端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
         }
       : {
           headers: {
@@ -71,7 +72,7 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
 
     let result: ShortDramaCategory[];
     // 内部API直接返回数组，外部API返回带categories的对象
-    if (isMobile()) {
+    if (useInternalApi) {
       result = data; // 内部API已经处理过格式
     } else {
       const categories = data.categories || [];
@@ -106,13 +107,14 @@ export async function getRecommendedShortDramas(
       }
     }
 
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/recommend?${category ? `category=${category}&` : ''}size=${size}`
       : `${SHORTDRAMA_API_BASE}/vod/recommend?${category ? `category=${category}&` : ''}size=${size}`;
 
-    const fetchOptions: RequestInit = isMobile()
+    const fetchOptions: RequestInit = useInternalApi
       ? {
-          // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
+          // 浏览器端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
         }
       : {
           headers: {
@@ -130,7 +132,7 @@ export async function getRecommendedShortDramas(
     const data = await response.json();
 
     let result: ShortDramaItem[];
-    if (isMobile()) {
+    if (useInternalApi) {
       result = data; // 内部API已经处理过格式
     } else {
       // 外部API的处理逻辑
@@ -178,13 +180,14 @@ export async function getShortDramaList(
       }
     }
 
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/list?categoryId=${category}&page=${page}&size=${size}`
       : `${SHORTDRAMA_API_BASE}/vod/list?categoryId=${category}&page=${page}&size=${size}`;
 
-    const fetchOptions: RequestInit = isMobile()
+    const fetchOptions: RequestInit = useInternalApi
       ? {
-          // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
+          // 浏览器端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
         }
       : {
           headers: {
@@ -202,7 +205,7 @@ export async function getShortDramaList(
     const data = await response.json();
 
     let result: { list: ShortDramaItem[]; hasMore: boolean };
-    if (isMobile()) {
+    if (useInternalApi) {
       result = data; // 内部API已经处理过格式
     } else {
       // 外部API的处理逻辑
@@ -247,13 +250,14 @@ export async function searchShortDramas(
   size = 20,
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
   try {
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`
       : `${SHORTDRAMA_API_BASE}/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`;
 
-    const fetchOptions: RequestInit = isMobile()
+    const fetchOptions: RequestInit = useInternalApi
       ? {
-          // 移动端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
+          // 浏览器端：让浏览器使用HTTP缓存，不添加破坏缓存的headers
         }
       : {
           headers: {
@@ -271,7 +275,7 @@ export async function searchShortDramas(
     const data = await response.json();
 
     let result: { list: ShortDramaItem[]; hasMore: boolean };
-    if (isMobile()) {
+    if (useInternalApi) {
       result = data; // 内部API已经处理过格式
     } else {
       // 外部API的处理逻辑

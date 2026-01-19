@@ -1836,7 +1836,7 @@ function PlayPageClient() {
   }, [isMobileGlobal]);
   const requestWakeLock = async () => {
     try {
-      if ('wakeLock' in navigator) {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible') {
         wakeLockRef.current = await (navigator as any).wakeLock.request(
           'screen',
         );
@@ -2071,7 +2071,7 @@ function PlayPageClient() {
         ModeAA,
         ModeBB,
         ModeCA,
-      } = await import('anime4k-webgpu');
+      } = await import(/* webpackPreload: false */ 'anime4k-webgpu');
 
       let ModeClass: any;
       const modeName = anime4kModeRef.current;
@@ -2993,8 +2993,8 @@ function PlayPageClient() {
         (window as any).DynamicArtplayerPluginDanmuku
           ? Promise.resolve()
           : Promise.all([
-              import('artplayer'),
-              import('artplayer-plugin-danmuku'),
+              import(/* webpackPreload: false */ 'artplayer'),
+              import(/* webpackPreload: false */ 'artplayer-plugin-danmuku'),
             ])
               .then(
                 ([
@@ -6082,8 +6082,8 @@ function PlayPageClient() {
           console.log('⏳ 播放器模块未预加载，正在导入...');
           const [{ default: ArtplayerModule }, { default: DanmukuModule }] =
             await Promise.all([
-              import('artplayer'),
-              import('artplayer-plugin-danmuku'),
+              import(/* webpackPreload: false */ 'artplayer'),
+              import(/* webpackPreload: false */ 'artplayer-plugin-danmuku'),
             ]);
 
           Artplayer = ArtplayerModule;

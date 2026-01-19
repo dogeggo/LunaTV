@@ -1,6 +1,23 @@
+import fs from 'fs';
 import { NextResponse } from 'next/server';
+import path from 'path';
+import stream from 'stream';
+import { promisify } from 'util';
 
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
+
+const pipeline = promisify(stream.pipeline);
+const CACHE_DIR = path.join(process.cwd(), 'cache', 'image');
+const downloadingFiles = new Set<string>();
+
+// Ensure cache directory exists
+try {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.error('Failed to create image cache dir', e);
+}
 
 export const runtime = 'nodejs';
 
@@ -28,6 +45,36 @@ export async function GET(request: Request) {
     // 动态设置 Referer 和 Origin（根据图片源域名）
     const imageUrlObj = new URL(imageUrl);
     const sourceOrigin = `${imageUrlObj.protocol}//${imageUrlObj.host}`;
+
+    // --- 本地缓存逻辑 ---
+    // 提取文件名：从 URL 路径中获取最后一部分
+    const urlPath = imageUrlObj.pathname;
+    const filename = path.basename(urlPath);
+    const filePath = path.join(CACHE_DIR, filename);
+
+    if (fs.existsSync(filePath)) {
+      try {
+        return serveLocalFile(request, filePath);
+      } catch (e) {
+        console.error('[ImageCache] Error serving local file:', e);
+      }
+    } else {
+      // 触发后台下载
+      if (!downloadingFiles.has(filename)) {
+        downloadingFiles.add(filename);
+        const downloadHeaders = {
+          Referer: sourceOrigin + '/',
+          'User-Agent': DEFAULT_USER_AGENT,
+        };
+
+        downloadToCache(imageUrl, filePath, downloadHeaders)
+          .catch((err) =>
+            console.error('[ImageCache] Background download failed:', err),
+          )
+          .finally(() => downloadingFiles.delete(filename));
+      }
+    }
+    // ------------------
 
     // 构建请求头
     const fetchHeaders: HeadersInit = {
@@ -131,4 +178,98 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
+}
+
+// 辅助函数：后台下载图片到缓存
+async function downloadToCache(url: string, filePath: string, headers: any) {
+  const tempPath = `${filePath}.tmp`;
+  try {
+    console.log(`[ImageCache] Starting download for: ${url}`);
+    const response = await fetch(url, { headers });
+    if (!response.ok || !response.body) {
+      console.error(`[ImageCache] Failed to fetch source: ${response.status}`);
+      return;
+    }
+
+    const fileStream = fs.createWriteStream(tempPath);
+    // @ts-ignore
+    const reader = stream.Readable.fromWeb(response.body);
+    await pipeline(reader, fileStream);
+
+    fileStream.close();
+
+    // 简单的重试机制
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        fs.renameSync(tempPath, filePath);
+        console.log(`[ImageCache] Successfully cached: ${filePath}`);
+        break;
+      } catch (e: any) {
+        if (e.code === 'EBUSY' || e.code === 'EPERM') {
+          retries--;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } else {
+          throw e;
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[ImageCache] Download error:`, error);
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
+}
+
+// 辅助函数：服务本地缓存文件
+function serveLocalFile(request: Request, filePath: string) {
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const mtime = stat.mtime.toUTCString();
+  const etag = `W/"${fileSize.toString(16)}-${stat.mtime.getTime().toString(16)}"`;
+
+  const ifNoneMatch = request.headers.get('if-none-match');
+  const ifModifiedSince = request.headers.get('if-modified-since');
+
+  // 检查缓存是否有效 (304 Not Modified)
+  if (ifNoneMatch === etag || ifModifiedSince === mtime) {
+    return new Response(null, {
+      status: 304,
+      headers: {
+        'Cache-Control': 'public, max-age=604800, stale-while-revalidate=86400',
+        'CDN-Cache-Control': 'public, s-maxage=604800',
+        ETag: etag,
+        'Last-Modified': mtime,
+        'X-Cache-Status': 'HIT',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  const headers = new Headers();
+  // 根据扩展名猜测 Content-Type，或者直接用 image/jpeg (大部分是 jpg)
+  // 更好的做法是读取文件头或根据扩展名
+  const ext = path.extname(filePath).toLowerCase();
+  let contentType = 'image/jpeg';
+  if (ext === '.png') contentType = 'image/png';
+  else if (ext === '.gif') contentType = 'image/gif';
+  else if (ext === '.webp') contentType = 'image/webp';
+  else if (ext === '.svg') contentType = 'image/svg+xml';
+
+  headers.set('Content-Type', contentType);
+  headers.set('Content-Length', fileSize.toString());
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set(
+    'Cache-Control',
+    'public, max-age=604800, stale-while-revalidate=86400',
+  );
+  headers.set('CDN-Cache-Control', 'public, s-maxage=604800');
+  headers.set('X-Cache-Status', 'HIT');
+  headers.set('ETag', etag);
+  headers.set('Last-Modified', mtime);
+
+  const fileStream = fs.createReadStream(filePath);
+  // @ts-ignore
+  const webStream = stream.Readable.toWeb(fileStream);
+
+  return new Response(webStream as any, { status: 200, headers });
 }

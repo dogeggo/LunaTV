@@ -36,6 +36,176 @@ interface HeroBannerProps {
   enableVideo?: boolean; // 是否启用视频自动播放
 }
 
+// 内部组件：稳定的视频播放器
+// 即使传入的 url 签名变化，只要视频 ID 不变，就不更新 src，避免重新加载
+// 🌟 优化：使用 fetch + Blob URL 预加载视频，确保一次性请求完整文件，避免 Range 请求
+const BannerVideo = ({
+  src,
+  poster,
+  isActive,
+  isMuted,
+  onLoad,
+  onError,
+}: {
+  src: string;
+  poster: string;
+  isActive: boolean;
+  isMuted: boolean;
+  onLoad: (e: any) => void;
+  onError: (e: any) => void;
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stableSrc, setStableSrc] = useState(src);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [fetchFailed, setFetchFailed] = useState(false);
+  const lastIdRef = useRef<string>('');
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 从 URL 中提取视频 ID (文件名)
+  const getVideoId = (url: string) => {
+    try {
+      // 处理代理 URL: /api/video-proxy?url=...
+      const urlObj = new URL(url, 'http://localhost');
+      const targetUrl = urlObj.searchParams.get('url') || url;
+      // 提取文件名
+      const parts = targetUrl.split('?')[0].split('/');
+      return parts[parts.length - 1];
+    } catch {
+      return url;
+    }
+  };
+
+  useEffect(() => {
+    const newId = getVideoId(src);
+    // 只有当视频 ID 变化时，才更新 src
+    if (newId !== lastIdRef.current) {
+      lastIdRef.current = newId;
+      setStableSrc(src);
+
+      // 重置状态
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        setBlobUrl(null);
+      }
+      setFetchFailed(false);
+    }
+  }, [src]);
+
+  // 使用 fetch 获取视频 Blob，避免 Range 请求
+  useEffect(() => {
+    if (!stableSrc) return;
+
+    // 如果已经有 blobUrl 且 ID 没变，不需要重新 fetch
+    // 但这里 stableSrc 变化已经意味着 ID 变化（由上一个 useEffect 控制）
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const fetchVideo = async () => {
+      try {
+        const response = await fetch(stableSrc, {
+          signal: controller.signal,
+          // 明确不使用 Range 头 (fetch 默认就不带)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch video: ${response.status}`);
+        }
+
+        // 检查文件大小，如果太大则放弃 Blob 加载，回退到流式播放
+        const contentLength = response.headers.get('content-length');
+        if (contentLength) {
+          const size = parseInt(contentLength, 10);
+          // 阈值：50MB。如果大于 50MB，直接放弃 fetch，避免内存压力和等待时间过长
+          if (size > 50 * 1024 * 1024) {
+            console.log(
+              `[BannerVideo] Video too large (${(size / 1024 / 1024).toFixed(2)}MB), falling back to streaming`,
+            );
+            // 中止下载
+            controller.abort();
+            // 触发回退
+            setFetchFailed(true);
+            return;
+          }
+        }
+
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+
+        if (!controller.signal.aborted) {
+          setBlobUrl(objectUrl);
+        } else {
+          URL.revokeObjectURL(objectUrl);
+        }
+      } catch (error: any) {
+        // 如果是手动 abort (包括文件过大)，不视为错误，但需要确保状态正确
+        if (error.name === 'AbortError') {
+          // 如果是因为文件过大而 abort 的（通过 setFetchFailed 判断），不需要做额外处理
+          // 如果是组件卸载导致的 abort，也不需要处理
+        } else {
+          console.warn(
+            '[BannerVideo] Fetch failed, falling back to direct src:',
+            error,
+          );
+          if (!controller.signal.aborted) {
+            setFetchFailed(true);
+          }
+        }
+      }
+    };
+
+    fetchVideo();
+
+    return () => {
+      controller.abort();
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [stableSrc]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  // 当变为非活动状态时暂停，活动时播放
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isActive) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isActive]);
+
+  // 决定最终使用的 src
+  // 1. 如果 fetch 成功，使用 blobUrl
+  // 2. 如果 fetch 失败，使用 stableSrc (流式播放)
+  // 3. 如果正在 fetch，src 为 undefined (显示 poster)
+  const videoSrc = blobUrl || (fetchFailed ? stableSrc : undefined);
+
+  return (
+    <video
+      ref={videoRef}
+      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+        isActive && videoSrc ? 'opacity-100' : 'opacity-0'
+      }`}
+      autoPlay={isActive}
+      muted={isMuted}
+      loop
+      playsInline
+      preload='metadata'
+      poster={poster}
+      onError={onError}
+      onLoadedData={onLoad}
+      src={videoSrc}
+    />
+  );
+};
+
 export default function HeroBanner({
   items,
   autoPlayInterval = 8000, // Netflix风格：更长的停留时间
@@ -72,6 +242,71 @@ export default function HeroBanner({
     new Set(),
   );
 
+  // 🎯 锁定视频 URL：记录每个视频 ID 对应的第一个 URL
+  // 即使后续 props 传入了新签名的 URL，也坚持使用第一次记录的 URL
+  // 这样可以确保 URL 不变，让浏览器能够利用缓存，避免重复请求
+  const stableVideoUrlsRef = useRef<Map<string | number, string>>(new Map());
+
+  // 更新稳定 URL Map
+  items.forEach((item) => {
+    if (!item.trailerUrl) return;
+
+    // 尝试提取视频 ID (文件名) 作为 key
+    // 如果没有 douban_id，就用 item.id
+    const key = item.douban_id || item.id;
+
+    if (!stableVideoUrlsRef.current.has(key)) {
+      stableVideoUrlsRef.current.set(key, item.trailerUrl);
+    }
+  });
+
+  // 获取稳定的视频 URL
+  const getStableVideoUrl = (item: BannerItem) => {
+    const key = item.douban_id || item.id;
+    // 优先使用刷新后的 URL (处理 403)
+    if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
+      return refreshedTrailerUrls[item.douban_id];
+    }
+    // 其次使用锁定的旧 URL
+    if (stableVideoUrlsRef.current.has(key)) {
+      return stableVideoUrlsRef.current.get(key)!;
+    }
+    // 最后使用当前 URL
+    return item.trailerUrl;
+  };
+
+  // 记录已渲染过的图片索引，避免重复挂载导致重新请求
+  const [renderedIndices, setRenderedIndices] = useState<Set<number>>(
+    new Set([0, 1, items.length - 1]),
+  );
+
+  // 记录需要降级使用完整 URL 的视频 ID
+  const [fallbackVideoIds, setFallbackVideoIds] = useState<
+    Set<string | number>
+  >(new Set());
+
+  // 更新已渲染索引
+  useEffect(() => {
+    setRenderedIndices((prev) => {
+      const nextIndex = (currentIndex + 1) % items.length;
+      const prevIndex = (currentIndex - 1 + items.length) % items.length;
+
+      if (
+        prev.has(currentIndex) &&
+        prev.has(nextIndex) &&
+        prev.has(prevIndex)
+      ) {
+        return prev;
+      }
+
+      const newSet = new Set(prev);
+      newSet.add(currentIndex);
+      newSet.add(nextIndex);
+      newSet.add(prevIndex);
+      return newSet;
+    });
+  }, [currentIndex, items.length]);
+
   // 🎯 使用 useRef 跟踪已请求和正在请求中的 trailer ID，避免重复请求
   const requestedTrailersRef = useRef<Set<string | number>>(new Set());
   const requestingTrailersRef = useRef<Set<string | number>>(new Set());
@@ -96,7 +331,14 @@ export default function HeroBanner({
   };
 
   // 处理视频 URL，使用代理绕过防盗链
-  const getProxiedVideoUrl = (url: string) => {
+  const getProxiedVideoUrl = (url: string, item?: BannerItem) => {
+    // 🎯 优先使用 ID 模式（利用浏览器缓存）
+    // 如果有 douban_id 且没有被标记为需要降级，只传递 id 参数
+    // 这样 URL 永远不变：/api/video-proxy?id=123456
+    if (item?.douban_id && !fallbackVideoIds.has(item.id)) {
+      return `/api/video-proxy?id=${item.douban_id}`;
+    }
+
     if (url?.includes('douban') || url?.includes('doubanio')) {
       return `/api/video-proxy?url=${encodeURIComponent(url)}`;
     }
@@ -225,25 +467,6 @@ export default function HeroBanner({
     onSwipeRight: handlePrev,
   });
 
-  // 预加载背景图片（只预加载当前和相邻的图片，优化性能）
-  useEffect(() => {
-    // 预加载当前、前一张、后一张
-    const indicesToPreload = [
-      currentIndex,
-      (currentIndex - 1 + items.length) % items.length,
-      (currentIndex + 1) % items.length,
-    ];
-
-    indicesToPreload.forEach((index) => {
-      const item = items[index];
-      if (item) {
-        const img = new window.Image();
-        const imageUrl = getHDBackdrop(item.backdrop) || item.poster;
-        img.src = getProxiedImageUrl(imageUrl);
-      }
-    });
-  }, [items, currentIndex]);
-
   if (!items || items.length === 0) {
     return null;
   }
@@ -288,10 +511,9 @@ export default function HeroBanner({
           // 计算是否应该渲染此项
           const prevIndex = (currentIndex - 1 + items.length) % items.length;
           const nextIndex = (currentIndex + 1) % items.length;
-          const shouldRender =
-            index === currentIndex ||
-            index === prevIndex ||
-            index === nextIndex;
+
+          // 只要曾经渲染过，就保持渲染，避免卸载导致重新请求
+          const shouldRender = renderedIndices.has(index);
 
           if (!shouldRender) return null;
 
@@ -322,7 +544,7 @@ export default function HeroBanner({
 
               {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
               {enableVideo &&
-                getEffectiveTrailerUrl(item) &&
+                getStableVideoUrl(item) &&
                 !failedVideoIds.has(item.id) &&
                 index === currentIndex && (
                   <video
@@ -342,6 +564,19 @@ export default function HeroBanner({
                         trailerUrl: item.trailerUrl,
                         error: e,
                       });
+
+                      // 1. 尝试降级：如果当前是 ID 模式，切换到完整 URL 模式
+                      if (item.douban_id && !fallbackVideoIds.has(item.id)) {
+                        console.log(
+                          '[HeroBanner] ID模式加载失败，降级到完整URL模式:',
+                          item.id,
+                        );
+                        setFallbackVideoIds((prev) =>
+                          new Set(prev).add(item.id),
+                        );
+                        // 状态更新会触发重新渲染，从而使用新 URL
+                        return;
+                      }
 
                       // 如果已经刷新过或者是刷新后的URL失败了，标记为失败并不再重试
                       if (
@@ -387,7 +622,8 @@ export default function HeroBanner({
                   >
                     <source
                       src={getProxiedVideoUrl(
-                        getEffectiveTrailerUrl(item) || '',
+                        getStableVideoUrl(item) || '',
+                        item,
                       )}
                       type='video/mp4'
                     />
@@ -485,7 +721,7 @@ export default function HeroBanner({
       </div>
 
       {/* 音量控制按钮（仅视频模式） - 底部右下角，避免遮挡简介 */}
-      {enableVideo && getEffectiveTrailerUrl(currentItem) && (
+      {enableVideo && getStableVideoUrl(currentItem) && (
         <button
           onClick={toggleMute}
           className='absolute bottom-6 sm:bottom-8 right-4 sm:right-8 md:right-12 lg:right-16 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/70 transition-all border border-white/50 z-10'

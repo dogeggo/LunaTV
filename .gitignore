@@ -49,3 +49,5 @@ AGENT.md
 TVBOX_DEV.md
 docker-compose.yml
 package-lock.json
+cache/video
+cache/image

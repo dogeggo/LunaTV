@@ -42,26 +42,38 @@ import SkeletonCard from '@/components/SkeletonCard';
 
 // 🚀 性能优化：使用动态导入延迟加载重型组件，显著提升导航响应速度
 const ConfirmDialog = dynamic(
-  () => import('@/components/ConfirmDialog').then((mod) => mod.ConfirmDialog),
+  () =>
+    import(/* webpackPreload: false */ '@/components/ConfirmDialog').then(
+      (mod) => mod.ConfirmDialog,
+    ),
   { ssr: false },
 );
 const ArtPlayerPreloader = dynamic(
-  () => import('@/components/ArtPlayerPreloader'),
+  () => import(/* webpackPreload: false */ '@/components/ArtPlayerPreloader'),
   { ssr: false },
 );
 const ContinueWatching = dynamic(
-  () => import('@/components/ContinueWatching'),
+  () => import(/* webpackPreload: false */ '@/components/ContinueWatching'),
   { ssr: false },
 );
-const HeroBanner = dynamic(() => import('@/components/HeroBanner'), {
-  ssr: false,
-});
-const VideoCard = dynamic(() => import('@/components/VideoCard'), {
-  ssr: false,
-});
-const ShortDramaCard = dynamic(() => import('@/components/ShortDramaCard'), {
-  ssr: false,
-});
+const HeroBanner = dynamic(
+  () => import(/* webpackPreload: false */ '@/components/HeroBanner'),
+  {
+    ssr: false,
+  },
+);
+const VideoCard = dynamic(
+  () => import(/* webpackPreload: false */ '@/components/VideoCard'),
+  {
+    ssr: false,
+  },
+);
+const ShortDramaCard = dynamic(
+  () => import(/* webpackPreload: false */ '@/components/ShortDramaCard'),
+  {
+    ssr: false,
+  },
+);
 // const TelegramWelcomeModal = dynamic(
 //   () =>
 //     import('@/components/TelegramWelcomeModal').then(
@@ -1637,6 +1649,7 @@ function HomeClient() {
                               remarks={remarksText}
                               releaseDate={release.releaseDate}
                               query={release.title}
+                              priority={index < 6}
                               episodes={
                                 release.episodes ||
                                 (release.type === 'tv' ? undefined : 1)
@@ -1688,6 +1701,7 @@ function HomeClient() {
                             rate={movie.rate}
                             year={movie.year}
                             type='movie'
+                            priority={index < 6}
                           />
                         </div>
                       ))}
@@ -1733,6 +1747,7 @@ function HomeClient() {
                             rate={show.rate}
                             year={show.year}
                             type='tv'
+                            priority={index < 6}
                           />
                         </div>
                       ))}
@@ -1805,6 +1820,7 @@ function HomeClient() {
                               rate={anime.rating?.score?.toFixed(1) || ''}
                               year={anime.air_date?.split('-')?.[0] || ''}
                               isBangumi={true}
+                              priority={index < 6}
                             />
                           </div>
                         ));
@@ -1851,6 +1867,7 @@ function HomeClient() {
                             rate={show.rate}
                             year={show.year}
                             type='variety'
+                            priority={index < 6}
                           />
                         </div>
                       ))}
@@ -1885,7 +1902,7 @@ function HomeClient() {
                           key={index}
                           className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
                         >
-                          <ShortDramaCard drama={drama} />
+                          <ShortDramaCard drama={drama} priority={index < 6} />
                         </div>
                       ))}
                 </ScrollableRow>

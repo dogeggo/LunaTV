@@ -16,7 +16,10 @@ export default function ArtPlayerPreloader() {
       }
 
       console.log('🚀 开始预加载 ArtPlayer 模块...');
-      Promise.all([import('artplayer'), import('artplayer-plugin-danmuku')])
+      Promise.all([
+        import(/* webpackPreload: false */ 'artplayer'),
+        import(/* webpackPreload: false */ 'artplayer-plugin-danmuku'),
+      ])
         .then(
           ([{ default: Artplayer }, { default: artplayerPluginDanmuku }]) => {
             // 将导入的模块设置为全局变量供后续使用

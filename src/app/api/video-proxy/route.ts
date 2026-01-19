@@ -1,13 +1,59 @@
+import fs from 'fs';
 import { NextResponse } from 'next/server';
+import path from 'path';
+import stream from 'stream';
+import { promisify } from 'util';
 
+import { fetchTrailerWithRetry } from '@/lib/douban-api';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
+
+const pipeline = promisify(stream.pipeline);
+const CACHE_DIR = path.join(process.cwd(), 'cache', 'video');
+const downloadingFiles = new Set<string>();
+// 内存缓存：douban_id -> trailerUrl
+const doubanIdToTrailerUrl = new Map<string, string>();
+
+// Ensure cache directory exists
+try {
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.error('Failed to create cache dir', e);
+}
 
 export const runtime = 'nodejs';
 
 // 视频代理接口 - 支持流式传输和Range请求
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const videoUrl = searchParams.get('url');
+  let videoUrl = searchParams.get('url');
+  const doubanId = searchParams.get('id');
+
+  // 如果没有 url 但有 id，尝试获取 url
+  if (!videoUrl && doubanId) {
+    // 1. 查内存缓存
+    if (doubanIdToTrailerUrl.has(doubanId)) {
+      videoUrl = doubanIdToTrailerUrl.get(doubanId)!;
+    } else {
+      // 2. 调用豆瓣 API 获取
+      try {
+        console.log(
+          `[Video Proxy] Fetching trailer URL for douban_id: ${doubanId}`,
+        );
+        const fetchedUrl = await fetchTrailerWithRetry(doubanId);
+        if (fetchedUrl) {
+          videoUrl = fetchedUrl;
+          doubanIdToTrailerUrl.set(doubanId, fetchedUrl);
+        }
+      } catch (e) {
+        console.error(
+          `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
+          e,
+        );
+      }
+    }
+  }
 
   if (!videoUrl) {
     return NextResponse.json({ error: 'Missing video URL' }, { status: 400 });
@@ -52,6 +98,42 @@ export async function GET(request: Request) {
       'Accept-Encoding': 'identity;q=1, *;q=0',
       Connection: 'keep-alive',
     };
+
+    // --- 本地缓存逻辑 ---
+    if (videoUrl.startsWith('https://vt1.doubanio.com')) {
+      // 提取文件名：从 URL 路径中获取最后一部分
+      const urlPath = new URL(videoUrl).pathname;
+      const filename = path.basename(urlPath); // 例如 "703230195.mp4"
+      const filePath = path.join(CACHE_DIR, filename);
+
+      console.log(`[Cache] Checking: ${filePath}`);
+      if (fs.existsSync(filePath)) {
+        console.log(`[Cache] HIT: ${filename}`);
+        try {
+          return serveLocalFile(request, filePath);
+        } catch (e) {
+          console.error('[Cache] Error serving local file:', e);
+        }
+      } else {
+        console.log(`[Cache] MISS: ${filename}`);
+        // 触发后台下载（不带 Range 头）
+        if (!downloadingFiles.has(filename)) {
+          downloadingFiles.add(filename);
+          const downloadHeaders = { ...fetchHeaders };
+          // @ts-ignore
+          delete downloadHeaders['Range'];
+
+          downloadToCache(videoUrl, filePath, downloadHeaders)
+            .catch((err) =>
+              console.error('[Cache] Background download failed:', err),
+            )
+            .finally(() => downloadingFiles.delete(filename));
+        } else {
+          console.log(`[Cache] Already downloading: ${filename}`);
+        }
+      }
+    }
+    // ------------------
 
     // 如果客户端发送了 Range 请求，转发给目标服务器
     if (rangeHeader) {
@@ -253,4 +335,146 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Range, Content-Type',
     },
   });
+}
+
+// 辅助函数：后台下载视频到缓存
+async function downloadToCache(url: string, filePath: string, headers: any) {
+  const tempPath = `${filePath}.tmp`;
+  try {
+    console.log(`[Cache] Starting download for: ${url}`);
+    const response = await fetch(url, { headers });
+    if (!response.ok || !response.body) {
+      console.error(`[Cache] Failed to fetch source: ${response.status}`);
+      return;
+    }
+
+    const fileStream = fs.createWriteStream(tempPath);
+    // @ts-ignore
+    const reader = stream.Readable.fromWeb(response.body);
+    await pipeline(reader, fileStream);
+
+    // 等待文件流完全关闭
+    fileStream.close();
+
+    // 简单的重试机制，确保文件句柄释放
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        fs.renameSync(tempPath, filePath);
+        console.log(`[Cache] Successfully cached: ${filePath}`);
+        break;
+      } catch (e: any) {
+        if (e.code === 'EBUSY' || e.code === 'EPERM') {
+          retries--;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } else {
+          throw e;
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`[Cache] Download error:`, error);
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
+}
+
+// 辅助函数：服务本地缓存文件
+function serveLocalFile(request: Request, filePath: string) {
+  const stat = fs.statSync(filePath);
+  const fileSize = stat.size;
+  const mtime = stat.mtime.toUTCString();
+  // 使用强 ETag，希望能触发浏览器的缓存验证
+  const etag = `"${fileSize.toString(16)}-${stat.mtime.getTime().toString(16)}"`;
+
+  const rangeHeader = request.headers.get('range');
+  const ifNoneMatch = request.headers.get('if-none-match');
+  const ifModifiedSince = request.headers.get('if-modified-since');
+  const ifRange = request.headers.get('if-range');
+
+  console.log(`[Cache] Serving ${path.basename(filePath)}`);
+  console.log(
+    `[Cache] Headers: Range=${rangeHeader}, If-None-Match=${ifNoneMatch}, If-Range=${ifRange}`,
+  );
+  console.log(`[Cache] File ETag=${etag}`);
+
+  // 检查缓存是否有效 (304 Not Modified)
+  // 注意：对于 Range 请求，通常不返回 304，除非是验证整个文件
+  if (!rangeHeader && (ifNoneMatch === etag || ifModifiedSince === mtime)) {
+    console.log('[Cache] Returning 304 Not Modified');
+    return new Response(null, {
+      status: 304,
+      headers: {
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        ETag: etag,
+        'Last-Modified': mtime,
+        'X-Cache-Status': 'HIT',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  const headers = new Headers();
+  headers.set('Content-Type', 'video/mp4');
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  headers.set('X-Cache-Status', 'HIT');
+  headers.set('ETag', etag);
+  headers.set('Last-Modified', mtime);
+
+  // 手动转换 Node Stream 到 Web Stream 以避免 "Controller is already closed" 错误
+  const streamToWeb = (nodeStream: fs.ReadStream) => {
+    return new ReadableStream({
+      start(controller) {
+        nodeStream.on('data', (chunk) => {
+          try {
+            controller.enqueue(chunk);
+          } catch (e) {
+            // Controller might be closed if client disconnects
+            nodeStream.destroy();
+          }
+        });
+        nodeStream.on('end', () => {
+          try {
+            controller.close();
+          } catch (e) {}
+        });
+        nodeStream.on('error', (err) => {
+          try {
+            controller.error(err);
+          } catch (e) {}
+        });
+      },
+      cancel() {
+        nodeStream.destroy();
+      },
+    });
+  };
+
+  // 策略调整：如果请求是从头开始 (bytes=0-) 或者没有 Range，且文件不是特别大，返回 200 OK
+  // 这样可以让浏览器更积极地缓存整个文件，减少后续请求
+  const isFullRequest = !rangeHeader || rangeHeader === 'bytes=0-';
+
+  if (!isFullRequest) {
+    // 处理具体的 Range 请求 (e.g. bytes=1024-2048)
+    const parts = rangeHeader!.replace(/bytes=/, '').split('-');
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+    const chunksize = end - start + 1;
+
+    headers.set('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+    headers.set('Content-Length', chunksize.toString());
+
+    const fileStream = fs.createReadStream(filePath, { start, end });
+    const webStream = streamToWeb(fileStream);
+
+    return new Response(webStream, { status: 206, headers });
+  } else {
+    // 返回完整文件 (200 OK)
+    headers.set('Content-Length', fileSize.toString());
+    const fileStream = fs.createReadStream(filePath);
+    const webStream = streamToWeb(fileStream);
+
+    return new Response(webStream, { status: 200, headers });
+  }
 }

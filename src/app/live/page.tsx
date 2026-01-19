@@ -32,7 +32,7 @@ import PageLayout from '@/components/PageLayout';
 
 // 🚀 性能优化：使用动态导入延迟加载重型组件，显著提升导航响应速度
 const EpgScrollableRow = dynamic(
-  () => import('@/components/EpgScrollableRow'),
+  () => import(/* webpackPreload: false */ '@/components/EpgScrollableRow'),
   { ssr: false },
 );
 
@@ -1765,7 +1765,9 @@ function LivePageClient() {
     // 动态导入 ArtPlayer 并初始化
     const loadAndInit = async () => {
       try {
-        const { default: Artplayer } = await import('artplayer');
+        const { default: Artplayer } = await import(
+          /* webpackPreload: false */ 'artplayer'
+        );
 
         // 将导入的模块设置为全局变量供 initPlayer 使用
         (window as any).DynamicArtplayer = Artplayer;

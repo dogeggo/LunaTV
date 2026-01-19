@@ -17,12 +17,14 @@ interface ShortDramaCardProps {
   drama: ShortDramaItem;
   showDescription?: boolean;
   className?: string;
+  priority?: boolean;
 }
 
 function ShortDramaCard({
   drama,
   showDescription = false,
   className = '',
+  priority = false,
 }: ShortDramaCardProps) {
   // 直接使用 props 中的 episode_count，不再尝试异步获取真实集数
   const realEpisodeCount = drama.episode_count;
@@ -140,7 +142,7 @@ function ShortDramaCard({
                 ? 'opacity-100 blur-0 scale-100 group-hover:scale-105'
                 : 'opacity-0 blur-md scale-105'
             }`}
-            loading='lazy'
+            loading={priority ? 'eager' : 'lazy'}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/placeholder-cover.jpg';
