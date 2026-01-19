@@ -247,26 +247,27 @@ export default function HeroBanner({
   const backgroundImage =
     getHDBackdrop(currentItem.backdrop) || currentItem.poster;
 
-  // 🎯 检查并刷新缺失的 trailer URL（组件挂载时）
-  useEffect(() => {
-    const checkAndRefreshMissingTrailers = async () => {
-      for (const item of items) {
-        // 如果有 douban_id 但没有 trailerUrl，尝试获取
-        if (
-          item.douban_id &&
-          !item.trailerUrl &&
-          !refreshedTrailerUrls[item.douban_id]
-        ) {
-          await refreshTrailerUrl(item.douban_id);
-        }
-      }
-    };
+  // 🎯 移除组件挂载时的自动刷新逻辑，避免重复请求
+  // 现在只在主页数据加载时获取一次 trailer URL
+  // useEffect(() => {
+  //   const checkAndRefreshMissingTrailers = async () => {
+  //     for (const item of items) {
+  //       // 如果有 douban_id 但没有 trailerUrl，尝试获取
+  //       if (
+  //         item.douban_id &&
+  //         !item.trailerUrl &&
+  //         !refreshedTrailerUrls[item.douban_id]
+  //       ) {
+  //         await refreshTrailerUrl(item.douban_id);
+  //       }
+  //     }
+  //   };
 
-    // 延迟执行，避免阻塞初始渲染
-    const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]); // 🎯 只依赖 items，避免循环触发
+  //   // 延迟执行，避免阻塞初始渲染
+  //   const timer = setTimeout(checkAndRefreshMissingTrailers, 1000);
+  //   return () => clearTimeout(timer);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [items]); // 🎯 只依赖 items，避免循环触发
 
   return (
     <div
@@ -330,57 +331,20 @@ export default function HeroBanner({
                     preload='metadata'
                     onError={async (e) => {
                       const video = e.currentTarget;
-                      console.error('[HeroBanner] 视频加载失败:', {
+                      console.warn('[HeroBanner] 视频加载失败:', {
                         title: item.title,
                         trailerUrl: item.trailerUrl,
                         error: e,
                       });
 
-                      // 检测是否是403错误（trailer URL过期）
+                      // 🎯 不再自动刷新过期的 trailer URL，避免重复请求
+                      // 如果视频加载失败，只记录日志，不进行自动重试
+                      // trailer URL 应该在主页数据加载时就获取好
                       if (item.douban_id) {
-                        // 🎯 检查是否已经请求过，避免重复刷新
-                        if (requestedTrailersRef.current.has(item.douban_id)) {
-                          console.log(
-                            '[HeroBanner] 该trailer已请求过刷新，跳过重复请求:',
-                            item.douban_id,
-                          );
-                          return;
-                        }
-
-                        // 如果localStorage中有URL，说明之前刷新过，但现在又失败了
-                        // 需要清除localStorage中的旧URL，重新刷新
-                        if (refreshedTrailerUrls[item.douban_id]) {
-                          console.log(
-                            '[HeroBanner] localStorage中的URL也过期了，清除并重新获取',
-                          );
-
-                          // 清除state和localStorage中的旧URL
-                          setRefreshedTrailerUrls((prev) => {
-                            const updated = { ...prev };
-                            delete updated[item.douban_id];
-
-                            try {
-                              localStorage.setItem(
-                                'refreshed-trailer-urls',
-                                JSON.stringify(updated),
-                              );
-                            } catch (error) {
-                              console.error(
-                                '[HeroBanner] 清除localStorage失败:',
-                                error,
-                              );
-                            }
-
-                            return updated;
-                          });
-                        }
-
-                        // 重新刷新URL（只会执行一次，因为 refreshTrailerUrl 内部会标记为已请求）
-                        const newUrl = await refreshTrailerUrl(item.douban_id);
-                        if (newUrl) {
-                          // 重新加载视频
-                          video.load();
-                        }
+                        console.log(
+                          '[HeroBanner] 视频加载失败，但不再自动刷新 URL，避免重复请求:',
+                          item.douban_id,
+                        );
                       }
                     }}
                     onLoadedData={(e) => {

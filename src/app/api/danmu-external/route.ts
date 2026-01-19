@@ -492,11 +492,6 @@ async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
       });
 
       clearTimeout(timeoutId);
-      console.log(
-        `📡 ${apiName}响应状态:`,
-        response.status,
-        response.statusText,
-      );
 
       if (!response.ok) {
         console.log(`❌ ${apiName}响应失败:`, response.status);
