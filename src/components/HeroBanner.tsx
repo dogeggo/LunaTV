@@ -67,6 +67,11 @@ export default function HeroBanner({
     return {};
   });
 
+  // 记录播放失败的视频ID，避免重复渲染导致无限重试
+  const [failedVideoIds, setFailedVideoIds] = useState<Set<string | number>>(
+    new Set(),
+  );
+
   // 🎯 使用 useRef 跟踪已请求和正在请求中的 trailer ID，避免重复请求
   const requestedTrailersRef = useRef<Set<string | number>>(new Set());
   const requestingTrailersRef = useRef<Set<string | number>>(new Set());
@@ -318,6 +323,7 @@ export default function HeroBanner({
               {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
               {enableVideo &&
                 getEffectiveTrailerUrl(item) &&
+                !failedVideoIds.has(item.id) &&
                 index === currentIndex && (
                   <video
                     ref={videoRef}
@@ -337,14 +343,37 @@ export default function HeroBanner({
                         error: e,
                       });
 
-                      // 🎯 不再自动刷新过期的 trailer URL，避免重复请求
-                      // 如果视频加载失败，只记录日志，不进行自动重试
-                      // trailer URL 应该在主页数据加载时就获取好
+                      // 如果已经刷新过或者是刷新后的URL失败了，标记为失败并不再重试
+                      if (
+                        (item.douban_id &&
+                          refreshedTrailerUrls[item.douban_id]) ||
+                        !item.douban_id
+                      ) {
+                        console.log(
+                          '[HeroBanner] 视频彻底加载失败，停止重试:',
+                          item.id,
+                        );
+                        setFailedVideoIds((prev) => new Set(prev).add(item.id));
+                        return;
+                      }
+
+                      // 尝试刷新 URL
                       if (item.douban_id) {
                         console.log(
-                          '[HeroBanner] 视频加载失败，但不再自动刷新 URL，避免重复请求:',
+                          '[HeroBanner] 尝试刷新过期 URL:',
                           item.douban_id,
                         );
+                        const newUrl = await refreshTrailerUrl(item.douban_id);
+                        if (!newUrl) {
+                          // 刷新失败，标记为失败
+                          console.log(
+                            '[HeroBanner] URL刷新失败，停止重试:',
+                            item.id,
+                          );
+                          setFailedVideoIds((prev) =>
+                            new Set(prev).add(item.id),
+                          );
+                        }
                       }
                     }}
                     onLoadedData={(e) => {

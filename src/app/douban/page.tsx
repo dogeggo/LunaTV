@@ -386,7 +386,7 @@ function DoubanPageClient() {
                 item.images?.medium ||
                 item.images?.small ||
                 item.images?.grid ||
-                '/placeholder-poster.jpg',
+                '',
               rate: item.rating?.score?.toFixed(1) || '',
               year: item.air_date?.split('-')?.[0] || '',
             })),

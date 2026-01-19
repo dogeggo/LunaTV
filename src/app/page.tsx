@@ -32,16 +32,23 @@ import { cleanExpiredCache } from '@/lib/shortdrama-cache';
 import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
 import { DoubanItem } from '@/lib/types';
 
-import ArtPlayerPreloader from '@/components/ArtPlayerPreloader';
+// 🚀 性能优化:首屏必需组件使用静态导入,减少CSS预加载警告
+import CapsuleSwitch from '@/components/CapsuleSwitch';
 import PageLayout from '@/components/PageLayout';
+import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
 import { useSite } from '@/components/SiteProvider';
 import SkeletonCard from '@/components/SkeletonCard';
 
 // 🚀 性能优化：使用动态导入延迟加载重型组件，显著提升导航响应速度
-const CapsuleSwitch = dynamic(() => import('@/components/CapsuleSwitch'), {
-  ssr: false,
-});
+const ConfirmDialog = dynamic(
+  () => import('@/components/ConfirmDialog').then((mod) => mod.ConfirmDialog),
+  { ssr: false },
+);
+const ArtPlayerPreloader = dynamic(
+  () => import('@/components/ArtPlayerPreloader'),
+  { ssr: false },
+);
 const ContinueWatching = dynamic(
   () => import('@/components/ContinueWatching'),
   { ssr: false },
@@ -49,26 +56,19 @@ const ContinueWatching = dynamic(
 const HeroBanner = dynamic(() => import('@/components/HeroBanner'), {
   ssr: false,
 });
-const ScrollableRow = dynamic(() => import('@/components/ScrollableRow'), {
+const VideoCard = dynamic(() => import('@/components/VideoCard'), {
   ssr: false,
 });
 const ShortDramaCard = dynamic(() => import('@/components/ShortDramaCard'), {
   ssr: false,
 });
-const TelegramWelcomeModal = dynamic(
-  () =>
-    import('@/components/TelegramWelcomeModal').then(
-      (mod) => mod.TelegramWelcomeModal,
-    ),
-  { ssr: false },
-);
-const VideoCard = dynamic(() => import('@/components/VideoCard'), {
-  ssr: false,
-});
-const ConfirmDialog = dynamic(
-  () => import('@/components/ConfirmDialog').then((mod) => mod.ConfirmDialog),
-  { ssr: false },
-);
+// const TelegramWelcomeModal = dynamic(
+//   () =>
+//     import('@/components/TelegramWelcomeModal').then(
+//       (mod) => mod.TelegramWelcomeModal,
+//     ),
+//   { ssr: false },
+// );
 
 function HomeClient() {
   // Refs for cleanup
@@ -1222,7 +1222,7 @@ function HomeClient() {
       {/* 预加载播放器模块 */}
       <ArtPlayerPreloader />
       {/* Telegram 新用户欢迎弹窗 */}
-      <TelegramWelcomeModal />
+      {/* <TelegramWelcomeModal /> */}
 
       <div className='overflow-visible -mt-6 md:mt-0'>
         {/* 顶部 Tab 切换 - AI 按钮已移至右上角导航栏 */}
@@ -1631,9 +1631,7 @@ function HomeClient() {
                               source_name='即将上映'
                               from='douban'
                               title={release.title}
-                              poster={
-                                release.cover || '/placeholder-poster.jpg'
-                              }
+                              poster={release.cover || ''}
                               year={release.releaseDate.split('-')[0]}
                               type={release.type}
                               remarks={remarksText}
@@ -1801,7 +1799,7 @@ function HomeClient() {
                                 anime.images?.medium ||
                                 anime.images?.small ||
                                 anime.images?.grid ||
-                                '/placeholder-poster.jpg'
+                                ''
                               }
                               douban_id={anime.id}
                               rate={anime.rating?.score?.toFixed(1) || ''}

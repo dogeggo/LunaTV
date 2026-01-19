@@ -35,9 +35,15 @@ export async function GET(request: Request) {
     const videoUrlObj = new URL(videoUrl);
     const sourceOrigin = `${videoUrlObj.protocol}//${videoUrlObj.host}`;
 
+    // 针对豆瓣的特殊处理
+    let referer = sourceOrigin + '/';
+    if (videoUrl.includes('douban')) {
+      referer = 'https://movie.douban.com/';
+    }
+
     // 构建请求头
     const fetchHeaders: HeadersInit = {
-      Referer: sourceOrigin + '/',
+      Referer: referer,
       Origin: sourceOrigin,
       'User-Agent': DEFAULT_USER_AGENT,
       Accept:
@@ -188,10 +194,16 @@ export async function HEAD(request: Request) {
     const videoUrlObj = new URL(videoUrl);
     const sourceOrigin = `${videoUrlObj.protocol}//${videoUrlObj.host}`;
 
+    // 针对豆瓣的特殊处理
+    let referer = sourceOrigin + '/';
+    if (videoUrl.includes('douban')) {
+      referer = 'https://movie.douban.com/';
+    }
+
     const videoResponse = await fetch(videoUrl, {
       method: 'HEAD',
       headers: {
-        Referer: sourceOrigin + '/',
+        Referer: referer,
         Origin: sourceOrigin,
         'User-Agent': DEFAULT_USER_AGENT,
         Accept:
