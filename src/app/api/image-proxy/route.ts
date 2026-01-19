@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import { NextResponse } from 'next/server';
 import path from 'path';
@@ -47,9 +48,12 @@ export async function GET(request: Request) {
     const sourceOrigin = `${imageUrlObj.protocol}//${imageUrlObj.host}`;
 
     // --- 本地缓存逻辑 ---
-    // 提取文件名：从 URL 路径中获取最后一部分
+    // 提取文件名：使用 URL 的 MD5 哈希作为文件名，避免不同分辨率(s/m/l)的文件名冲突
+    // 例如：.../photo/s/p123.jpg 和 .../photo/l/p123.jpg 如果只用 basename 都会是 p123.jpg
     const urlPath = imageUrlObj.pathname;
-    const filename = path.basename(urlPath);
+    const ext = path.extname(urlPath) || '.jpg'; // 默认 .jpg
+    const urlHash = crypto.createHash('md5').update(imageUrl).digest('hex');
+    const filename = `${urlHash}${ext}`;
     const filePath = path.join(CACHE_DIR, filename);
 
     if (fs.existsSync(filePath)) {

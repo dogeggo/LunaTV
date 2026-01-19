@@ -530,7 +530,7 @@ export default function HeroBanner({
               {/* 背景图片（始终显示，作为视频的占位符） */}
               <Image
                 src={getProxiedImageUrl(
-                  getHDBackdrop(item.backdrop) || item.poster,
+                  getHDBackdrop(item.backdrop || item.poster) || '',
                 )}
                 alt={item.title}
                 fill
@@ -538,11 +538,7 @@ export default function HeroBanner({
                 priority={index === 0}
                 quality={100}
                 sizes='100vw'
-                unoptimized={
-                  item.backdrop?.includes('/l/') ||
-                  item.backdrop?.includes('/l_ratio_poster/') ||
-                  false
-                }
+                unoptimized={true}
               />
 
               {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
