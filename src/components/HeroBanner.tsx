@@ -109,7 +109,6 @@ const BannerVideo = ({
             const cache = await caches.open(cacheName);
             const cachedResponse = await cache.match(cacheKey);
             if (cachedResponse) {
-              console.log(`[BannerVideo] 🎯 Cache HIT: ${videoId}`);
               const blob = await cachedResponse.blob();
               const objectUrl = URL.createObjectURL(blob);
               setBlobUrl(objectUrl);
@@ -217,14 +216,11 @@ const BannerImage = ({
           const cache = await caches.open(cacheName);
           const cachedResponse = await cache.match(cacheKey);
           if (cachedResponse) {
-            console.log(`[BannerImage] 🎯 Cache HIT: ${imageId}`);
             const blob = await cachedResponse.blob();
             const objectUrl = URL.createObjectURL(blob);
             setBlobUrl(objectUrl);
             setIsReady(true);
             return;
-          } else {
-            console.log(`[BannerImage] ❌ Cache MISS: ${imageId}`);
           }
         } catch (e) {
           console.warn('[BannerImage] Cache access failed:', e);
@@ -463,7 +459,6 @@ export default function HeroBanner({
         // 1. 检查是否已在缓存中
         const cachedResponse = await cache.match(cacheKey);
         if (cachedResponse) {
-          console.log(`[HeroBanner] 🎯 Image Cache HIT: ${imageId}`);
           if (!signal?.aborted) {
             setCachedImageIds((prev) => new Set(prev).add(imageId));
           }
@@ -477,23 +472,12 @@ export default function HeroBanner({
         });
 
         if (response.ok) {
-          console.log(
-            `[HeroBanner] Fetch success for ${imageId}, status: ${response.status}`,
-          );
           if (signal?.aborted) return;
-
           await cache.put(cacheKey, response);
           console.log(`[HeroBanner] ✅ Image cached: ${imageId}`);
-
           if (!signal?.aborted) {
             setCachedImageIds((prev) => new Set(prev).add(imageId));
           }
-        } else {
-          console.warn(
-            `[HeroBanner] ❌ Image download failed: ${imageId}`,
-            response.status,
-            response.statusText,
-          );
         }
       } catch (error: any) {
         if (error.name !== 'AbortError') {
@@ -541,7 +525,6 @@ export default function HeroBanner({
         // 1. 检查是否已在缓存中
         const cachedResponse = await cache.match(cacheKey);
         if (cachedResponse) {
-          console.log(`[HeroBanner] 🎯 Cache HIT (pre-check): ${videoId}`);
           if (!signal?.aborted) {
             setCachedVideoIds((prev) => new Set(prev).add(videoId));
           }
@@ -556,18 +539,12 @@ export default function HeroBanner({
 
         if (response.ok) {
           if (signal?.aborted) return;
-
           await cache.put(cacheKey, response);
           console.log(`[HeroBanner] ✅ Video cached: ${videoId}`);
 
           if (!signal?.aborted) {
             setCachedVideoIds((prev) => new Set(prev).add(videoId));
           }
-        } else {
-          console.warn(
-            `[HeroBanner] ❌ Video download failed: ${videoId}`,
-            response.status,
-          );
         }
       } catch (error: any) {
         if (error.name !== 'AbortError') {
@@ -634,25 +611,20 @@ export default function HeroBanner({
   const refreshTrailerUrl = useCallback(async (doubanId: number | string) => {
     // 🎯 防重复请求：如果正在请求中或已请求过，直接返回
     if (requestingTrailersRef.current.has(doubanId)) {
-      console.log('[HeroBanner] 跳过重复请求:', doubanId);
       return null;
     }
 
     if (requestedTrailersRef.current.has(doubanId)) {
-      console.log('[HeroBanner] 已请求过该 trailer，跳过:', doubanId);
       return null;
     }
 
     try {
       // 标记为正在请求中
       requestingTrailersRef.current.add(doubanId);
-      console.log('[HeroBanner] 检测到trailer URL过期，重新获取:', doubanId);
-
       // 🎯 调用专门的刷新API（不使用缓存，直接调用豆瓣移动端API）
       const response = await fetch(
         `/api/douban/refresh-trailer?id=${doubanId}`,
       );
-
       if (!response.ok) {
         // 如果是 404 (没有预告片)，标记为失败并不再重试
         if (response.status === 404) {
@@ -719,9 +691,6 @@ export default function HeroBanner({
         // 只有在没缓存的时候才去请求
         // 注意：这里我们假设只要没缓存，就需要去验证/获取（即使 item.trailerUrl 存在也可能过期）
         if (!hasCached) {
-          console.log(
-            `[HeroBanner] Proactively fetching/refreshing URL for: ${item.douban_id}`,
-          );
           refreshTrailerUrl(item.douban_id);
         }
       }
