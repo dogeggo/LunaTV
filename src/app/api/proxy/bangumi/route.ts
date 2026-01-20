@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
 
     const response = await fetch(apiUrl, {
       headers: {
-        'User-Agent': 'LunaTV/1.0 (https://github.com/yourusername/LunaTV)',
         Accept: 'application/json',
       },
       next: {
@@ -42,8 +41,45 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
+    // 递归处理数据中的图片 URL，替换为 image-proxy
+    const processImages = (obj: any): any => {
+      if (!obj) return obj;
+
+      if (Array.isArray(obj)) {
+        return obj.map((item) => processImages(item));
+      }
+
+      if (typeof obj === 'object') {
+        const newObj: any = {};
+        for (const key in obj) {
+          if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const value = obj[key];
+            // 检查是否是图片 URL 字段
+            if (
+              (key === 'large' ||
+                key === 'common' ||
+                key === 'medium' ||
+                key === 'small' ||
+                key === 'grid') &&
+              typeof value === 'string' &&
+              value.startsWith('http')
+            ) {
+              newObj[key] = `/api/image-proxy?url=${encodeURIComponent(value)}`;
+            } else {
+              newObj[key] = processImages(value);
+            }
+          }
+        }
+        return newObj;
+      }
+
+      return obj;
+    };
+
+    const processedData = processImages(data);
+
     // 返回数据，并设置 CORS 头允许前端访问
-    return NextResponse.json(data, {
+    return NextResponse.json(processedData, {
       headers: {
         'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       },

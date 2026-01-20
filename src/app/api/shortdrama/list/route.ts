@@ -31,7 +31,9 @@ async function getShortDramaListInternal(
   const list = items.map((item: any) => ({
     id: item.id,
     name: item.name,
-    cover: item.cover,
+    cover: item.cover
+      ? `/api/image-proxy?url=${encodeURIComponent(item.cover)}`
+      : '',
     update_time: item.update_time || new Date().toISOString(),
     score: item.score || 0,
     episode_count: 1, // 分页API没有集数信息，ShortDramaCard会自动获取

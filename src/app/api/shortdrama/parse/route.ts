@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
       title: result.data!.videoName || '',
       episode: result.data!.currentEpisode || episodeNum,
       totalEpisodes: result.data!.totalEpisodes || 1,
+      cover: result.data!.cover
+        ? `/api/image-proxy?url=${encodeURIComponent(result.data!.cover)}`
+        : '',
     };
 
     // 设置与豆瓣一致的缓存策略

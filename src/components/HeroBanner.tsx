@@ -36,6 +36,21 @@ interface HeroBannerProps {
   enableVideo?: boolean; // 是否启用视频自动播放
 }
 
+// 提取视频 ID 的辅助函数
+const extractVideoId = (url: string) => {
+  try {
+    const urlObj = new URL(url, 'http://localhost');
+    const idParam = urlObj.searchParams.get('id');
+    if (idParam) return idParam;
+
+    const targetUrl = urlObj.searchParams.get('url') || url;
+    const parts = targetUrl.split('?')[0].split('/');
+    return parts[parts.length - 1];
+  } catch {
+    return url;
+  }
+};
+
 // 内部组件：稳定的视频播放器
 // 🌟 优化：使用 Cache API + Blob 实现永久缓存
 // 即使 URL 签名变化，只要视频 ID 不变，就直接使用缓存，避免网络请求
@@ -44,6 +59,7 @@ const BannerVideo = ({
   poster,
   isActive,
   isMuted,
+  isCached,
   onLoad,
   onError,
 }: {
@@ -51,6 +67,7 @@ const BannerVideo = ({
   poster: string;
   isActive: boolean;
   isMuted: boolean;
+  isCached: boolean;
   onLoad: (e: any) => void;
   onError: (e: any) => void;
 }) => {
@@ -58,26 +75,14 @@ const BannerVideo = ({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   // 记录当前正在使用的视频 ID，用于在 ID 变化时清理旧的 Blob
   const currentVideoIdRef = useRef<string>('');
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 从 URL 中提取视频 ID (文件名)，用作稳定的 Cache Key
-  const getVideoId = useCallback((url: string) => {
-    try {
-      // 处理代理 URL: /api/video-proxy?url=... 或 /api/video-proxy?id=...
-      const urlObj = new URL(url, 'http://localhost');
-      const idParam = urlObj.searchParams.get('id');
-      if (idParam) return idParam;
-
-      const targetUrl = urlObj.searchParams.get('url') || url;
-      // 提取文件名作为 ID
-      const parts = targetUrl.split('?')[0].split('/');
-      return parts[parts.length - 1];
-    } catch {
-      return url;
-    }
-  }, []);
+  const getVideoId = useCallback((url: string) => extractVideoId(url), []);
 
   useEffect(() => {
+    // 只有当视频已被缓存时才尝试加载
+    if (!isCached) return;
+
     const videoId = getVideoId(src);
 
     // 如果 ID 没变，说明是同一个视频（即使 URL 签名变了），不需要重新加载
@@ -90,88 +95,44 @@ const BannerVideo = ({
       URL.revokeObjectURL(blobUrl);
       setBlobUrl(null);
     }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
 
     currentVideoIdRef.current = videoId;
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
 
     const loadVideo = async () => {
       try {
-        const cacheName = 'luna-video-cache-v2'; // 升级缓存版本
-        // 使用虚拟 URL 作为 Cache Key，确保 Key 稳定且唯一
+        const cacheName = 'luna-video-cache-v2';
         const cacheKey = `https://luna-cache/video/${videoId}`;
-        let response: Response | undefined;
-        let cache: Cache | undefined;
 
         // 1. 尝试从 Cache API 获取
         if ('caches' in window) {
           try {
-            cache = await caches.open(cacheName);
+            const cache = await caches.open(cacheName);
             const cachedResponse = await cache.match(cacheKey);
             if (cachedResponse) {
               console.log(`[BannerVideo] 🎯 Cache HIT: ${videoId}`);
-              response = cachedResponse;
+              const blob = await cachedResponse.blob();
+              const objectUrl = URL.createObjectURL(blob);
+              setBlobUrl(objectUrl);
+              return;
             }
           } catch (e) {
             console.warn('[BannerVideo] Cache access failed:', e);
           }
         }
 
-        // 2. 缓存未命中，发起网络请求
-        if (!response) {
-          console.log(`[BannerVideo] 🌐 Cache MISS, fetching: ${videoId}`);
-          response = await fetch(src, {
-            signal: controller.signal,
-            cache: 'force-cache',
-          });
-
-          if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
-
-          // 3. 写入缓存 (克隆 response)
-          if (cache && response.status === 200) {
-            try {
-              const responseToCache = response.clone();
-              cache
-                .put(cacheKey, responseToCache)
-                .catch((e) =>
-                  console.warn('[BannerVideo] Cache write failed:', e),
-                );
-            } catch (e) {
-              console.warn('[BannerVideo] Cache put error:', e);
-            }
-          }
-        }
-
-        // 4. 转换为 Blob URL
-        const blob = await response.blob();
-        if (!controller.signal.aborted) {
-          const objectUrl = URL.createObjectURL(blob);
-          setBlobUrl(objectUrl);
-        }
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('[BannerVideo] Video load failed:', error);
-          // 如果 Blob 加载失败，回退到原始 src 流式播放
-          // 但这里我们不自动回退，而是让 onError 触发，由父组件决定是否重试或降级
-          if (onError && !controller.signal.aborted) {
-            // 模拟一个错误事件或直接调用 onError
-            // 由于这里是异步逻辑，无法直接触发 video 的 error 事件
-            // 我们可以选择设置 blobUrl 为 null，让 video 尝试加载 src（如果我们在 render 中做了回退逻辑）
-            // 或者保持 blobUrl 为 null，让 render 使用原始 src
-          }
-        }
+        // 如果缓存中没有，理论上不应该发生（因为 isCached 为 true），但为了健壮性，这里不做任何操作
+        // 或者可以触发 onError 让父组件知道状态不一致
+        console.warn(
+          `[BannerVideo] ⚠️ Expected cached video not found: ${videoId}`,
+        );
+      } catch (error) {
+        console.error('[BannerVideo] Video load failed:', error);
+        if (onError) onError(error);
       }
     };
 
     loadVideo();
-
-    return () => {
-      controller.abort();
-    };
-  }, [src, getVideoId]); // 依赖 src 变化
+  }, [src, getVideoId, isCached]); // 依赖 isCached 变化
 
   // 组件卸载时清理 Blob URL
   useEffect(() => {
@@ -188,11 +149,13 @@ const BannerVideo = ({
     }
   }, [isMuted]);
 
+  const finalSrc = blobUrl || undefined;
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (isActive) {
+    if (isActive && finalSrc) {
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {});
@@ -200,17 +163,7 @@ const BannerVideo = ({
     } else {
       video.pause();
     }
-  }, [isActive]);
-
-  // 优先使用 Blob URL，如果没有（正在加载或失败），使用原始 src 作为回退
-  // 这样即使用户网络差，也能先看到流式播放（如果 fetch 还没完成）
-  // 但为了避免双重请求，通常建议等待 Blob。
-  // 鉴于用户要求“完整缓存”，我们只在 blobUrl 存在时才渲染 src，或者在 fetch 失败时回退。
-  // 这里简化逻辑：如果有 blobUrl 就用 blobUrl，否则用 src (流式)
-  // 注意：如果正在 fetch 中，src=src 会导致浏览器同时也去发起 Range 请求，造成双重带宽浪费。
-  // 所以：如果没有 blobUrl，我们暂时不给 src，或者只给 poster。
-  // 等待 blob 加载完毕后再播放。
-  const finalSrc = blobUrl || undefined;
+  }, [isActive, finalSrc]);
 
   return (
     <video
@@ -309,6 +262,106 @@ export default function HeroBanner({
   const [fallbackVideoIds, setFallbackVideoIds] = useState<
     Set<string | number>
   >(new Set());
+
+  // 记录已缓存的视频 ID
+  const [cachedVideoIds, setCachedVideoIds] = useState<Set<string | number>>(
+    new Set(),
+  );
+
+  // 顺序下载所有视频
+  useEffect(() => {
+    if (!enableVideo || items.length === 0) return;
+
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    const downloadQueue = async () => {
+      const cacheName = 'luna-video-cache-v2';
+      let cache: Cache | undefined;
+
+      if ('caches' in window) {
+        try {
+          cache = await caches.open(cacheName);
+        } catch (e) {
+          console.warn('[HeroBanner] Cache open failed:', e);
+          return;
+        }
+      }
+
+      if (!cache) return;
+
+      // 按照顺序下载：从当前索引开始，向后遍历
+      const orderedItems = [
+        ...items.slice(currentIndex),
+        ...items.slice(0, currentIndex),
+      ];
+
+      for (const item of orderedItems) {
+        if (signal.aborted) return;
+
+        const videoUrl = getStableVideoUrl(item);
+        if (!videoUrl) continue;
+
+        // 获取视频 ID (使用与 BannerVideo 一致的逻辑)
+        const proxiedUrl = getProxiedVideoUrl(videoUrl, item);
+        const videoId = extractVideoId(proxiedUrl);
+
+        // 如果已经缓存了，跳过
+        if (cachedVideoIds.has(videoId)) continue;
+
+        const cacheKey = `https://luna-cache/video/${videoId}`;
+
+        try {
+          // 1. 检查是否已在缓存中
+          const cachedResponse = await cache.match(cacheKey);
+          if (cachedResponse) {
+            console.log(`[HeroBanner] 🎯 Preload Cache HIT: ${videoId}`);
+            if (!signal.aborted) {
+              setCachedVideoIds((prev) => new Set(prev).add(videoId));
+            }
+            continue;
+          }
+
+          // 2. 缓存未命中，下载并写入缓存
+          console.log(`[HeroBanner] ⬇️ Downloading video: ${videoId}`);
+          const response = await fetch(proxiedUrl, {
+            cache: 'force-cache',
+            signal, // 绑定 AbortSignal
+          });
+
+          if (response.ok) {
+            // 检查是否在下载过程中被取消
+            if (signal.aborted) return;
+
+            await cache.put(cacheKey, response);
+            console.log(`[HeroBanner] ✅ Video cached: ${videoId}`);
+
+            if (!signal.aborted) {
+              setCachedVideoIds((prev) => new Set(prev).add(videoId));
+            }
+          } else {
+            console.warn(
+              `[HeroBanner] ❌ Video download failed: ${videoId}`,
+              response.status,
+            );
+          }
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error(
+              `[HeroBanner] Video download error: ${videoId}`,
+              error,
+            );
+          }
+        }
+      }
+    };
+
+    downloadQueue();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [items, enableVideo]); // 只在 items 变化时重新启动队列
 
   // 更新已渲染索引
   useEffect(() => {
@@ -556,6 +609,17 @@ export default function HeroBanner({
                     )}
                     isActive={index === currentIndex}
                     isMuted={isMuted}
+                    isCached={
+                      !!getStableVideoUrl(item) &&
+                      cachedVideoIds.has(
+                        extractVideoId(
+                          getProxiedVideoUrl(
+                            getStableVideoUrl(item) || '',
+                            item,
+                          ),
+                        ),
+                      )
+                    }
                     onLoad={(e) => {
                       setVideoLoaded(true); // 视频加载完成，淡入显示
                     }}

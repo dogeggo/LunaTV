@@ -31,7 +31,10 @@ async function getRecommendedShortDramasInternal(category?: number, size = 10) {
   return items.map((item: any) => ({
     id: item.vod_id || item.id,
     name: item.vod_name || item.name,
-    cover: item.vod_pic || item.cover,
+    cover:
+      item.vod_pic || item.cover
+        ? `/api/image-proxy?url=${encodeURIComponent(item.vod_pic || item.cover)}`
+        : '',
     update_time: item.vod_time || item.update_time || new Date().toISOString(),
     score: item.vod_score || item.score || 0,
     episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),

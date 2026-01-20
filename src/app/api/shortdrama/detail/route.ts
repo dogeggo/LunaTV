@@ -91,7 +91,9 @@ export async function GET(request: NextRequest) {
     const response: any = {
       id: id, // 使用原始请求ID，保持一致性
       title: result.data!.videoName,
-      poster: result.data!.cover,
+      poster: result.data!.cover
+        ? `/api/image-proxy?url=${encodeURIComponent(result.data!.cover)}`
+        : '',
       episodes: Array.from(
         { length: totalEpisodes },
         (_, i) => `shortdrama:${id}:${i}`, // 使用原始请求ID

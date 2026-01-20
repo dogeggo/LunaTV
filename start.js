@@ -3,6 +3,55 @@
 /* eslint-disable no-console,@typescript-eslint/no-var-requires */
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
+
+// 清理过期文件的函数
+function cleanExpiredFiles(dirPath, maxAgeDays) {
+  const now = Date.now();
+  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+
+  fs.readdir(dirPath, (err, files) => {
+    if (err) {
+      // 如果目录不存在，忽略错误
+      if (err.code !== 'ENOENT') {
+        console.error(`Error reading directory ${dirPath}:`, err);
+      }
+      return;
+    }
+
+    let deletedCount = 0;
+    let errorCount = 0;
+
+    const checkFile = (file) => {
+      const filePath = path.join(dirPath, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) {
+          console.error(`Error getting stats for ${filePath}:`, err);
+          return;
+        }
+
+        if (stats.isFile() && now - stats.mtimeMs > maxAgeMs) {
+          fs.unlink(filePath, (err) => {
+            if (err) {
+              console.error(`Error deleting ${filePath}:`, err);
+              errorCount++;
+            } else {
+              // console.log(`Deleted expired cache file: ${filePath}`);
+              deletedCount++;
+            }
+          });
+        }
+      });
+    };
+
+    files.forEach(checkFile);
+
+    // 简单输出一下清理开始的日志，具体删除详情如果太多就不打印了
+    console.log(
+      `Started cleaning ${dirPath}, checking ${files.length} files...`,
+    );
+  });
+}
 
 // 调用 generate-manifest.js 生成 manifest.json
 function generateManifest() {
@@ -62,6 +111,16 @@ const intervalId = setInterval(() => {
 
 // 执行 cron 任务的函数
 function executeCronJob() {
+  // 执行缓存清理 (7天过期)
+  const cacheDirs = [
+    path.join(__dirname, 'cache', 'image'),
+    path.join(__dirname, 'cache', 'video'),
+  ];
+
+  cacheDirs.forEach((dir) => {
+    cleanExpiredFiles(dir, 7);
+  });
+
   const cronUrl = `http://${process.env.HOSTNAME || 'localhost'}:${
     process.env.PORT || 3000
   }/api/cron`;
