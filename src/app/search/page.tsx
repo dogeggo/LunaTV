@@ -1647,7 +1647,7 @@ function SearchPageClient() {
                           ))}
                         </div>
                       </div>
-
+                      <br></br>
                       {/* 警告信息显示 */}
                       {youtubeWarning && (
                         <div className='mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800'>
