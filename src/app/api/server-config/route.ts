@@ -7,8 +7,6 @@ import { getConfig } from '@/lib/config';
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  console.log('server-config request: ', request.url);
-
   const config = await getConfig();
 
   const result: any = {

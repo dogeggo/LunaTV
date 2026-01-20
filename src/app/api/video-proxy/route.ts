@@ -159,10 +159,11 @@ export async function GET(request: Request) {
       if (etag) headers.set('ETag', etag);
       if (lastModified) headers.set('Last-Modified', lastModified);
 
-      headers.set(
-        'Cache-Control',
-        'public, max-age=1800, stale-while-revalidate=900, must-revalidate',
-      );
+      if (videoUrl.includes('vt1.doubanio.com')) {
+        headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+      } else {
+        headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+      }
       headers.set('Access-Control-Allow-Origin', '*');
 
       return new Response(null, {
@@ -211,20 +212,11 @@ export async function GET(request: Request) {
     if (etag) headers.set('ETag', etag);
     if (lastModified) headers.set('Last-Modified', lastModified);
 
-    // 设置缓存头（视频30分钟缓存 + 智能重验证）
-    // 使用 stale-while-revalidate 策略：允许在后台重新验证时提供旧内容
-    // 但添加 must-revalidate 确保过期后必须验证源服务器
-    // trailer URL 有时效性，使用较短的 30 分钟缓存
-    headers.set(
-      'Cache-Control',
-      'public, max-age=1800, stale-while-revalidate=900, must-revalidate',
-    );
-    // CDN缓存：30分钟 + 15分钟宽限期
-    headers.set(
-      'CDN-Cache-Control',
-      'public, s-maxage=1800, stale-while-revalidate=900',
-    );
-
+    if (videoUrl.includes('vt1.doubanio.com')) {
+      headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+    } else {
+      headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+    }
     // 添加 CORS 支持
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
@@ -303,11 +295,11 @@ export async function HEAD(request: Request) {
     if (lastModified) headers.set('Last-Modified', lastModified);
 
     headers.set('Access-Control-Allow-Origin', '*');
-    headers.set(
-      'Cache-Control',
-      'public, max-age=3600, stale-while-revalidate=1800, must-revalidate',
-    );
-
+    if (videoUrl.includes('vt1.doubanio.com')) {
+      headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+    } else {
+      headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+    }
     return new NextResponse(null, {
       status: videoResponse.status,
       headers,
@@ -386,7 +378,7 @@ function serveLocalFile(request: Request, filePath: string) {
     return new Response(null, {
       status: 304,
       headers: {
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': 'public, max-age=604800, immutable',
         ETag: etag,
         'Last-Modified': mtime,
         'X-Cache-Status': 'HIT',
@@ -399,7 +391,7 @@ function serveLocalFile(request: Request, filePath: string) {
   headers.set('Content-Type', 'video/mp4');
   headers.set('Content-Length', fileSize.toString());
   headers.set('Access-Control-Allow-Origin', '*');
-  headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+  headers.set('Cache-Control', 'public, max-age=604800, immutable');
   headers.set('X-Cache-Status', 'HIT');
   headers.set('ETag', etag);
   headers.set('Last-Modified', mtime);

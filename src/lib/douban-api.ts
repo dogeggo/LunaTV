@@ -2,14 +2,22 @@ import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 /**
  * 刷新过期的 Douban trailer URL
- * 不使用任何缓存，直接调用豆瓣移动端API获取最新URL
+ * 使用内存缓存，如果已请求过该id就从内存中返回
  */
+
+// 简单的内存缓存
+const trailerCache = new Map<string, string>();
 
 // 带重试的获取函数
 export async function fetchTrailerWithRetry(
   id: string,
   retryCount = 0,
 ): Promise<string | null> {
+  // 检查缓存
+  if (trailerCache.has(id)) {
+    return trailerCache.get(id)!;
+  }
+
   const MAX_RETRIES = 2;
   const TIMEOUT = 20000; // 20秒超时
   const RETRY_DELAY = 2000; // 2秒后重试
@@ -79,6 +87,10 @@ export async function fetchTrailerWithRetry(
       throw new Error('该影片没有预告片');
     }
     console.log(`[refresh-trailer] 影片 ${id} 刷新成功. url = ${trailerUrl}`);
+
+    // 写入缓存
+    trailerCache.set(id, trailerUrl);
+
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;
