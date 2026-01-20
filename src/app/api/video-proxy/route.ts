@@ -9,6 +9,7 @@ import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 const pipeline = promisify(stream.pipeline);
 const CACHE_DIR = path.join(process.cwd(), 'cache', 'video');
+const MAX_CACHE_BYTES = 10 * 1024 * 1024;
 const downloadingFiles = new Set<string>();
 // 内存缓存：douban_id -> trailerUrl
 const doubanIdToTrailerUrl = new Map<string, string>();
@@ -29,9 +30,18 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   let videoUrl = searchParams.get('url');
   const doubanId = searchParams.get('id');
+  const isCarousel = searchParams.get('carousel') === '1';
 
-  // 如果没有 url 但有 id，尝试获取 url
-  if (!videoUrl && doubanId) {
+  if (isCarousel && !doubanId) {
+    return NextResponse.json({ error: 'Missing video ID' }, { status: 400 });
+  }
+
+  if (isCarousel) {
+    videoUrl = null;
+  }
+
+  // 仅轮播视频：如果没有 url 但有 id，尝试获取 url
+  if (!videoUrl && doubanId && isCarousel) {
     // 1. 查内存缓存
     if (doubanIdToTrailerUrl.has(doubanId)) {
       videoUrl = doubanIdToTrailerUrl.get(doubanId)!;
@@ -97,8 +107,9 @@ export async function GET(request: Request) {
     };
 
     // --- 本地缓存逻辑 ---
-    // 仅针对 vt1.doubanio.com 进行缓存和完整返回
-    if (videoUrl.includes('vt1.doubanio.com')) {
+    // 仅针对轮播视频进行缓存和完整返回
+    let cacheMiss = false;
+    if (isCarousel) {
       // 提取文件名：从 URL 路径中获取最后一部分
       const urlPath = new URL(videoUrl).pathname;
       const filename = path.basename(urlPath); // 例如 "703230195.mp4"
@@ -111,17 +122,19 @@ export async function GET(request: Request) {
           return serveLocalFile(request, filePath);
         } catch (e) {
           console.error('[Cache] Error serving local file:', e);
+          cacheMiss = true;
         }
       } else {
         // 触发后台下载（不带 Range 头）
         console.log(`[Cache] MISS: ${filename}`);
+        cacheMiss = true;
         if (!downloadingFiles.has(filename)) {
           downloadingFiles.add(filename);
           const downloadHeaders = { ...fetchHeaders };
           // @ts-ignore
           delete downloadHeaders['Range'];
 
-          downloadToCache(videoUrl, filePath, downloadHeaders)
+          downloadToCache(videoUrl, filePath, downloadHeaders, MAX_CACHE_BYTES)
             .catch((err) =>
               console.error('[Cache] Background download failed:', err),
             )
@@ -131,6 +144,21 @@ export async function GET(request: Request) {
     }
 
     // 如果客户端发送了 Range 请求，转发给目标服务器
+    if (cacheMiss) {
+      const warmingResponse = NextResponse.json(
+        { error: 'Video cache warming' },
+        { status: 503 },
+      );
+      warmingResponse.headers.set('Access-Control-Allow-Origin', '*');
+      warmingResponse.headers.set(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate',
+      );
+      warmingResponse.headers.set('Retry-After', '5');
+      warmingResponse.headers.set('X-Cache-Status', 'WARMING');
+      return warmingResponse;
+    }
+
     if (rangeHeader) {
       fetchHeaders['Range'] = rangeHeader;
     }
@@ -159,7 +187,7 @@ export async function GET(request: Request) {
       if (etag) headers.set('ETag', etag);
       if (lastModified) headers.set('Last-Modified', lastModified);
 
-      if (videoUrl.includes('vt1.doubanio.com')) {
+      if (isCarousel) {
         headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
       } else {
         headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
@@ -212,7 +240,7 @@ export async function GET(request: Request) {
     if (etag) headers.set('ETag', etag);
     if (lastModified) headers.set('Last-Modified', lastModified);
 
-    if (videoUrl.includes('vt1.doubanio.com')) {
+    if (isCarousel) {
       headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
     } else {
       headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
@@ -250,13 +278,75 @@ export async function GET(request: Request) {
 // 处理 HEAD 请求（用于获取视频元数据）
 export async function HEAD(request: Request) {
   const { searchParams } = new URL(request.url);
-  const videoUrl = searchParams.get('url');
+  let videoUrl = searchParams.get('url');
+  const doubanId = searchParams.get('id');
+  const isCarousel = searchParams.get('carousel') === '1';
+
+  if (isCarousel && !doubanId) {
+    return new NextResponse(null, { status: 400 });
+  }
+
+  if (isCarousel) {
+    videoUrl = null;
+  }
+
+  if (!videoUrl && doubanId && isCarousel) {
+    if (doubanIdToTrailerUrl.has(doubanId)) {
+      videoUrl = doubanIdToTrailerUrl.get(doubanId)!;
+    } else {
+      try {
+        const fetchedUrl = await fetchTrailerWithRetry(doubanId);
+        if (fetchedUrl) {
+          videoUrl = fetchedUrl;
+          doubanIdToTrailerUrl.set(doubanId, fetchedUrl);
+        }
+      } catch (e) {
+        console.error(
+          `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
+          e,
+        );
+      }
+    }
+  }
 
   if (!videoUrl) {
     return new NextResponse(null, { status: 400 });
   }
 
   try {
+    if (isCarousel) {
+      const urlPath = new URL(videoUrl).pathname;
+      const filename = path.basename(urlPath);
+      const filePath = path.join(CACHE_DIR, filename);
+
+      if (fs.existsSync(filePath)) {
+        const stat = fs.statSync(filePath);
+        const mtime = stat.mtime.toUTCString();
+        const etag = `"${stat.size.toString(16)}-${stat.mtime.getTime().toString(16)}"`;
+
+        const headers = new Headers();
+        headers.set('Content-Type', 'video/mp4');
+        headers.set('Content-Length', stat.size.toString());
+        headers.set('ETag', etag);
+        headers.set('Last-Modified', mtime);
+        headers.set('Access-Control-Allow-Origin', '*');
+        headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+        headers.set('X-Cache-Status', 'HIT');
+
+        return new NextResponse(null, { status: 200, headers });
+      }
+
+      const warmingResponse = new NextResponse(null, { status: 503 });
+      warmingResponse.headers.set('Access-Control-Allow-Origin', '*');
+      warmingResponse.headers.set(
+        'Cache-Control',
+        'no-cache, no-store, must-revalidate',
+      );
+      warmingResponse.headers.set('Retry-After', '5');
+      warmingResponse.headers.set('X-Cache-Status', 'WARMING');
+      return warmingResponse;
+    }
+
     // 动态设置 Referer 和 Origin（根据视频源域名）
     const videoUrlObj = new URL(videoUrl);
     const sourceOrigin = `${videoUrlObj.protocol}//${videoUrlObj.host}`;
@@ -295,7 +385,7 @@ export async function HEAD(request: Request) {
     if (lastModified) headers.set('Last-Modified', lastModified);
 
     headers.set('Access-Control-Allow-Origin', '*');
-    if (videoUrl.includes('vt1.doubanio.com')) {
+    if (isCarousel) {
       headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
     } else {
       headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
@@ -323,28 +413,125 @@ export async function OPTIONS() {
 }
 
 // 辅助函数：后台下载视频到缓存
-async function downloadToCache(url: string, filePath: string, headers: any) {
+async function downloadToCache(
+  url: string,
+  filePath: string,
+  headers: any,
+  maxBytes: number,
+) {
   const tempPath = `${filePath}.tmp`;
+  const controller = new AbortController();
   try {
-    const response = await fetch(url, { headers });
+    const cappedHeaders = { ...headers, Range: `bytes=0-${maxBytes - 1}` };
+    const response = await fetch(url, {
+      headers: cappedHeaders,
+      signal: controller.signal,
+    });
     if (!response.ok || !response.body) {
       console.error(`[Cache] Failed to fetch source: ${response.status}`);
       return;
     }
 
+    const contentLengthHeader = response.headers.get('content-length');
+    const contentRangeHeader = response.headers.get('content-range');
+    let totalSize: number | null = null;
+    let isComplete = false;
+
+    if (response.status === 206 && contentRangeHeader) {
+      const match = contentRangeHeader.match(/bytes\s+(\d+)-(\d+)\/(\d+|\*)/i);
+      if (match && match[3] !== '*') {
+        const start = Number(match[1]);
+        const end = Number(match[2]);
+        const total = Number(match[3]);
+        if (Number.isFinite(total)) {
+          totalSize = total;
+          isComplete = start === 0 && end + 1 === total;
+        }
+      }
+    } else if (response.status === 200 && contentLengthHeader) {
+      const total = Number(contentLengthHeader);
+      if (Number.isFinite(total)) {
+        totalSize = total;
+        isComplete = true;
+      }
+    }
+
+    let isPartial = false;
+    if (totalSize === null) {
+      isPartial = true;
+      console.log(`[Cache] Size unknown, caching up to ${maxBytes}: ${url}`);
+    } else if (totalSize > maxBytes) {
+      isPartial = true;
+      console.log(`[Cache] Capping cache (too large: ${totalSize}): ${url}`);
+    } else if (!isComplete) {
+      isPartial = true;
+      console.log(`[Cache] Capping cache (partial range): ${url}`);
+    }
+
     const fileStream = fs.createWriteStream(tempPath);
     // @ts-ignore
     const reader = stream.Readable.fromWeb(response.body);
-    await pipeline(reader, fileStream);
+    let bytesWritten = 0;
+    let limitReached = false;
+    const limitTransform = new stream.Transform({
+      transform(chunk, _encoding, callback) {
+        if (limitReached) {
+          callback();
+          return;
+        }
+
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        const remaining = maxBytes - bytesWritten;
+
+        if (remaining <= 0) {
+          limitReached = true;
+          controller.abort();
+          callback();
+          return;
+        }
+
+        let output = buffer;
+        if (buffer.length > remaining) {
+          output = buffer.subarray(0, remaining);
+          limitReached = true;
+        }
+
+        bytesWritten += output.length;
+        if (output.length > 0) {
+          this.push(output);
+        }
+
+        if (limitReached) {
+          controller.abort();
+        }
+        callback();
+      },
+    });
+
+    try {
+      await pipeline(reader, limitTransform, fileStream);
+    } catch (error: any) {
+      if (!(limitReached && error?.name === 'AbortError')) {
+        throw error;
+      }
+    }
 
     // 等待文件流完全关闭
     fileStream.close();
+
+    if (limitReached && !isPartial) {
+      isPartial = true;
+      console.log(`[Cache] Capping cache (exceeded limit): ${url}`);
+    }
 
     // 简单的重试机制，确保文件句柄释放
     let retries = 3;
     while (retries > 0) {
       try {
-        console.log(`[VideoCache] Successfully cached: ${filePath}`);
+        const cacheNote = isPartial ? ' (partial)' : '';
+        console.log(
+          `[VideoCache] Successfully cached${cacheNote}: ${filePath}`,
+        );
         fs.renameSync(tempPath, filePath);
         break;
       } catch (e: any) {

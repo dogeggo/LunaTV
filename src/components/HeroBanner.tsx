@@ -270,24 +270,12 @@ const BannerImage = ({
   );
 };
 
-// 处理视频 URL，使用代理绕过防盗链
-const getProxiedVideoUrl = (
-  url: string,
-  item?: BannerItem,
-  fallbackVideoIds?: Set<string | number>,
-) => {
-  // 🎯 优先使用 ID 模式（利用浏览器缓存）
-  // 如果有 douban_id 且没有被标记为需要降级，只传递 id 参数
-  // 这样 URL 永远不变：/api/video-proxy?id=123456
-  if (
-    item?.douban_id &&
-    (!fallbackVideoIds || !fallbackVideoIds.has(item.id))
-  ) {
-    return `/api/video-proxy?id=${item.douban_id}`;
-  }
-
-  if (url?.includes('douban') || url?.includes('doubanio')) {
-    return `/api/video-proxy?url=${encodeURIComponent(url)}`;
+// 处理视频 URL，轮播视频仅允许通过 id 请求
+const getProxiedVideoUrl = (url: string, item?: BannerItem) => {
+  // 🎯 只传递 id 参数，避免 url 参数请求
+  // 这样 URL 永远不变：/api/video-proxy?id=123456&carousel=1
+  if (item?.douban_id) {
+    return `/api/video-proxy?id=${item.douban_id}&carousel=1`;
   }
   return url;
 };
