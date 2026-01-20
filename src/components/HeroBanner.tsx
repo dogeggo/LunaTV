@@ -68,7 +68,7 @@ const BannerVideo = ({
   isActive: boolean;
   isMuted: boolean;
   isCached: boolean;
-  onLoad: (e: any) => void;
+  onLoad?: (e: any) => void;
   onError: (e: any) => void;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -121,7 +121,6 @@ const BannerVideo = ({
         }
 
         // 如果缓存中没有，理论上不应该发生（因为 isCached 为 true），但为了健壮性，这里不做任何操作
-        // 或者可以触发 onError 让父组件知道状态不一致
         console.warn(
           `[BannerVideo] ⚠️ Expected cached video not found: ${videoId}`,
         );
@@ -184,6 +183,116 @@ const BannerVideo = ({
   );
 };
 
+// 内部组件：稳定的图片组件
+// 🌟 优化：使用 Cache API + Blob 实现永久缓存
+const BannerImage = ({
+  src,
+  alt,
+  isPriority,
+  isCached,
+}: {
+  src: string;
+  alt: string;
+  isPriority: boolean;
+  isCached: boolean;
+}) => {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  // 如果已知已缓存，先不显示 Image，等待 Blob 加载，避免使用原始 src 发起网络请求
+  // 🌟 优化：默认设为 false，总是先尝试去 Cache API 找一下
+  // 这样即使父组件传来的 isCached 为 false（例如页面刚刷新），也能利用持久化的缓存
+  const [isReady, setIsReady] = useState(false);
+
+  // 从 URL 中提取 ID (文件名)，用作稳定的 Cache Key
+  const getImageId = useCallback((url: string) => extractVideoId(url), []);
+
+  useEffect(() => {
+    const loadBlob = async () => {
+      // 即使 isCached 为 false，也尝试去缓存里找一下（可能是页面刷新后状态丢失但缓存还在）
+      const imageId = getImageId(src);
+      const cacheName = 'luna-image-cache-v1';
+      const cacheKey = `https://luna-cache/image/${imageId}`;
+
+      if ('caches' in window) {
+        try {
+          const cache = await caches.open(cacheName);
+          const cachedResponse = await cache.match(cacheKey);
+          if (cachedResponse) {
+            console.log(`[BannerImage] 🎯 Cache HIT: ${imageId}`);
+            const blob = await cachedResponse.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            setBlobUrl(objectUrl);
+            setIsReady(true);
+            return;
+          } else {
+            console.log(`[BannerImage] ❌ Cache MISS: ${imageId}`);
+          }
+        } catch (e) {
+          console.warn('[BannerImage] Cache access failed:', e);
+        }
+      }
+
+      // 如果缓存里没有
+      if (isCached) {
+        // 标记了已缓存但没找到，只能回退到原始 src
+        console.warn(
+          `[BannerImage] ⚠️ Expected cached image not found: ${imageId}`,
+        );
+      }
+      setIsReady(true);
+    };
+
+    loadBlob();
+  }, [src, isCached, getImageId]);
+
+  // 组件卸载时清理 Blob URL
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
+
+  if (!isReady) {
+    return <div className='absolute inset-0 bg-black/10 animate-pulse' />;
+  }
+
+  return (
+    <Image
+      src={blobUrl || src}
+      alt={alt}
+      fill
+      className='object-cover object-center'
+      priority={isPriority}
+      quality={100}
+      sizes='100vw'
+      unoptimized={true}
+    />
+  );
+};
+
+// 处理视频 URL，使用代理绕过防盗链
+const getProxiedVideoUrl = (
+  url: string,
+  item?: BannerItem,
+  fallbackVideoIds?: Set<string | number>,
+) => {
+  // 🎯 优先使用 ID 模式（利用浏览器缓存）
+  // 如果有 douban_id 且没有被标记为需要降级，只传递 id 参数
+  // 这样 URL 永远不变：/api/video-proxy?id=123456
+  if (
+    item?.douban_id &&
+    (!fallbackVideoIds || !fallbackVideoIds.has(item.id))
+  ) {
+    return `/api/video-proxy?id=${item.douban_id}`;
+  }
+
+  if (url?.includes('douban') || url?.includes('doubanio')) {
+    return `/api/video-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
 export default function HeroBanner({
   items,
   autoPlayInterval = 8000, // Netflix风格：更长的停留时间
@@ -195,7 +304,6 @@ export default function HeroBanner({
   const [isHovered, setIsHovered] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [videoLoaded, setVideoLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // 存储刷新后的trailer URL（用于403自动重试，使用localStorage持久化）
@@ -258,117 +366,13 @@ export default function HeroBanner({
     new Set([0, 1, items.length - 1]),
   );
 
-  // 记录需要降级使用完整 URL 的视频 ID
-  const [fallbackVideoIds, setFallbackVideoIds] = useState<
-    Set<string | number>
-  >(new Set());
-
-  // 记录已缓存的视频 ID
-  const [cachedVideoIds, setCachedVideoIds] = useState<Set<string | number>>(
-    new Set(),
-  );
-
-  // 顺序下载所有视频
-  useEffect(() => {
-    if (!enableVideo || items.length === 0) return;
-
-    const abortController = new AbortController();
-    const { signal } = abortController;
-
-    const downloadQueue = async () => {
-      const cacheName = 'luna-video-cache-v2';
-      let cache: Cache | undefined;
-
-      if ('caches' in window) {
-        try {
-          cache = await caches.open(cacheName);
-        } catch (e) {
-          console.warn('[HeroBanner] Cache open failed:', e);
-          return;
-        }
-      }
-
-      if (!cache) return;
-
-      // 按照顺序下载：从当前索引开始，向后遍历
-      const orderedItems = [
-        ...items.slice(currentIndex),
-        ...items.slice(0, currentIndex),
-      ];
-
-      for (const item of orderedItems) {
-        if (signal.aborted) return;
-
-        const videoUrl = getStableVideoUrl(item);
-        if (!videoUrl) continue;
-
-        // 获取视频 ID (使用与 BannerVideo 一致的逻辑)
-        const proxiedUrl = getProxiedVideoUrl(videoUrl, item);
-        const videoId = extractVideoId(proxiedUrl);
-
-        // 如果已经缓存了，跳过
-        if (cachedVideoIds.has(videoId)) continue;
-
-        const cacheKey = `https://luna-cache/video/${videoId}`;
-
-        try {
-          // 1. 检查是否已在缓存中
-          const cachedResponse = await cache.match(cacheKey);
-          if (cachedResponse) {
-            console.log(`[HeroBanner] 🎯 Preload Cache HIT: ${videoId}`);
-            if (!signal.aborted) {
-              setCachedVideoIds((prev) => new Set(prev).add(videoId));
-            }
-            continue;
-          }
-
-          // 2. 缓存未命中，下载并写入缓存
-          console.log(`[HeroBanner] ⬇️ Downloading video: ${videoId}`);
-          const response = await fetch(proxiedUrl, {
-            cache: 'force-cache',
-            signal, // 绑定 AbortSignal
-          });
-
-          if (response.ok) {
-            // 检查是否在下载过程中被取消
-            if (signal.aborted) return;
-
-            await cache.put(cacheKey, response);
-            console.log(`[HeroBanner] ✅ Video cached: ${videoId}`);
-
-            if (!signal.aborted) {
-              setCachedVideoIds((prev) => new Set(prev).add(videoId));
-            }
-          } else {
-            console.warn(
-              `[HeroBanner] ❌ Video download failed: ${videoId}`,
-              response.status,
-            );
-          }
-        } catch (error: any) {
-          if (error.name !== 'AbortError') {
-            console.error(
-              `[HeroBanner] Video download error: ${videoId}`,
-              error,
-            );
-          }
-        }
-      }
-    };
-
-    downloadQueue();
-
-    return () => {
-      abortController.abort();
-    };
-  }, [items, enableVideo]); // 只在 items 变化时重新启动队列
-
   // 更新已渲染索引
   useEffect(() => {
     setRenderedIndices((prev) => {
       const nextIndex = (currentIndex + 1) % items.length;
       const prevIndex = (currentIndex - 1 + items.length) % items.length;
 
+      // 检查是否需要更新
       if (
         prev.has(currentIndex) &&
         prev.has(nextIndex) &&
@@ -385,9 +389,25 @@ export default function HeroBanner({
     });
   }, [currentIndex, items.length]);
 
-  // 🎯 使用 useRef 跟踪已请求和正在请求中的 trailer ID，避免重复请求
-  const requestedTrailersRef = useRef<Set<string | number>>(new Set());
-  const requestingTrailersRef = useRef<Set<string | number>>(new Set());
+  // 记录需要降级使用完整 URL 的视频 ID
+  const [fallbackVideoIds, setFallbackVideoIds] = useState<
+    Set<string | number>
+  >(new Set());
+
+  // 记录已缓存的视频 ID
+  const [cachedVideoIds, setCachedVideoIds] = useState<Set<string | number>>(
+    new Set(),
+  );
+
+  // 🎯 记录已缓存的图片 ID
+  const [cachedImageIds, setCachedImageIds] = useState<Set<string | number>>(
+    new Set(),
+  );
+
+  // 🎯 记录正在下载的视频 ID，避免重复下载
+  const downloadingVideoIdsRef = useRef<Set<string>>(new Set());
+  // 🎯 记录正在下载的图片 ID，避免重复下载
+  const downloadingImageIdsRef = useRef<Set<string>>(new Set());
 
   // 处理图片 URL，使用代理绕过防盗链
   const getProxiedImageUrl = (url: string) => {
@@ -408,20 +428,207 @@ export default function HeroBanner({
       .replace('/m_ratio_poster/', '/l_ratio_poster/');
   };
 
-  // 处理视频 URL，使用代理绕过防盗链
-  const getProxiedVideoUrl = (url: string, item?: BannerItem) => {
-    // 🎯 优先使用 ID 模式（利用浏览器缓存）
-    // 如果有 douban_id 且没有被标记为需要降级，只传递 id 参数
-    // 这样 URL 永远不变：/api/video-proxy?id=123456
-    if (item?.douban_id && !fallbackVideoIds.has(item.id)) {
-      return `/api/video-proxy?id=${item.douban_id}`;
-    }
+  // 下载单个图片的辅助函数
+  const downloadImage = useCallback(
+    async (item: BannerItem, signal?: AbortSignal) => {
+      const imageUrl = getHDBackdrop(item.backdrop || item.poster);
+      if (!imageUrl) return;
 
-    if (url?.includes('douban') || url?.includes('doubanio')) {
-      return `/api/video-proxy?url=${encodeURIComponent(url)}`;
+      const proxiedUrl = getProxiedImageUrl(imageUrl);
+      const imageId = extractVideoId(proxiedUrl); // 复用 ID 提取逻辑
+
+      // 如果已经缓存或正在下载，跳过
+      if (cachedImageIds.has(imageId)) return;
+      if (downloadingImageIdsRef.current.has(imageId)) return;
+
+      downloadingImageIdsRef.current.add(imageId);
+
+      try {
+        const cacheName = 'luna-image-cache-v1';
+        let cache: Cache | undefined;
+
+        if ('caches' in window) {
+          try {
+            cache = await caches.open(cacheName);
+          } catch (e) {
+            console.warn('[HeroBanner] Image Cache open failed:', e);
+            return;
+          }
+        }
+
+        if (!cache) return;
+
+        const cacheKey = `https://luna-cache/image/${imageId}`;
+
+        // 1. 检查是否已在缓存中
+        const cachedResponse = await cache.match(cacheKey);
+        if (cachedResponse) {
+          console.log(`[HeroBanner] 🎯 Image Cache HIT: ${imageId}`);
+          if (!signal?.aborted) {
+            setCachedImageIds((prev) => new Set(prev).add(imageId));
+          }
+          return;
+        }
+
+        // 2. 缓存未命中，下载并写入缓存
+        const response = await fetch(proxiedUrl, {
+          cache: 'force-cache',
+          signal,
+        });
+
+        if (response.ok) {
+          console.log(
+            `[HeroBanner] Fetch success for ${imageId}, status: ${response.status}`,
+          );
+          if (signal?.aborted) return;
+
+          await cache.put(cacheKey, response);
+          console.log(`[HeroBanner] ✅ Image cached: ${imageId}`);
+
+          if (!signal?.aborted) {
+            setCachedImageIds((prev) => new Set(prev).add(imageId));
+          }
+        } else {
+          console.warn(
+            `[HeroBanner] ❌ Image download failed: ${imageId}`,
+            response.status,
+            response.statusText,
+          );
+        }
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error(`[HeroBanner] Image download error: ${imageId}`, error);
+        }
+      } finally {
+        downloadingImageIdsRef.current.delete(imageId);
+      }
+    },
+    [cachedImageIds],
+  );
+
+  // 下载单个视频的辅助函数
+  const downloadVideo = useCallback(
+    async (item: BannerItem, signal?: AbortSignal) => {
+      const videoUrl = getStableVideoUrl(item);
+      if (!videoUrl) return;
+
+      const proxiedUrl = getProxiedVideoUrl(videoUrl, item);
+      const videoId = extractVideoId(proxiedUrl);
+
+      // 如果已经缓存或正在下载，跳过
+      if (cachedVideoIds.has(videoId)) return;
+      if (downloadingVideoIdsRef.current.has(videoId)) return;
+
+      downloadingVideoIdsRef.current.add(videoId);
+
+      try {
+        const cacheName = 'luna-video-cache-v2';
+        let cache: Cache | undefined;
+
+        if ('caches' in window) {
+          try {
+            cache = await caches.open(cacheName);
+          } catch (e) {
+            console.warn('[HeroBanner] Cache open failed:', e);
+            return;
+          }
+        }
+
+        if (!cache) return;
+
+        const cacheKey = `https://luna-cache/video/${videoId}`;
+
+        // 1. 检查是否已在缓存中
+        const cachedResponse = await cache.match(cacheKey);
+        if (cachedResponse) {
+          console.log(`[HeroBanner] 🎯 Cache HIT (pre-check): ${videoId}`);
+          if (!signal?.aborted) {
+            setCachedVideoIds((prev) => new Set(prev).add(videoId));
+          }
+          return;
+        }
+
+        // 2. 缓存未命中，下载并写入缓存
+        const response = await fetch(proxiedUrl, {
+          cache: 'force-cache',
+          signal,
+        });
+
+        if (response.ok) {
+          if (signal?.aborted) return;
+
+          await cache.put(cacheKey, response);
+          console.log(`[HeroBanner] ✅ Video cached: ${videoId}`);
+
+          if (!signal?.aborted) {
+            setCachedVideoIds((prev) => new Set(prev).add(videoId));
+          }
+        } else {
+          console.warn(
+            `[HeroBanner] ❌ Video download failed: ${videoId}`,
+            response.status,
+          );
+        }
+      } catch (error: any) {
+        if (error.name !== 'AbortError') {
+          console.error(`[HeroBanner] Video download error: ${videoId}`, error);
+        }
+      } finally {
+        downloadingVideoIdsRef.current.delete(videoId);
+      }
+    },
+    [cachedVideoIds], // 依赖 cachedVideoIds，但内部也会再次检查
+  );
+
+  // 顺序下载所有视频和图片（后台队列）
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    const downloadQueue = async () => {
+      // 按照顺序下载：从当前索引开始，向后遍历
+      const orderedItems = [
+        ...items.slice(currentIndex),
+        ...items.slice(0, currentIndex),
+      ];
+
+      for (const item of orderedItems) {
+        if (signal.aborted) return;
+        // 并行下载图片和视频
+        const tasks = [downloadImage(item, signal)];
+        if (enableVideo) {
+          tasks.push(downloadVideo(item, signal));
+        }
+        await Promise.all(tasks);
+      }
+    };
+
+    downloadQueue();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [items, enableVideo]); // 只在 items 变化时重新启动队列
+
+  // 🎯 监听 currentIndex 变化，优先下载当前视频和图片
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const currentItem = items[currentIndex];
+    if (currentItem) {
+      // 启动一个独立的下载任务，不传递 signal（除非组件卸载），确保高优先级
+      downloadImage(currentItem);
+      if (enableVideo) {
+        downloadVideo(currentItem);
+      }
     }
-    return url;
-  };
+  }, [currentIndex, items, enableVideo, downloadVideo, downloadImage]);
+
+  // 🎯 使用 useRef 跟踪已请求和正在请求中的 trailer ID，避免重复请求
+  const requestedTrailersRef = useRef<Set<string | number>>(new Set());
+  const requestingTrailersRef = useRef<Set<string | number>>(new Set());
 
   // 刷新过期的trailer URL（通过后端代理调用豆瓣移动端API，绕过缓存）
   const refreshTrailerUrl = useCallback(async (doubanId: number | string) => {
@@ -447,7 +654,13 @@ export default function HeroBanner({
       );
 
       if (!response.ok) {
-        console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
+        // 如果是 404 (没有预告片)，标记为失败并不再重试
+        if (response.status === 404) {
+          console.warn(`[HeroBanner] 影片 ${doubanId} 没有预告片，标记为失败`);
+          setFailedVideoIds((prev) => new Set(prev).add(doubanId));
+        } else {
+          console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
+        }
         return null;
       }
 
@@ -490,19 +703,35 @@ export default function HeroBanner({
     return null;
   }, []);
 
-  // 获取当前有效的trailer URL（优先使用刷新后的）
-  const getEffectiveTrailerUrl = (item: BannerItem) => {
-    if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
-      return refreshedTrailerUrls[item.douban_id];
-    }
-    return item.trailerUrl;
-  };
+  // 🎯 页面加载时主动检查并刷新 URL
+  useEffect(() => {
+    if (!items || items.length === 0) return;
+
+    items.forEach((item) => {
+      // 只要有 douban_id，无论是否有 trailerUrl，都去检查一下
+      // 如果没有 trailerUrl，或者没有缓存的刷新 URL，都去请求
+      if (item.douban_id) {
+        // 只要本地缓存里有，就认为不需要刷新
+        // 之前的逻辑是 (!item.trailerUrl || !refreshedTrailerUrls[...])
+        // 这导致如果 item.trailerUrl 为空（列表页常见情况），即使本地有缓存也会强制刷新
+        const hasCached = !!refreshedTrailerUrls[item.douban_id];
+
+        // 只有在没缓存的时候才去请求
+        // 注意：这里我们假设只要没缓存，就需要去验证/获取（即使 item.trailerUrl 存在也可能过期）
+        if (!hasCached) {
+          console.log(
+            `[HeroBanner] Proactively fetching/refreshing URL for: ${item.douban_id}`,
+          );
+          refreshTrailerUrl(item.douban_id);
+        }
+      }
+    });
+  }, [items, refreshTrailerUrl]); // refreshedTrailerUrls 不放入依赖，只在 items 变化或挂载时检查一次
 
   // 导航函数
   const handleNext = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-    setVideoLoaded(false); // 重置视频加载状态
     setCurrentIndex((prev) => (prev + 1) % items.length);
     setTimeout(() => setIsTransitioning(false), 800); // Netflix风格：更慢的过渡
   }, [isTransitioning, items.length]);
@@ -510,7 +739,6 @@ export default function HeroBanner({
   const handlePrev = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-    setVideoLoaded(false); // 重置视频加载状态
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
     setTimeout(() => setIsTransitioning(false), 800);
   }, [isTransitioning, items.length]);
@@ -518,7 +746,6 @@ export default function HeroBanner({
   const handleIndicatorClick = (index: number) => {
     if (isTransitioning || index === currentIndex) return;
     setIsTransitioning(true);
-    setVideoLoaded(false); // 重置视频加载状态
     setCurrentIndex(index);
     setTimeout(() => setIsTransitioning(false), 800);
   };
@@ -564,15 +791,9 @@ export default function HeroBanner({
       <div className='absolute inset-0'>
         {/* 只渲染当前、前一张、后一张（性能优化） */}
         {items.map((item, index) => {
-          // 计算是否应该渲染此项
-          const prevIndex = (currentIndex - 1 + items.length) % items.length;
-          const nextIndex = (currentIndex + 1) % items.length;
-
           // 只要曾经渲染过，就保持渲染，避免卸载导致重新请求
           const shouldRender = renderedIndices.has(index);
-
           if (!shouldRender) return null;
-
           return (
             <div
               key={item.id}
@@ -581,17 +802,22 @@ export default function HeroBanner({
               }`}
             >
               {/* 背景图片（始终显示，作为视频的占位符） */}
-              <Image
+              <BannerImage
                 src={getProxiedImageUrl(
                   getHDBackdrop(item.backdrop || item.poster) || '',
                 )}
                 alt={item.title}
-                fill
-                className='object-cover object-center'
-                priority={index === 0}
-                quality={100}
-                sizes='100vw'
-                unoptimized={true}
+                isPriority={index === 0}
+                isCached={
+                  !!getHDBackdrop(item.backdrop || item.poster) &&
+                  cachedImageIds.has(
+                    extractVideoId(
+                      getProxiedImageUrl(
+                        getHDBackdrop(item.backdrop || item.poster) || '',
+                      ),
+                    ),
+                  )
+                }
               />
 
               {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
@@ -620,9 +846,6 @@ export default function HeroBanner({
                         ),
                       )
                     }
-                    onLoad={(e) => {
-                      setVideoLoaded(true); // 视频加载完成，淡入显示
-                    }}
                     onError={async (e) => {
                       // 这里的 e 可能是原生事件，也可能是 fetch 错误
                       console.warn('[HeroBanner] 视频加载失败:', {
@@ -644,38 +867,12 @@ export default function HeroBanner({
                         return;
                       }
 
-                      // 如果已经刷新过或者是刷新后的URL失败了，标记为失败并不再重试
-                      if (
-                        (item.douban_id &&
-                          refreshedTrailerUrls[item.douban_id]) ||
-                        !item.douban_id
-                      ) {
-                        console.log(
-                          '[HeroBanner] 视频彻底加载失败，停止重试:',
-                          item.id,
-                        );
-                        setFailedVideoIds((prev) => new Set(prev).add(item.id));
-                        return;
-                      }
-
-                      // 尝试刷新 URL
-                      if (item.douban_id) {
-                        console.log(
-                          '[HeroBanner] 尝试刷新过期 URL:',
-                          item.douban_id,
-                        );
-                        const newUrl = await refreshTrailerUrl(item.douban_id);
-                        if (!newUrl) {
-                          // 刷新失败，标记为失败
-                          console.log(
-                            '[HeroBanner] URL刷新失败，停止重试:',
-                            item.id,
-                          );
-                          setFailedVideoIds((prev) =>
-                            new Set(prev).add(item.id),
-                          );
-                        }
-                      }
+                      // 标记为失败并不再重试
+                      console.log(
+                        '[HeroBanner] 视频彻底加载失败，停止重试:',
+                        item.id,
+                      );
+                      setFailedVideoIds((prev) => new Set(prev).add(item.id));
                     }}
                   />
                 )}

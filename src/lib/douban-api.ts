@@ -67,8 +67,6 @@ export async function fetchTrailerWithRetry(
       clearTimeout(tvTimeoutId);
     }
 
-    const fetchTime = Date.now() - startTime;
-
     if (!response.ok) {
       throw new Error(`豆瓣API返回错误: ${response.status}`);
     }
@@ -80,6 +78,7 @@ export async function fetchTrailerWithRetry(
       console.warn(`[refresh-trailer] 影片 ${id} 没有预告片数据`);
       throw new Error('该影片没有预告片');
     }
+    console.log(`[refresh-trailer] 影片 ${id} 刷新成功. url = ${trailerUrl}`);
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;
