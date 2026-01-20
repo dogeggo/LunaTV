@@ -150,40 +150,51 @@ function getDoubanImageProxyConfig(): {
 export function processImageUrl(originalUrl: string): string {
   if (!originalUrl) return originalUrl;
 
-  // 处理 manmankan 图片防盗链
-  if (originalUrl.includes('manmankan.com')) {
-    return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-  }
-
-  // 仅处理豆瓣图片代理
-  if (!originalUrl.includes('doubanio.com')) {
+  // 如果是本地资源（以 / 开头），直接返回，不走代理
+  if (originalUrl.startsWith('/')) {
     return originalUrl;
   }
 
-  const { proxyType, proxyUrl } = getDoubanImageProxyConfig();
-  switch (proxyType) {
-    case 'server':
-      return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-    case 'img3':
-      return originalUrl.replace(/img\d+\.doubanio\.com/g, 'img3.doubanio.com');
-    case 'cmliussss-cdn-tencent':
-      return originalUrl.replace(
-        /img\d+\.doubanio\.com/g,
-        'img.doubanio.cmliussss.net',
-      );
-    case 'cmliussss-cdn-ali':
-      return originalUrl.replace(
-        /img\d+\.doubanio\.com/g,
-        'img.doubanio.cmliussss.com',
-      );
-    case 'baidu':
-      return `https://image.baidu.com/search/down?url=${encodeURIComponent(originalUrl)}`;
-    case 'custom':
-      return `${proxyUrl}${encodeURIComponent(originalUrl)}`;
-    case 'direct':
-    default:
-      return originalUrl;
-  }
+  return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+  // // 处理 manmankan 图片防盗链
+  // if (originalUrl.includes('manmankan.com')) {
+  //   return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+  // }
+
+  // // 强制所有非 HTTPS 图片都走代理
+  // if (originalUrl.startsWith('http://')) {
+  //   return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+  // }
+
+  // // 仅处理豆瓣图片代理
+  // if (!originalUrl.includes('doubanio.com')) {
+  //   return originalUrl;
+  // }
+
+  // const { proxyType, proxyUrl } = getDoubanImageProxyConfig();
+  // switch (proxyType) {
+  //   case 'server':
+  //     return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
+  //   case 'img3':
+  //     return originalUrl.replace(/img\d+\.doubanio\.com/g, 'img3.doubanio.com');
+  //   case 'cmliussss-cdn-tencent':
+  //     return originalUrl.replace(
+  //       /img\d+\.doubanio\.com/g,
+  //       'img.doubanio.cmliussss.net',
+  //     );
+  //   case 'cmliussss-cdn-ali':
+  //     return originalUrl.replace(
+  //       /img\d+\.doubanio\.com/g,
+  //       'img.doubanio.cmliussss.com',
+  //     );
+  //   case 'baidu':
+  //     return `https://image.baidu.com/search/down?url=${encodeURIComponent(originalUrl)}`;
+  //   case 'custom':
+  //     return `${proxyUrl}${encodeURIComponent(originalUrl)}`;
+  //   case 'direct':
+  //   default:
+  //     return originalUrl;
+  // }
 }
 
 /**

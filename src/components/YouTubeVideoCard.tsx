@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { processImageUrl } from '@/lib/utils';
+
 interface YouTubeVideo {
   id: { videoId: string };
   snippet: {
@@ -113,7 +115,7 @@ const YouTubeVideoCard = ({ video }: YouTubeVideoCardProps) => {
 
             {!imageError ? (
               <img
-                src={video.snippet.thumbnails.medium.url}
+                src={processImageUrl(video.snippet.thumbnails.medium.url)}
                 alt={video.snippet.title}
                 className='w-full h-full object-cover'
                 onError={handleImageError}

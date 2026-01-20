@@ -11,6 +11,8 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
+import { processImageUrl } from '@/lib/utils';
+
 import {
   detectProvider,
   getProviderButtonStyle,
@@ -198,7 +200,7 @@ function LoginPageClient() {
       {bingWallpaper && (
         <div
           className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 animate-ken-burns'
-          style={{ backgroundImage: `url(${bingWallpaper})` }}
+          style={{ backgroundImage: `url(${processImageUrl(bingWallpaper)})` }}
         />
       )}
 

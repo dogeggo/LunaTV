@@ -12,6 +12,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { ShortDramaItem } from '@/lib/types';
+import { processImageUrl } from '@/lib/utils';
 
 interface ShortDramaCardProps {
   drama: ShortDramaItem;
@@ -135,7 +136,7 @@ function ShortDramaCard({
           />
 
           <img
-            src={drama.cover}
+            src={processImageUrl(drama.cover)}
             alt={drama.name}
             className={`h-full w-full object-cover transition-all duration-700 ease-out ${
               imageLoaded

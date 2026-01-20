@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ExternalLink, Layers, Server, Tv } from 'lucide-react';
@@ -10,6 +9,7 @@ import type {
   DoubanItem,
   SearchResult as GlobalSearchResult,
 } from '@/lib/types';
+import { processImageUrl } from '@/lib/utils';
 
 import PageLayout from '@/components/PageLayout';
 
@@ -864,7 +864,7 @@ export default function SourceBrowserPage() {
                           <div className='aspect-[2/3] bg-linear-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 overflow-hidden relative'>
                             {item.poster ? (
                               <img
-                                src={item.poster}
+                                src={processImageUrl(item.poster)}
                                 alt={item.title}
                                 className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
                                 loading='lazy'
@@ -1011,7 +1011,7 @@ export default function SourceBrowserPage() {
                         {previewItem?.poster ? (
                           <div className='relative rounded-xl md:rounded-2xl overflow-hidden shadow-lg md:shadow-2xl border border-gray-200 dark:border-gray-700 md:border-2 group max-w-[200px] mx-auto md:max-w-none'>
                             <img
-                              src={previewItem.poster}
+                              src={processImageUrl(previewItem.poster)}
                               alt={previewItem.title}
                               className='w-full group-hover:scale-105 transition-transform duration-300'
                             />

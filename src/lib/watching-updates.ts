@@ -13,14 +13,11 @@ const LAST_CHECK_TIME_KEY = 'moontv_last_update_check';
 const ORIGINAL_EPISODES_CACHE_KEY = 'moontv_original_episodes'; // 新增：记录观看时的总集数
 const COMPLETED_SERIES_CACHE_KEY = 'moontv_completed_series'; // 新增：已完结剧集缓存
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
-const COMPLETED_SERIES_CACHE_DURATION = Infinity; // 已完结剧集永久缓存
-
-// 防重复修复标记
-const fixingRecords = new Set<string>();
 
 // 内存缓存（用于非 localStorage 模式，避免 QuotaExceededError）
 let memoryWatchingUpdatesCache: WatchingUpdatesCache | null = null;
 let memoryLastCheckTime = 0;
+let isChecking = false;
 
 // 检测存储模式
 const STORAGE_TYPE = (() => {
@@ -131,6 +128,12 @@ function saveCompletedSeriesCache(recordKey: string, episodes: number): void {
 export async function checkWatchingUpdates(
   forceRefresh = false,
 ): Promise<void> {
+  if (isChecking) {
+    console.log('正在检查更新，跳过重复请求');
+    return;
+  }
+  isChecking = true;
+
   try {
     console.log('开始检查追番更新...', forceRefresh ? '(强制刷新)' : '');
 
@@ -331,6 +334,8 @@ export async function checkWatchingUpdates(
   } catch (error) {
     console.error('检查追番更新失败:', error);
     notifyListeners(false);
+  } finally {
+    isChecking = false;
   }
 }
 

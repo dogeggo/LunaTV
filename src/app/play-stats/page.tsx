@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { PlayRecord, ReleaseCalendarItem } from '@/lib/types';
+import { processImageUrl } from '@/lib/utils';
 import {
   checkWatchingUpdates,
   forceClearWatchingUpdatesCache,
@@ -1157,7 +1158,7 @@ const PlayStatsPage: React.FC = () => {
                                     <div className='shrink-0 w-12 h-16 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden'>
                                       {record.cover ? (
                                         <Image
-                                          src={record.cover}
+                                          src={processImageUrl(record.cover)}
                                           alt={record.title}
                                           width={48}
                                           height={64}
@@ -1792,7 +1793,7 @@ const PlayStatsPage: React.FC = () => {
                         <div className='shrink-0 w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden'>
                           {record.cover ? (
                             <Image
-                              src={record.cover}
+                              src={processImageUrl(record.cover)}
                               alt={record.title}
                               width={64}
                               height={80}
@@ -2497,7 +2498,7 @@ const PlayStatsPage: React.FC = () => {
                     <div className='shrink-0 w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden'>
                       {record.cover ? (
                         <Image
-                          src={record.cover}
+                          src={processImageUrl(record.cover)}
                           alt={record.title}
                           width={64}
                           height={80}

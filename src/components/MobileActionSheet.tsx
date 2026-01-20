@@ -3,6 +3,8 @@ import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { processImageUrl } from '@/lib/utils';
+
 interface ActionItem {
   id: string;
   label: string;
@@ -223,7 +225,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
             {poster && (
               <div className='relative w-12 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0'>
                 <Image
-                  src={poster}
+                  src={processImageUrl(poster)}
                   alt={title}
                   fill
                   className={

@@ -3,6 +3,8 @@
 import { AlertCircle, Check, Copy, ExternalLink, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { processImageUrl } from '@/lib/utils';
+
 interface AcgSearchItem {
   title: string;
   link: string;
@@ -211,7 +213,7 @@ export default function AcgSearch({
                 {item.images.slice(0, 3).map((img, imgIndex) => (
                   <img
                     key={imgIndex}
-                    src={img}
+                    src={processImageUrl(img)}
                     alt=''
                     className='h-20 w-auto rounded object-cover'
                     loading='lazy'

@@ -12,6 +12,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { processImageUrl } from '@/lib/utils';
+
 import { useAutoplay } from './hooks/useAutoplay';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
 
@@ -407,10 +409,7 @@ export default function HeroBanner({
 
   // 处理图片 URL，使用代理绕过防盗链
   const getProxiedImageUrl = (url: string) => {
-    if (url?.includes('douban') || url?.includes('doubanio')) {
-      return `/api/image-proxy?url=${encodeURIComponent(url)}`;
-    }
-    return url;
+    return processImageUrl(url);
   };
 
   // 确保 backdrop 是高清版本
