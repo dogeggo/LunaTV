@@ -66,7 +66,7 @@ const BannerVideo = ({
   onError,
 }: {
   src: string;
-  poster: string;
+  poster?: string;
   isActive: boolean;
   isMuted: boolean;
   isCached: boolean;
@@ -150,6 +150,7 @@ const BannerVideo = ({
   }, [isMuted]);
 
   const finalSrc = blobUrl || undefined;
+  const posterSrc = isCached ? poster : undefined;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -176,7 +177,7 @@ const BannerVideo = ({
       loop
       playsInline
       preload='metadata'
-      poster={poster}
+      poster={posterSrc}
       onError={onError}
       onLoadedData={onLoad}
       src={finalSrc}
@@ -345,19 +346,22 @@ export default function HeroBanner({
   });
 
   // 获取稳定的视频 URL
-  const getStableVideoUrl = (item: BannerItem) => {
-    const key = item.douban_id || item.id;
-    // 优先使用刷新后的 URL (处理 403)
-    if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
-      return refreshedTrailerUrls[item.douban_id];
-    }
-    // 其次使用锁定的旧 URL
-    if (stableVideoUrlsRef.current.has(key)) {
-      return stableVideoUrlsRef.current.get(key)!;
-    }
-    // 最后使用当前 URL
-    return item.trailerUrl;
-  };
+  const getStableVideoUrl = useCallback(
+    (item: BannerItem) => {
+      const key = item.douban_id || item.id;
+      // 优先使用刷新后的 URL (处理 403)
+      if (item.douban_id && refreshedTrailerUrls[item.douban_id]) {
+        return refreshedTrailerUrls[item.douban_id];
+      }
+      // 其次使用锁定的旧 URL
+      if (stableVideoUrlsRef.current.has(key)) {
+        return stableVideoUrlsRef.current.get(key)!;
+      }
+      // 最后使用当前 URL
+      return item.trailerUrl;
+    },
+    [refreshedTrailerUrls],
+  );
 
   // 记录已渲染过的图片索引，避免重复挂载导致重新请求
   const [renderedIndices, setRenderedIndices] = useState<Set<number>>(
@@ -553,7 +557,7 @@ export default function HeroBanner({
         downloadingVideoIdsRef.current.delete(videoId);
       }
     },
-    [cachedVideoIds], // 依赖 cachedVideoIds，但内部也会再次检查
+    [cachedVideoIds, getStableVideoUrl], // 依赖 cachedVideoIds 和 getStableVideoUrl，但内部也会再次检查
   );
 
   // 顺序下载所有视频和图片（后台队列）
@@ -799,7 +803,7 @@ export default function HeroBanner({
                       item,
                     )}
                     poster={getProxiedImageUrl(
-                      getHDBackdrop(item.backdrop) || item.poster,
+                      getHDBackdrop(item.backdrop || item.poster) || '',
                     )}
                     isActive={index === currentIndex}
                     isMuted={isMuted}
