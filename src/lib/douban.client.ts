@@ -686,44 +686,29 @@ export async function getDoubanDetails(id: string): Promise<{
     trailerUrl?: string;
   };
 }> {
-  // 🔍 调试模式：检查localStorage标志
-  const isDebugMode =
-    typeof window !== 'undefined' &&
-    localStorage.getItem('DOUBAN_DEBUG') === '1';
-
-  if (isDebugMode) {
-    console.log(`[Debug Mode] 跳过缓存，直接请求: ${id}`);
-  } else {
-    // 检查缓存 - 如果缓存中没有plot_summary则重新获取
-    const cacheKey = getCacheKey('details', { id });
-    const cached = await getCache(cacheKey);
-    if (cached && cached.data?.plot_summary) {
-      console.log(`豆瓣详情缓存命中(有简介): ${id}`);
-      return cached;
-    }
-    if (cached && !cached.data?.plot_summary) {
-      console.log(`豆瓣详情缓存无效(缺少简介): ${id}，重新获取`);
-      // 缓存无效，继续执行下面的逻辑重新获取
-    }
+  // 检查缓存 - 如果缓存中没有plot_summary则重新获取
+  const cacheKey = getCacheKey('details', { id });
+  const cached = await getCache(cacheKey);
+  if (cached && cached.data?.plot_summary) {
+    console.log(`豆瓣详情缓存命中(有简介): ${id}`);
+    return cached;
   }
-
+  if (cached && !cached.data?.plot_summary) {
+    console.log(`豆瓣详情缓存无效(缺少简介): ${id}，重新获取`);
+    // 缓存无效，继续执行下面的逻辑重新获取
+  }
   try {
-    const noCacheParam = isDebugMode ? '&nocache=1' : '';
-    const response = await fetch(`/api/douban/details?id=${id}${noCacheParam}`);
-
+    const response = await fetch(`/api/douban/details?id=${id}`);
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-
     const result = await response.json();
-
     // 保存到缓存（调试模式下不缓存）
-    if (result.code === 200 && !isDebugMode) {
+    if (result.code === 200) {
       const cacheKey = getCacheKey('details', { id });
       await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.details);
       console.log(`豆瓣详情已缓存: ${id}`);
     }
-
     return result;
   } catch (error) {
     return {
@@ -1001,21 +986,18 @@ export async function getDoubanComments(
       message: 'id 参数不能为空',
     };
   }
-
   if (limit < 1 || limit > 50) {
     return {
       code: 400,
       message: 'limit 必须在 1-50 之间',
     };
   }
-
   if (start < 0) {
     return {
       code: 400,
       message: 'start 不能小于 0',
     };
   }
-
   // 检查缓存 - 如果缓存中的数据是空数组，则重新获取
   const cacheKey = getCacheKey('comments', { id, start, limit, sort });
   const cached = await getCache(cacheKey);
@@ -1023,28 +1005,19 @@ export async function getDoubanComments(
     console.log(`豆瓣短评缓存命中: ${id}/${start}`);
     return cached;
   }
-  if (cached && cached.data?.comments?.length === 0) {
-    console.log(`豆瓣短评缓存无效(空数据): ${id}/${start}，重新获取`);
-    // 缓存无效，继续执行下面的逻辑重新获取
-  }
-
   try {
     const response = await fetch(
       `/api/douban/comments?id=${id}&start=${start}&limit=${limit}&sort=${sort}`,
     );
-
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-
     const result = await response.json();
-
     // 保存到缓存
     if (result.code === 200) {
       await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.comments);
-      console.log(`豆瓣短评已缓存: ${id}/${start}`);
+      console.log(`豆瓣短评已缓存 url = `, response.url);
     }
-
     return result;
   } catch (error) {
     return {

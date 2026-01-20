@@ -2550,42 +2550,20 @@ function PlayPageClient() {
         console.log('没有可用的参数获取弹幕');
         return [];
       }
-
       // 生成缓存键（使用state值确保准确性）
       const cacheKey = `${currentVideoTitle}_${currentVideoYear}_${currentVideoDoubanId}_${currentEpisodeNum}`;
       const now = Date.now();
 
-      console.log('🔑 弹幕缓存调试信息:');
-      console.log('- 缓存键:', cacheKey);
-      console.log('- 当前时间:', now);
-      console.log('- 视频标题:', currentVideoTitle);
-      console.log('- 视频年份:', currentVideoYear);
-      console.log('- 豆瓣ID:', currentVideoDoubanId);
-      console.log('- 集数:', currentEpisodeNum);
-
       // 检查缓存
-      console.log('🔍 检查弹幕缓存:', cacheKey);
       const cached = await getDanmuCacheItem(cacheKey);
       if (cached) {
-        console.log('📦 找到缓存数据:');
-        console.log('- 缓存时间:', cached.timestamp);
-        console.log('- 时间差:', now - cached.timestamp, 'ms');
-        console.log('- 缓存有效期:', DANMU_CACHE_DURATION * 1000, 'ms');
-        console.log(
-          '- 是否过期:',
-          now - cached.timestamp >= DANMU_CACHE_DURATION * 1000,
-        );
-
         if (now - cached.timestamp < DANMU_CACHE_DURATION * 1000) {
-          console.log('✅ 使用弹幕缓存数据，缓存键:', cacheKey);
           console.log('📊 缓存弹幕数量:', cached.data.length);
           return cached.data;
         }
       } else {
         console.log('❌ 未找到缓存数据');
       }
-
-      console.log('开始获取外部弹幕，参数:', params.toString());
       const response = await fetch(`/api/danmu-external?${params}`);
       console.log('弹幕API响应状态:', response.status, response.statusText);
 
@@ -2596,17 +2574,9 @@ function PlayPageClient() {
       }
 
       const data = await response.json();
-      console.log('外部弹幕API返回数据:', data);
       console.log('外部弹幕加载成功:', data.total || 0, '条');
 
       const finalDanmu = data.danmu || [];
-      console.log('最终弹幕数据:', finalDanmu.length, '条');
-
-      // 缓存结果
-      console.log('💾 保存弹幕到统一存储:');
-      console.log('- 缓存键:', cacheKey);
-      console.log('- 弹幕数量:', finalDanmu.length);
-      console.log('- 保存时间:', now);
 
       // 保存到统一存储
       await setDanmuCacheItem(cacheKey, finalDanmu);
@@ -2614,7 +2584,6 @@ function PlayPageClient() {
       return finalDanmu;
     } catch (error) {
       console.error('加载外部弹幕失败:', error);
-      console.log('弹幕加载失败，返回空结果');
       return [];
     } finally {
       // 重置加载状态
