@@ -668,19 +668,14 @@ function cacheWatchingUpdates(data: WatchingUpdate): void {
       continueWatchingCount: data.continueWatchingCount,
       updatedSeries: data.updatedSeries,
     };
-    console.log('准备缓存的数据:', cacheData);
-
     // 🔧 优化：非 localStorage 模式使用内存缓存（避免 QuotaExceededError）
     if (STORAGE_TYPE !== 'localstorage') {
       memoryWatchingUpdatesCache = cacheData;
-      console.log('数据已写入内存缓存');
     } else {
       localStorage.setItem(
         WATCHING_UPDATES_CACHE_KEY,
         JSON.stringify(cacheData),
       );
-      console.log('数据已写入 localStorage 缓存');
-
       // 验证写入结果
       const verification = localStorage.getItem(WATCHING_UPDATES_CACHE_KEY);
       console.log('缓存验证 - 实际存储的数据:', verification);
@@ -790,7 +785,6 @@ export function getDetailedWatchingUpdates(): WatchingUpdate | null {
         continueWatchingCount: memoryWatchingUpdatesCache.continueWatchingCount,
         updatedSeries: memoryWatchingUpdatesCache.updatedSeries,
       };
-      console.log('从内存缓存返回数据:', result);
       return result;
     }
 

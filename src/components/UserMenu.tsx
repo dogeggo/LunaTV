@@ -351,23 +351,13 @@ export const UserMenu: React.FC = () => {
 
   // 获取观看更新信息
   useEffect(() => {
-    console.log('UserMenu watching-updates 检查条件:', {
-      window: typeof window !== 'undefined',
-      'authInfo.username': authInfo?.username,
-      storageType: storageType,
-      'storageType !== localstorage': storageType !== 'localstorage',
-    });
-
     if (
       typeof window !== 'undefined' &&
       authInfo?.username &&
       storageType !== 'localstorage'
     ) {
-      console.log('开始加载 watching-updates 数据...');
-
       const updateWatchingUpdates = () => {
         const updates = getDetailedWatchingUpdates();
-        console.log('getDetailedWatchingUpdates 返回:', updates);
 
         // 如果缓存过期或不存在，触发后台更新检查
         if (updates === null) {
@@ -408,10 +398,7 @@ export const UserMenu: React.FC = () => {
         console.log('收到 watching-updates 事件，更新数据...');
         updateWatchingUpdates();
       });
-
       return unsubscribe;
-    } else {
-      console.log('watching-updates 条件不满足，跳过加载');
     }
   }, [authInfo, storageType]);
 
