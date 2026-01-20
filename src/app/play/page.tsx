@@ -95,6 +95,7 @@ function PlayPageClient() {
   const [loadingShortdramaDetails, setLoadingShortdramaDetails] =
     useState(false);
   const loadingShortdramaDetailsRef = useRef(false);
+  const loadedCommentsIdRef = useRef<string | number | null>(null);
 
   // 网盘搜索状态
   const [netdiskResults, setNetdiskResults] = useState<{
@@ -471,13 +472,7 @@ function PlayPageClient() {
     };
 
     loadMovieDetails();
-  }, [
-    videoDoubanId,
-    loadingMovieDetails,
-    movieDetails,
-    loadingBangumiDetails,
-    bangumiDetails,
-  ]);
+  }, [videoDoubanId, movieDetails, bangumiDetails]);
 
   // 加载豆瓣短评
   useEffect(() => {
@@ -495,8 +490,13 @@ function PlayPageClient() {
         return;
       }
 
-      // 如果已经加载过短评，不重复加载
-      if (loadingComments || movieComments.length > 0) {
+      // 如果已经加载过该ID的短评，不重复加载
+      if (loadedCommentsIdRef.current === videoDoubanId) {
+        return;
+      }
+
+      // 如果正在加载，也不重复加载
+      if (loadingComments) {
         return;
       }
 
@@ -515,16 +515,20 @@ function PlayPageClient() {
         } else {
           setCommentsError(response.message);
         }
+        // 标记该ID已加载
+        loadedCommentsIdRef.current = videoDoubanId;
       } catch (error) {
         console.error('Failed to load comments:', error);
         setCommentsError('加载短评失败');
+        // 即使失败也标记已加载，防止无限重试
+        loadedCommentsIdRef.current = videoDoubanId;
       } finally {
         setLoadingComments(false);
       }
     };
 
     loadComments();
-  }, [videoDoubanId, loadingComments, movieComments.length, detail?.source]);
+  }, [videoDoubanId, detail?.source]);
 
   // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
   useEffect(() => {
