@@ -12,12 +12,6 @@ import {
 export const runtime = 'nodejs';
 const FAILURE_CACHE_SECONDS = 30 * 60;
 
-/**
- * 使用 unstable_cache 包裹移动端API请求
- * - 30分钟缓存（trailer URL 有时效性，需要较短缓存）
- * - 与详情页缓存分开管理
- * - Next.js会自动根据函数参数区分缓存
- */
 const fetchMobileApiData = unstable_cache(
   async (id: string) => {
     try {
@@ -28,14 +22,10 @@ const fetchMobileApiData = unstable_cache(
   },
   ['douban-mobile-api'],
   {
-    revalidate: 1800, // 30分钟缓存
+    revalidate: await getCacheTime(),
     tags: ['douban-mobile'],
   },
 );
-
-// ============================================================================
-// 核心爬虫函数（带缓存）
-// ============================================================================
 
 /**
  * 爬取豆瓣详情页面（内部函数）
@@ -267,7 +257,6 @@ export async function GET(request: Request) {
       'Netlify-Vary': 'query',
       'X-Data-Source': 'scraper-cached',
     };
-
     return NextResponse.json(details, { headers: cacheHeaders });
   } catch (error) {
     // 处理 DoubanError

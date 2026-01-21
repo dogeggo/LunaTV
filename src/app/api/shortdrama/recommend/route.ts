@@ -75,14 +75,6 @@ export async function GET(request: NextRequest) {
       `public, s-maxage=${cacheTime}`,
     );
 
-    // 调试信息
-    response.headers.set('X-Cache-Duration', '1hour');
-    response.headers.set(
-      'X-Cache-Expires-At',
-      new Date(Date.now() + cacheTime * 1000).toISOString(),
-    );
-    response.headers.set('X-Debug-Timestamp', new Date().toISOString());
-
     // Vary头确保不同设备有不同缓存
     response.headers.set('Vary', 'Accept-Encoding, User-Agent');
 

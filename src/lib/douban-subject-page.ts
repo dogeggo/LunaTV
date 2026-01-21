@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 
+import { getCacheTime } from '@/lib/config';
 import {
   getRandomUserAgentWithInfo,
   getSecChUaHeaders,
@@ -30,11 +31,13 @@ export class DoubanSubjectFetchError extends Error {
   }
 }
 
-const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_CACHE_TTL_MS = (await getCacheTime()) * 1000;
 const DEFAULT_MAX_ENTRIES = 200;
 const DEFAULT_TIMEOUT_MS = 20000;
 const DEFAULT_MIN_REQUEST_INTERVAL_MS = 1000;
 const DEFAULT_RANDOM_DELAY_RANGE: [number, number] = [300, 1000];
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const MAX_REDIRECTS = 3;
 
 type DoubanChallenge = {
   tok: string;
@@ -138,7 +141,8 @@ export class DoubanSubjectPageScraper {
 
     await randomDelay(minDelay, maxDelay);
 
-    const target = `https://movie.douban.com/subject/${id}/`;
+    const sanitizedId = id.replace(/\/+$/, '');
+    const target = `https://movie.douban.com/subject/${sanitizedId}/`;
     const { ua, browser, platform } = getRandomUserAgentWithInfo();
     const secChHeaders = getSecChUaHeaders(browser, platform);
     const headers: Record<string, string> = {
@@ -161,7 +165,7 @@ export class DoubanSubjectPageScraper {
     };
 
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const response = await fetchWithTimeout(
+    let response = await fetchWithTimeout(
       target,
       {
         headers,
@@ -169,8 +173,39 @@ export class DoubanSubjectPageScraper {
       },
       timeoutMs,
     );
+    let currentUrl = target;
+    const cookieJar = new Map<string, string>();
+    applySetCookies(cookieJar, getSetCookieHeaders(response.headers));
+
+    for (
+      let redirectCount = 0;
+      redirectCount < MAX_REDIRECTS && REDIRECT_STATUSES.has(response.status);
+      redirectCount += 1
+    ) {
+      const location = response.headers.get('location');
+      if (!location) break;
+      const nextUrl = new URL(location, currentUrl).toString();
+      const redirectHeaders: Record<string, string> = {
+        ...headers,
+        Referer: currentUrl,
+      };
+      const cookieHeader = buildCookieHeader(cookieJar);
+      if (cookieHeader) {
+        redirectHeaders['Cookie'] = cookieHeader;
+      }
+      response = await fetchWithTimeout(
+        nextUrl,
+        {
+          headers: redirectHeaders,
+          redirect: 'manual',
+        },
+        timeoutMs,
+      );
+      applySetCookies(cookieJar, getSetCookieHeaders(response.headers));
+      currentUrl = nextUrl;
+    }
+
     const html = await response.text();
-    console.log(html);
     const hasChallenge = parseDoubanChallenge(html) !== null;
 
     if (!response.ok && !hasChallenge) {
@@ -182,9 +217,10 @@ export class DoubanSubjectPageScraper {
 
     return resolveDoubanChallenge({
       html,
-      url: target,
+      url: currentUrl,
       headers,
       responseHeaders: response.headers,
+      cookieJar,
     });
   }
 }
@@ -352,10 +388,11 @@ async function resolveDoubanChallenge(params: {
   url: string;
   headers?: HeadersInit;
   responseHeaders: Headers;
+  cookieJar?: Map<string, string>;
 }): Promise<string> {
   let html = params.html;
   const baseHeaders = normalizeHeaders(params.headers);
-  const cookieJar = new Map<string, string>();
+  const cookieJar = new Map<string, string>(params.cookieJar ?? []);
   applySetCookies(cookieJar, getSetCookieHeaders(params.responseHeaders));
 
   const pageOrigin = new URL(params.url).origin;
