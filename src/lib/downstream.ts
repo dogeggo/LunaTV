@@ -1,4 +1,4 @@
-// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
+﻿// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
 import stcasc, { ChineseType } from 'switch-chinese';
 
 import { API_CONFIG, ApiSite, getConfig } from '@/lib/config';
@@ -73,7 +73,8 @@ async function searchWithCache(
     }
 
     // 处理结果数据
-    const allResults = data.list.map((item: ApiSearchItem) => {
+    const results: SearchResult[] = [];
+    data.list.forEach((item: ApiSearchItem) => {
       let episodes: string[] = [];
       let titles: string[] = [];
 
@@ -103,7 +104,11 @@ async function searchWithCache(
         });
       }
 
-      return {
+      if (episodes.length === 0) {
+        return;
+      }
+
+      results.push({
         id: item.vod_id.toString(),
         title: item.vod_name.trim().replace(/\s+/g, ' '),
         poster: item.vod_pic?.trim() || '', // 确保poster为有效字符串，过滤空白
@@ -119,13 +124,8 @@ async function searchWithCache(
         type_name: item.type_name,
         douban_id: item.vod_douban_id,
         remarks: item.vod_remarks, // 传递备注信息（如"已完结"等）
-      };
+      });
     });
-
-    // 过滤掉集数为 0 的结果
-    const results = allResults.filter(
-      (result: SearchResult) => result.episodes.length > 0,
-    );
 
     const pageCount = page === 1 ? data.pagecount || 1 : undefined;
     // 写入缓存（成功）
@@ -165,8 +165,8 @@ export async function searchFromApi(
 
     for (let i = 0; i < searchVariants.length; i++) {
       const variant = searchVariants[i];
-      const apiUrl =
-        apiBaseUrl + API_CONFIG.search.path + encodeURIComponent(variant);
+      const encodedVariant = encodeURIComponent(variant);
+      const apiUrl = apiBaseUrl + API_CONFIG.search.path + encodedVariant;
 
       try {
         // 使用新的缓存搜索函数处理第一页
@@ -212,28 +212,27 @@ export async function searchFromApi(
     // 使用原始查询进行后续分页
     query = searchVariants[0];
 
-    // 如果所有变体都没有结果，直接返回空数组
-    if (results.length === 0) {
-      return [];
+    // 获取总页数
+    const pageCount = pageCountFromFirst || 1;
+    if (pageCount <= 1) {
+      return results;
     }
 
     const config = await getConfig();
     const MAX_SEARCH_PAGES: number = config.SiteConfig.SearchDownstreamMaxPage;
-
-    // 获取总页数
-    const pageCount = pageCountFromFirst || 1;
     // 确定需要获取的额外页数
     const pagesToFetch = Math.min(pageCount - 1, MAX_SEARCH_PAGES - 1);
 
     // 如果有额外页数，获取更多页的结果
     if (pagesToFetch > 0) {
       const additionalPagePromises = [];
+      const encodedQuery = encodeURIComponent(query);
 
       for (let page = 2; page <= pagesToFetch + 1; page++) {
         const pageUrl =
           apiBaseUrl +
           API_CONFIG.search.pagePath
-            .replace('{query}', encodeURIComponent(query))
+            .replace('{query}', encodedQuery)
             .replace('{page}', page.toString());
 
         const pagePromise = (async () => {

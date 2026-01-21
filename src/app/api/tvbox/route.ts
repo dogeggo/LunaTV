@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { getConfig, getShowAdultContent } from '@/lib/config';
 import { db } from '@/lib/db';
 import { getCandidates, getSpiderJar } from '@/lib/spiderJar';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
@@ -181,7 +181,7 @@ export async function GET(request: NextRequest) {
       tvboxEnabledSources?: string[];
       showAdultContent?: boolean;
     } | null = null;
-
+    let showAdultContent = false;
     // 优先尝试用户专属 Token（支持用户级源限制）
     if (token) {
       const user = config.UserConfig.Users.find((u) => u.tvboxToken === token);
@@ -191,6 +191,7 @@ export async function GET(request: NextRequest) {
           tvboxEnabledSources: user.tvboxEnabledSources,
           showAdultContent: user.showAdultContent,
         };
+        showAdultContent = await getShowAdultContent(user.username);
         console.log(
           `[TVBox] 识别到用户 ${user.username}，源限制:`,
           user.tvboxEnabledSources || '无限制',
@@ -320,46 +321,8 @@ export async function GET(request: NextRequest) {
     // 🔑 成人内容过滤：确定成人内容显示权限，优先级：用户 > 用户组 > 全局
     // 🛡️ 纵深防御第一层：filter 参数控制（默认启用过滤，只有显式传 filter=off 才关闭）
     const shouldFilterAdult = filterParam !== 'off'; // 默认启用过滤
-    let showAdultContent = config.SiteConfig.ShowAdultContent;
-
-    if (currentUser) {
-      // 用户级别优先
-      if (currentUser.showAdultContent !== undefined) {
-        showAdultContent = currentUser.showAdultContent;
-      }
-      // 如果用户没有设置，检查用户组设置
-      else {
-        const user = config.UserConfig.Users.find(
-          (u) => u.username === currentUser!.username,
-        );
-        if (user?.tags && user.tags.length > 0 && config.UserConfig.Tags) {
-          // 如果用户有多个用户组，只要有一个用户组允许就允许（取并集）
-          const hasAnyTagAllowAdult = user.tags.some((tagName) => {
-            const tagConfig = config.UserConfig.Tags?.find(
-              (t) => t.name === tagName,
-            );
-            return tagConfig?.showAdultContent === true;
-          });
-          if (hasAnyTagAllowAdult) {
-            showAdultContent = true;
-          } else {
-            // 检查是否有任何用户组明确禁止
-            const hasAnyTagDenyAdult = user.tags.some((tagName) => {
-              const tagConfig = config.UserConfig.Tags?.find(
-                (t) => t.name === tagName,
-              );
-              return tagConfig?.showAdultContent === false;
-            });
-            if (hasAnyTagDenyAdult) {
-              showAdultContent = false;
-            }
-          }
-        }
-      }
-    }
-
     // 应用过滤逻辑：filter 参数和用户权限都要满足
-    if (shouldFilterAdult && !showAdultContent) {
+    if (!showAdultContent) {
       enabledSources = enabledSources.filter((source) => !source.is_adult);
       console.log(
         `[TVBox] 🛡️ 成人内容过滤已启用（filter=${filterParam || 'default'}, showAdultContent=${showAdultContent}），剩余源数量: ${enabledSources.length}`,

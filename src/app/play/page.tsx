@@ -3108,8 +3108,6 @@ function PlayPageClient() {
         detailData = await preferBestSource(sourcesInfo);
       }
 
-      console.log(detailData.source, detailData.id);
-
       setNeedPrefer(false);
       setCurrentSource(detailData.source);
       setCurrentId(detailData.id);
@@ -5503,19 +5501,12 @@ function PlayPageClient() {
               }
 
               console.log('设备类型:', isMobile ? '移动端' : '桌面端');
-
-              // 桌面端：简化处理，依赖CSS hover，移除复杂的JavaScript事件
               if (!isMobile) {
-                console.log('桌面端：使用CSS原生hover，避免JavaScript事件冲突');
                 return;
               }
 
               if (isMobile) {
-                // 移动端：添加点击切换支持 + 持久位置修正
-                console.log('为移动端添加弹幕配置按钮点击切换功能');
-
                 let isConfigVisible = false;
-
                 // 弹幕面板位置修正函数 - 简化版本
                 const adjustPanelPosition = () => {
                   const player = document.querySelector('.artplayer');
@@ -5523,7 +5514,6 @@ function PlayPageClient() {
 
                   try {
                     const panelElement = configPanel as HTMLElement;
-
                     // 始终清除内联样式，使用CSS默认定位
                     panelElement.style.left = '';
                     panelElement.style.right = '';

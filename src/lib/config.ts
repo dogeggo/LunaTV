@@ -652,15 +652,16 @@ function applyVideoProxy(sites: ApiSite[], config: AdminConfig): ApiSite[] {
   });
 }
 
-export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
+export async function getShowAdultContent(userName?: string): Promise<boolean> {
   const config = await getConfig();
 
   // 确定成人内容显示权限，优先级：用户 > 用户组 > 全局
   let showAdultContent = config.SiteConfig.ShowAdultContent;
 
-  if (user) {
-    const userConfig = config.UserConfig.Users.find((u) => u.username === user);
-
+  if (userName) {
+    const userConfig = config.UserConfig.Users.find(
+      (u) => u.username === userName,
+    );
     if (userConfig) {
       // 用户级别优先
       if (userConfig.showAdultContent !== undefined) {
@@ -696,6 +697,16 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
       }
     }
   }
+  return showAdultContent;
+}
+
+export async function getAvailableApiSites(
+  userName?: string,
+): Promise<ApiSite[]> {
+  const config = await getConfig();
+
+  // 确定成人内容显示权限，优先级：用户 > 用户组 > 全局
+  let showAdultContent = getShowAdultContent(userName);
 
   // 过滤掉禁用的源，如果未启用成人内容则同时过滤掉成人资源
   const allApiSites = config.SourceConfig.filter((s) => {
@@ -704,11 +715,13 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
     return true;
   });
 
-  if (!user) {
+  if (!userName) {
     return applyVideoProxy(allApiSites, config);
   }
 
-  const userConfig = config.UserConfig.Users.find((u) => u.username === user);
+  const userConfig = config.UserConfig.Users.find(
+    (u) => u.username === userName,
+  );
   if (!userConfig) {
     return applyVideoProxy(allApiSites, config);
   }
