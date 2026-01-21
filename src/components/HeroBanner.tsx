@@ -38,6 +38,13 @@ interface HeroBannerProps {
   enableVideo?: boolean; // 是否启用视频自动播放
 }
 
+const FAILED_TRAILER_STORAGE_KEY = 'failed-trailer-ids';
+
+const toTrailerKey = (id: number | string) => String(id);
+
+const getVideoKey = (item: BannerItem) =>
+  toTrailerKey(item.douban_id ?? item.id);
+
 // 提取视频 ID 的辅助函数
 const extractVideoId = (url: string) => {
   try {
@@ -310,10 +317,35 @@ export default function HeroBanner({
     return {};
   });
 
+  const [failedTrailerIds, setFailedTrailerIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(FAILED_TRAILER_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return new Set(parsed.map((value) => String(value)));
+          }
+        }
+      } catch (error) {
+        console.error('[HeroBanner] 读取失败预告片缓存失败:', error);
+      }
+    }
+    return new Set();
+  });
+
   // 记录播放失败的视频ID，避免重复渲染导致无限重试
-  const [failedVideoIds, setFailedVideoIds] = useState<Set<string | number>>(
-    new Set(),
-  );
+  const [failedVideoIds, setFailedVideoIds] = useState<Set<string>>(new Set());
+  const failedVideoIdsRef = useRef(failedVideoIds);
+  const failedTrailerIdsRef = useRef(failedTrailerIds);
+
+  useEffect(() => {
+    failedVideoIdsRef.current = failedVideoIds;
+  }, [failedVideoIds]);
+
+  useEffect(() => {
+    failedTrailerIdsRef.current = failedTrailerIds;
+  }, [failedTrailerIds]);
 
   // 🎯 锁定视频 URL：记录每个视频 ID 对应的第一个 URL
   // 即使后续 props 传入了新签名的 URL，也坚持使用第一次记录的 URL
@@ -487,6 +519,14 @@ export default function HeroBanner({
       const videoUrl = getStableVideoUrl(item);
       if (!videoUrl) return;
 
+      const videoKey = getVideoKey(item);
+      if (
+        failedVideoIdsRef.current.has(videoKey) ||
+        failedTrailerIdsRef.current.has(videoKey)
+      ) {
+        return;
+      }
+
       const proxiedUrl = getProxiedVideoUrl(videoUrl, item);
       const videoId = extractVideoId(proxiedUrl);
 
@@ -595,76 +635,105 @@ export default function HeroBanner({
   }, [currentIndex, items, enableVideo, downloadVideo, downloadImage]);
 
   // 🎯 使用 useRef 跟踪已请求和正在请求中的 trailer ID，避免重复请求
-  const requestedTrailersRef = useRef<Set<string | number>>(new Set());
-  const requestingTrailersRef = useRef<Set<string | number>>(new Set());
+  const requestedTrailersRef = useRef<Set<string>>(new Set());
+  const requestingTrailersRef = useRef<Set<string>>(new Set());
+
+  const persistFailedTrailerIds = useCallback((next: Set<string>) => {
+    try {
+      localStorage.setItem(
+        FAILED_TRAILER_STORAGE_KEY,
+        JSON.stringify([...next]),
+      );
+    } catch (error) {
+      console.error('[HeroBanner] 保存失败预告片缓存失败:', error);
+    }
+  }, []);
 
   // 刷新过期的trailer URL（通过后端代理调用豆瓣移动端API，绕过缓存）
-  const refreshTrailerUrl = useCallback(async (doubanId: number | string) => {
-    // 🎯 防重复请求：如果正在请求中或已请求过，直接返回
-    if (requestingTrailersRef.current.has(doubanId)) {
-      return null;
-    }
+  const refreshTrailerUrl = useCallback(
+    async (doubanId: number | string) => {
+      const trailerKey = toTrailerKey(doubanId);
 
-    if (requestedTrailersRef.current.has(doubanId)) {
-      return null;
-    }
-
-    try {
-      // 标记为正在请求中
-      requestingTrailersRef.current.add(doubanId);
-      // 🎯 调用专门的刷新API（不使用缓存，直接调用豆瓣移动端API）
-      const response = await fetch(
-        `/api/douban/refresh-trailer?id=${doubanId}`,
-      );
-      if (!response.ok) {
-        // 如果是 404 (没有预告片)，标记为失败并不再重试
-        if (response.status === 404) {
-          console.warn(`[HeroBanner] 影片 ${doubanId} 没有预告片，标记为失败`);
-          setFailedVideoIds((prev) => new Set(prev).add(doubanId));
-        } else {
-          console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
-        }
+      if (failedTrailerIds.has(trailerKey)) {
         return null;
       }
 
-      const data = await response.json();
-      if (data.code === 200 && data.data?.trailerUrl) {
-        console.log('[HeroBanner] 成功获取新的trailer URL');
-
-        // 更新 state 并保存到 localStorage
-        setRefreshedTrailerUrls((prev) => {
-          const updated = {
-            ...prev,
-            [doubanId]: data.data.trailerUrl,
-          };
-
-          // 持久化到 localStorage
-          try {
-            localStorage.setItem(
-              'refreshed-trailer-urls',
-              JSON.stringify(updated),
-            );
-          } catch (error) {
-            console.error('[HeroBanner] 保存到localStorage失败:', error);
-          }
-
-          return updated;
-        });
-
-        return data.data.trailerUrl;
-      } else {
-        console.warn('[HeroBanner] 未能获取新的trailer URL:', data.message);
+      // 🎯 防重复请求：如果正在请求中或已请求过，直接返回
+      if (requestingTrailersRef.current.has(trailerKey)) {
+        return null;
       }
-    } catch (error) {
-      console.error('[HeroBanner] 刷新trailer URL异常:', error);
-    } finally {
-      // 移除正在请求中的标记
-      requestingTrailersRef.current.delete(doubanId);
-      // 标记为已请求（无论成功与否，本次会话不再重试，防止死循环）
-      requestedTrailersRef.current.add(doubanId);
-    }
-    return null;
-  }, []);
+
+      if (requestedTrailersRef.current.has(trailerKey)) {
+        return null;
+      }
+
+      try {
+        // 标记为正在请求中
+        requestingTrailersRef.current.add(trailerKey);
+        // 🎯 调用专门的刷新API（不使用缓存，直接调用豆瓣移动端API）
+        const response = await fetch(
+          `/api/douban/refresh-trailer?id=${trailerKey}`,
+        );
+        if (!response.ok) {
+          // 如果是 404 (没有预告片)，标记为失败并不再重试
+          if (response.status === 404) {
+            console.warn(
+              `[HeroBanner] 影片 ${doubanId} 没有预告片，标记为失败`,
+            );
+            setFailedVideoIds((prev) => new Set(prev).add(trailerKey));
+            setFailedTrailerIds((prev) => {
+              if (prev.has(trailerKey)) return prev;
+              const next = new Set(prev);
+              next.add(trailerKey);
+              persistFailedTrailerIds(next);
+              return next;
+            });
+          } else {
+            console.error('[HeroBanner] 刷新trailer URL失败:', response.status);
+          }
+          return null;
+        }
+
+        const data = await response.json();
+        if (data.code === 200 && data.data?.trailerUrl) {
+          console.log('[HeroBanner] 成功获取新的trailer URL');
+
+          // 更新 state 并保存到 localStorage
+          setRefreshedTrailerUrls((prev) => {
+            const updated = {
+              ...prev,
+              [trailerKey]: data.data.trailerUrl,
+            };
+
+            // 持久化到 localStorage
+            try {
+              localStorage.setItem(
+                'refreshed-trailer-urls',
+                JSON.stringify(updated),
+              );
+            } catch (error) {
+              console.error('[HeroBanner] 保存到localStorage失败:', error);
+            }
+
+            return updated;
+          });
+
+          return data.data.trailerUrl;
+        } else {
+          console.warn('[HeroBanner] 未能获取新的trailer URL:', data.message);
+        }
+      } catch (error) {
+        console.error('[HeroBanner] 刷新trailer URL异常:', error);
+      } finally {
+        // 移除正在请求中的标记
+        requestingTrailersRef.current.delete(trailerKey);
+        // 标记为已请求（无论成功与否，本次会话不再重试，防止死循环）
+        requestedTrailersRef.current.add(trailerKey);
+      }
+      return null;
+    },
+    [failedTrailerIds, persistFailedTrailerIds],
+  );
 
   // 🎯 页面加载时主动检查并刷新 URL
   useEffect(() => {
@@ -783,7 +852,8 @@ export default function HeroBanner({
               {/* 视频背景（如果启用且有预告片URL，加载完成后淡入） */}
               {enableVideo &&
                 getStableVideoUrl(item) &&
-                !failedVideoIds.has(item.id) &&
+                !failedVideoIds.has(getVideoKey(item)) &&
+                !failedTrailerIds.has(getVideoKey(item)) &&
                 index === currentIndex && (
                   <BannerVideo
                     src={getProxiedVideoUrl(
@@ -832,7 +902,9 @@ export default function HeroBanner({
                         '[HeroBanner] 视频彻底加载失败，停止重试:',
                         item.id,
                       );
-                      setFailedVideoIds((prev) => new Set(prev).add(item.id));
+                      setFailedVideoIds((prev) =>
+                        new Set(prev).add(getVideoKey(item)),
+                      );
                     }}
                   />
                 )}
