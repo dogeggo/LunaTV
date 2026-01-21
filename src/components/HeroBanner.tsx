@@ -109,7 +109,7 @@ const BannerVideo = ({
 
     const loadVideo = async () => {
       try {
-        const cacheName = 'luna-video-cache-v2';
+        const cacheName = 'luna-video-cache';
         const cacheKey = `https://luna-cache/video/${videoId}`;
 
         // 1. 尝试从 Cache API 获取
@@ -218,7 +218,7 @@ const BannerImage = ({
     const loadBlob = async () => {
       // 即使 isCached 为 false，也尝试去缓存里找一下（可能是页面刷新后状态丢失但缓存还在）
       const imageId = getImageId(src);
-      const cacheName = 'luna-image-cache-v1';
+      const cacheName = 'luna-image-cache';
       const cacheKey = `https://luna-cache/image/${imageId}`;
 
       if ('caches' in window) {
@@ -463,7 +463,7 @@ export default function HeroBanner({
       downloadingImageIdsRef.current.add(imageId);
 
       try {
-        const cacheName = 'luna-image-cache-v1';
+        const cacheName = 'luna-image-cache';
         let cache: Cache | undefined;
 
         if ('caches' in window) {
@@ -537,7 +537,7 @@ export default function HeroBanner({
       downloadingVideoIdsRef.current.add(videoId);
 
       try {
-        const cacheName = 'luna-video-cache-v2';
+        const cacheName = 'luna-video-cache';
         let cache: Cache | undefined;
 
         if ('caches' in window) {

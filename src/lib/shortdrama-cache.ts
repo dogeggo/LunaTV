@@ -23,6 +23,12 @@ function getCacheKey(prefix: string, params: Record<string, any>): string {
 // 统一缓存获取方法
 async function getCache(key: string): Promise<any | null> {
   try {
+    // 如果在服务端，直接使用 DB
+    if (typeof window === 'undefined') {
+      const { db } = await import('@/lib/db');
+      return await db.getCache(key);
+    }
+
     // 优先从统一存储获取
     const cached = await ClientCache.get(key);
     if (cached) return cached;
@@ -57,6 +63,13 @@ async function setCache(
   expireSeconds: number,
 ): Promise<void> {
   try {
+    // 如果在服务端，直接使用 DB
+    if (typeof window === 'undefined') {
+      const { db } = await import('@/lib/db');
+      await db.setCache(key, data, expireSeconds);
+      return;
+    }
+
     // 主要存储：统一存储
     await ClientCache.set(key, data, expireSeconds);
 
@@ -81,6 +94,13 @@ async function setCache(
 // 清理过期缓存
 async function cleanExpiredCache(): Promise<void> {
   try {
+    // 如果在服务端，直接使用 DB
+    if (typeof window === 'undefined') {
+      const { db } = await import('@/lib/db');
+      await db.clearExpiredCache('shortdrama-');
+      return;
+    }
+
     // 清理统一存储中的过期缓存
     await ClientCache.clearExpired('shortdrama-');
 
