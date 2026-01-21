@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getCacheTime } from '@/lib/config';
+
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -59,14 +61,10 @@ export async function GET(request: NextRequest) {
       categoryNum,
       pageSize,
     );
-
     // 测试1小时HTTP缓存策略
     const response = NextResponse.json(result);
-
-    console.log('🕐 [RECOMMEND] 设置1小时HTTP缓存 - 测试自动过期刷新');
-
     // 1小时 = 3600秒
-    const cacheTime = 3600;
+    const cacheTime = await getCacheTime();
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

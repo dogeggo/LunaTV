@@ -24,11 +24,11 @@ if (typeof window !== 'undefined') {
 
 // 豆瓣数据缓存配置（秒）
 const DOUBAN_CACHE_EXPIRE = {
-  details: 8 * 60 * 60, // 详情4小时（变化较少）
+  details: 24 * 60 * 60, // 详情4小时（变化较少）
   lists: 4 * 60 * 60, // 列表2小时（更新频繁）
   categories: 4 * 60 * 60, // 分类2小时
   recommends: 4 * 60 * 60, // 推荐2小时
-  comments: 2 * 60 * 60, // 短评1小时（更新频繁）
+  comments: 24 * 60 * 60, // 短评1小时（更新频繁）
 };
 
 // 缓存工具函数

@@ -96,6 +96,11 @@ function PlayPageClient() {
     useState(false);
   const loadingShortdramaDetailsRef = useRef(false);
   const loadedCommentsIdRef = useRef<string | number | null>(null);
+  const doubanDetailsRequestRef = useRef<{
+    id: number | null;
+    inFlight: boolean;
+    lastAttempt: number;
+  }>({ id: null, inFlight: false, lastAttempt: 0 });
 
   // 网盘搜索状态
   const [netdiskResults, setNetdiskResults] = useState<{
@@ -440,6 +445,19 @@ function PlayPageClient() {
           return;
         }
 
+        const bangumiRequestState = doubanDetailsRequestRef.current;
+        const bangumiNow = Date.now();
+        if (
+          bangumiRequestState.id === videoDoubanId &&
+          (bangumiRequestState.inFlight ||
+            bangumiNow - bangumiRequestState.lastAttempt < 5000)
+        ) {
+          return;
+        }
+        bangumiRequestState.id = videoDoubanId;
+        bangumiRequestState.inFlight = true;
+        bangumiRequestState.lastAttempt = bangumiNow;
+
         setLoadingBangumiDetails(true);
         try {
           const bangumiData = await fetchBangumiDetails(videoDoubanId);
@@ -450,12 +468,28 @@ function PlayPageClient() {
           console.error('Failed to load bangumi details:', error);
         } finally {
           setLoadingBangumiDetails(false);
+          if (bangumiRequestState.id === videoDoubanId) {
+            bangumiRequestState.inFlight = false;
+          }
         }
       } else {
         // 加载豆瓣详情
         if (loadingMovieDetails || movieDetails) {
           return;
         }
+
+        const doubanRequestState = doubanDetailsRequestRef.current;
+        const doubanNow = Date.now();
+        if (
+          doubanRequestState.id === videoDoubanId &&
+          (doubanRequestState.inFlight ||
+            doubanNow - doubanRequestState.lastAttempt < 5000)
+        ) {
+          return;
+        }
+        doubanRequestState.id = videoDoubanId;
+        doubanRequestState.inFlight = true;
+        doubanRequestState.lastAttempt = doubanNow;
 
         setLoadingMovieDetails(true);
         try {
@@ -467,6 +501,9 @@ function PlayPageClient() {
           console.error('Failed to load movie details:', error);
         } finally {
           setLoadingMovieDetails(false);
+          if (doubanRequestState.id === videoDoubanId) {
+            doubanRequestState.inFlight = false;
+          }
         }
       }
     };

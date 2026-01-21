@@ -585,7 +585,7 @@ export async function resetConfig() {
 
 export async function getCacheTime(): Promise<number> {
   const config = await getConfig();
-  return config.SiteConfig.SiteInterfaceCacheTime || 7200;
+  return config.SiteConfig.SiteInterfaceCacheTime || 14400;
 }
 
 // Helper function to apply VideoProxyConfig to API sites

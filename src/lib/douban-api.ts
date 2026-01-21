@@ -6,16 +6,66 @@ import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
  */
 
 // 简单的内存缓存
-const trailerCache = new Map<string, string>();
+const trailerDataCache = new Map<string, TrailerWithBackdrop>();
+
+type TrailerFetchOptions = {
+  includeBackdrop?: boolean;
+};
+
+type TrailerWithBackdrop = {
+  trailerUrl?: string;
+  backdrop?: string;
+};
+
+function getBackdropFromMobileData(data: any): string | undefined {
+  let backdrop =
+    data.cover?.image?.raw?.url ||
+    data.cover?.image?.large?.url ||
+    data.cover?.image?.normal?.url ||
+    data.pic?.large ||
+    undefined;
+
+  if (backdrop) {
+    backdrop = backdrop
+      .replace('/view/photo/s/', '/view/photo/l/')
+      .replace('/view/photo/m/', '/view/photo/l/')
+      .replace('/view/photo/sqxs/', '/view/photo/l/')
+      .replace('/s_ratio_poster/', '/l_ratio_poster/')
+      .replace('/m_ratio_poster/', '/l_ratio_poster/');
+  }
+
+  return backdrop;
+}
 
 // 带重试的获取函数
 export async function fetchTrailerWithRetry(
   id: string,
+  retryCount?: number,
+): Promise<string | null>;
+export async function fetchTrailerWithRetry(
+  id: string,
+  retryCount: number | undefined,
+  options: TrailerFetchOptions & { includeBackdrop: true },
+): Promise<TrailerWithBackdrop | null>;
+export async function fetchTrailerWithRetry(
+  id: string,
+  retryCount: number | undefined,
+  options?: TrailerFetchOptions,
+): Promise<string | null>;
+export async function fetchTrailerWithRetry(
+  id: string,
   retryCount = 0,
-): Promise<string | null> {
-  // 检查缓存
-  if (trailerCache.has(id)) {
-    return trailerCache.get(id)!;
+  options?: TrailerFetchOptions,
+): Promise<string | TrailerWithBackdrop | null> {
+  const includeBackdrop = options?.includeBackdrop === true;
+  const cachedData = trailerDataCache.get(id);
+  if (cachedData) {
+    if (includeBackdrop) {
+      return cachedData;
+    }
+    if (cachedData.trailerUrl) {
+      return cachedData.trailerUrl;
+    }
   }
 
   const MAX_RETRIES = 2;
@@ -81,16 +131,28 @@ export async function fetchTrailerWithRetry(
 
     const data = await response.json();
     const trailerUrl = data.trailers?.[0]?.video_url;
+    const backdrop = includeBackdrop
+      ? getBackdropFromMobileData(data)
+      : undefined;
 
     if (!trailerUrl) {
       console.warn(`[refresh-trailer] 影片 ${id} 没有预告片数据`);
+      if (includeBackdrop) {
+        const cachedData = { trailerUrl: undefined, backdrop };
+        trailerDataCache.set(id, cachedData);
+        return cachedData;
+      }
       throw new Error('该影片没有预告片');
     }
     console.log(`[refresh-trailer] 影片 ${id} 刷新成功. url = ${trailerUrl}`);
 
     // 写入缓存
-    trailerCache.set(id, trailerUrl);
-
+    if (includeBackdrop) {
+      const cachedData = { trailerUrl, backdrop };
+      trailerDataCache.set(id, cachedData);
+      return cachedData;
+    }
+    trailerDataCache.set(id, { trailerUrl });
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;
@@ -105,7 +167,7 @@ export async function fetchTrailerWithRetry(
 
       if (retryCount < MAX_RETRIES) {
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-        return fetchTrailerWithRetry(id, retryCount + 1);
+        return fetchTrailerWithRetry(id, retryCount + 1, options);
       }
     }
     throw error;

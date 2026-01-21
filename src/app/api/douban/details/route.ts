@@ -2,131 +2,15 @@ import { unstable_cache } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
+import { db } from '@/lib/db';
+import { fetchTrailerWithRetry } from '@/lib/douban-api';
 import {
-  getRandomUserAgentWithInfo,
-  getSecChUaHeaders,
-} from '@/lib/user-agent';
-
-// 请求限制器
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2秒最小间隔
-
-function randomDelay(min = 1000, max = 3000): Promise<void> {
-  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
-  return new Promise((resolve) => setTimeout(resolve, delay));
-}
+  DoubanSubjectFetchError,
+  DoubanSubjectPageScraper,
+} from '@/lib/douban-subject-page';
 
 export const runtime = 'nodejs';
-
-// ============================================================================
-// 移动端API数据获取（预告片和高清图片）
-// ============================================================================
-
-/**
- * 从移动端API获取预告片和高清图片（内部函数）
- * 2024-2025 最佳实践：使用最新 User-Agent 和完整请求头
- * 支持电影和电视剧（自动检测并切换端点）
- */
-async function _fetchMobileApiData(id: string): Promise<{
-  trailerUrl?: string;
-  backdrop?: string;
-} | null> {
-  try {
-    // 先尝试 movie 端点
-    let mobileApiUrl = `https://m.douban.com/rexxar/api/v2/movie/${id}`;
-
-    // 获取随机浏览器指纹
-    const { ua, browser, platform } = getRandomUserAgentWithInfo();
-    const secChHeaders = getSecChUaHeaders(browser, platform);
-
-    // 创建 AbortController 用于超时控制
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
-
-    let response = await fetch(mobileApiUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': ua,
-        Referer: 'https://movie.douban.com/explore', // 更具体的 Referer
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        Origin: 'https://movie.douban.com',
-        ...secChHeaders, // Chrome/Edge 的 Sec-CH-UA 头部
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-      redirect: 'manual', // 手动处理重定向
-    });
-
-    clearTimeout(timeoutId);
-
-    // 如果是 3xx 重定向，说明可能是电视剧，尝试 tv 端点
-    if (response.status >= 300 && response.status < 400) {
-      console.log(`[details] 检测到重定向，尝试 TV 端点: ${id}`);
-      mobileApiUrl = `https://m.douban.com/rexxar/api/v2/tv/${id}`;
-
-      const tvController = new AbortController();
-      const tvTimeoutId = setTimeout(() => tvController.abort(), 15000);
-
-      response = await fetch(mobileApiUrl, {
-        signal: tvController.signal,
-        headers: {
-          'User-Agent': ua,
-          Referer: 'https://movie.douban.com/explore',
-          Accept: 'application/json, text/plain, */*',
-          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-          'Accept-Encoding': 'gzip, deflate, br',
-          Origin: 'https://movie.douban.com',
-          ...secChHeaders, // Chrome/Edge 的 Sec-CH-UA 头部
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'same-site',
-        },
-      });
-
-      clearTimeout(tvTimeoutId);
-    }
-
-    if (!response.ok) {
-      console.warn(`移动端API请求失败: ${response.status}`);
-      return null;
-    }
-
-    const data = await response.json();
-
-    // 提取预告片URL（取第一个预告片）
-    const trailerUrl = data.trailers?.[0]?.video_url || undefined;
-
-    // 提取高清图片：优先使用raw原图，转换URL到最高清晰度
-    let backdrop =
-      data.cover?.image?.raw?.url ||
-      data.cover?.image?.large?.url ||
-      data.cover?.image?.normal?.url ||
-      data.pic?.large ||
-      undefined;
-
-    // 将图片URL转换为高清版本（使用l而不是raw，避免重定向）
-    if (backdrop) {
-      backdrop = backdrop
-        .replace('/view/photo/s/', '/view/photo/l/')
-        .replace('/view/photo/m/', '/view/photo/l/')
-        .replace('/view/photo/sqxs/', '/view/photo/l/')
-        .replace('/s_ratio_poster/', '/l_ratio_poster/')
-        .replace('/m_ratio_poster/', '/l_ratio_poster/');
-    }
-
-    return { trailerUrl, backdrop };
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.warn(`获取移动端API数据超时`);
-    } else {
-      console.warn(`获取移动端API数据失败: ${(error as Error).message}`);
-    }
-    return null;
-  }
-}
+const FAILURE_CACHE_SECONDS = 30 * 60;
 
 /**
  * 使用 unstable_cache 包裹移动端API请求
@@ -135,7 +19,13 @@ async function _fetchMobileApiData(id: string): Promise<{
  * - Next.js会自动根据函数参数区分缓存
  */
 const fetchMobileApiData = unstable_cache(
-  async (id: string) => _fetchMobileApiData(id),
+  async (id: string) => {
+    try {
+      return await fetchTrailerWithRetry(id, 0, { includeBackdrop: true });
+    } catch (error) {
+      return null;
+    }
+  },
   ['douban-mobile-api'],
   {
     revalidate: 1800, // 30分钟缓存
@@ -173,85 +63,16 @@ class DoubanError extends Error {
  * 带重试的爬取函数
  */
 async function _scrapeDoubanDetails(id: string, retryCount = 0): Promise<any> {
-  const target = `https://movie.douban.com/subject/${id}/`;
   const MAX_RETRIES = 3;
   const RETRY_DELAYS = [2000, 4000, 8000]; // 指数退避
 
   try {
-    // 请求限流：确保请求间隔
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest),
-      );
-    }
-    lastRequestTime = Date.now();
-
-    // 添加随机延时（增加变化范围以模拟真实用户）
-    await randomDelay(500, 1500);
-
-    // 增加超时时间至20秒
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-    // 获取随机浏览器指纹
-    const { ua, browser, platform } = getRandomUserAgentWithInfo();
-    const secChHeaders = getSecChUaHeaders(browser, platform);
-
-    // 🎯 2025 最佳实践：按照真实浏览器的头部顺序发送
-    const fetchOptions = {
-      signal: controller.signal,
-      headers: {
-        // 基础头部（所有浏览器通用）
-        Accept:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Cache-Control': 'max-age=0',
-        DNT: '1',
-        ...secChHeaders, // Chrome/Edge 的 Sec-CH-UA 头部
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': ua,
-        // 随机添加 Referer（50% 概率）
-        ...(Math.random() > 0.5 ? { Referer: 'https://www.douban.com/' } : {}),
-      },
-    };
-
-    const response = await fetch(target, fetchOptions);
-    clearTimeout(timeoutId);
-
-    // 处理不同的HTTP状态码
-    if (!response.ok) {
-      if (response.status === 429) {
-        // 速率限制
-        throw new DoubanError('请求过于频繁，请稍后再试', 'RATE_LIMIT', 429);
-      } else if (response.status >= 500) {
-        // 服务器错误
-        throw new DoubanError(
-          `豆瓣服务器错误: ${response.status}`,
-          'SERVER_ERROR',
-          response.status,
-        );
-      } else if (response.status === 404) {
-        // 资源不存在
-        throw new DoubanError(`影片不存在: ${id}`, 'SERVER_ERROR', 404);
-      } else {
-        throw new DoubanError(
-          `HTTP错误: ${response.status}`,
-          'NETWORK_ERROR',
-          response.status,
-        );
-      }
-    }
-
-    const html = await response.text();
-
-    // 解析详细信息
+    const html = await DoubanSubjectPageScraper.getHtml(id, {
+      timeoutMs: 20000,
+      minRequestIntervalMs: 2000,
+      randomDelayMs: [500, 1500],
+    });
+    // 解析详情信息
     return parseDoubanDetails(html, id);
   } catch (error) {
     // 超时错误
@@ -272,6 +93,48 @@ async function _scrapeDoubanDetails(id: string, retryCount = 0): Promise<any> {
       }
 
       throw timeoutError;
+    }
+
+    if (error instanceof DoubanSubjectFetchError) {
+      const status = error.status;
+      let mapped: DoubanError;
+      if (status === 429) {
+        mapped = new DoubanError('请求过于频繁，请稍后再试', 'RATE_LIMIT', 429);
+      } else if (status && status >= 500) {
+        mapped = new DoubanError(
+          `豆瓣服务器错误 ${status}`,
+          'SERVER_ERROR',
+          status,
+        );
+      } else if (status === 404) {
+        return {
+          code: 404,
+          message: `影片不存在 ${id}`,
+          data: null,
+        };
+      } else if (status) {
+        mapped = new DoubanError(
+          `HTTP错误: ${status}`,
+          'NETWORK_ERROR',
+          status,
+        );
+      } else {
+        mapped = new DoubanError(error.message, 'NETWORK_ERROR');
+      }
+
+      if (
+        (mapped.code === 'RATE_LIMIT' || mapped.code === 'SERVER_ERROR') &&
+        retryCount < MAX_RETRIES
+      ) {
+        console.warn(
+          `[Douban] ${mapped.message}，重试 ${retryCount + 1}/${MAX_RETRIES}...`,
+        );
+        await new Promise((resolve) =>
+          setTimeout(resolve, RETRY_DELAYS[retryCount]),
+        );
+        return _scrapeDoubanDetails(id, retryCount + 1);
+      }
+      throw mapped;
     }
 
     // DoubanError 直接抛出
@@ -302,7 +165,6 @@ async function _scrapeDoubanDetails(id: string, retryCount = 0): Promise<any> {
 
 /**
  * 使用 unstable_cache 包裹爬虫函数
- * - 4小时缓存
  * - 自动重新验证
  * - Next.js会自动根据函数参数区分缓存
  */
@@ -310,7 +172,7 @@ export const scrapeDoubanDetails = unstable_cache(
   async (id: string, retryCount = 0) => _scrapeDoubanDetails(id, retryCount),
   ['douban-details'],
   {
-    revalidate: 14400, // 4小时缓存
+    revalidate: await getCacheTime(),
     tags: ['douban'],
   },
 );
@@ -318,8 +180,6 @@ export const scrapeDoubanDetails = unstable_cache(
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
-  const noCache =
-    searchParams.get('nocache') === '1' || searchParams.get('debug') === '1';
 
   if (!id) {
     return NextResponse.json(
@@ -330,6 +190,50 @@ export async function GET(request: Request) {
       },
       { status: 400 },
     );
+  }
+
+  const failureCacheKey = `douban-details-fail-id=${id}`;
+  const failureCacheHeaders = {
+    'Cache-Control': `public, max-age=${FAILURE_CACHE_SECONDS}, s-maxage=${FAILURE_CACHE_SECONDS}, stale-while-revalidate=${FAILURE_CACHE_SECONDS}`,
+    'CDN-Cache-Control': `public, s-maxage=${FAILURE_CACHE_SECONDS}`,
+    'Vercel-CDN-Cache-Control': `public, s-maxage=${FAILURE_CACHE_SECONDS}`,
+    'Netlify-Vary': 'query',
+    'X-Data-Source': 'error-cache',
+  };
+
+  const saveFailureCache = async (
+    status: number,
+    body: {
+      code: number;
+      message: string;
+      error: string;
+      details: string;
+    },
+  ) => {
+    try {
+      await db.setCache(
+        failureCacheKey,
+        {
+          status,
+          body,
+        },
+        FAILURE_CACHE_SECONDS,
+      );
+    } catch (cacheError) {
+      console.warn('[Douban] 失败缓存写入失败:', cacheError);
+    }
+  };
+
+  try {
+    const cachedFailure = await db.getCache(failureCacheKey);
+    if (cachedFailure?.status && cachedFailure?.body) {
+      return NextResponse.json(cachedFailure.body, {
+        status: cachedFailure.status,
+        headers: failureCacheHeaders,
+      });
+    }
+  } catch (cacheError) {
+    console.warn('[Douban] 失败缓存读取失败:', cacheError);
   }
 
   try {
@@ -349,26 +253,20 @@ export async function GET(request: Request) {
       }
     }
 
-    const cacheTime = await getCacheTime();
+    try {
+      await db.deleteCache(failureCacheKey);
+    } catch (cacheError) {
+      console.warn('[Douban] 失败缓存清理失败:', cacheError);
+    }
 
-    // 🔍 调试模式：绕过缓存
-    // 🎬 Trailer安全缓存：30分钟（与移动端API的unstable_cache保持一致）
-    // 因为trailer URL有效期约2-3小时，30分钟缓存确保用户拿到的链接仍然有效
-    const trailerSafeCacheTime = 1800; // 30分钟
-    const cacheHeaders = noCache
-      ? {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          Pragma: 'no-cache',
-          Expires: '0',
-          'X-Data-Source': 'no-cache-debug',
-        }
-      : {
-          'Cache-Control': `public, max-age=${trailerSafeCacheTime}, s-maxage=${trailerSafeCacheTime}, stale-while-revalidate=${trailerSafeCacheTime}`,
-          'CDN-Cache-Control': `public, s-maxage=${trailerSafeCacheTime}`,
-          'Vercel-CDN-Cache-Control': `public, s-maxage=${trailerSafeCacheTime}`,
-          'Netlify-Vary': 'query',
-          'X-Data-Source': 'scraper-cached',
-        };
+    const trailerSafeCacheTime = await getCacheTime();
+    const cacheHeaders = {
+      'Cache-Control': `public, max-age=${trailerSafeCacheTime}, s-maxage=${trailerSafeCacheTime}, stale-while-revalidate=${trailerSafeCacheTime}`,
+      'CDN-Cache-Control': `public, s-maxage=${trailerSafeCacheTime}`,
+      'Vercel-CDN-Cache-Control': `public, s-maxage=${trailerSafeCacheTime}`,
+      'Netlify-Vary': 'query',
+      'X-Data-Source': 'scraper-cached',
+    };
 
     return NextResponse.json(details, { headers: cacheHeaders });
   } catch (error) {
@@ -384,50 +282,46 @@ export async function GET(request: Request) {
               ? 502
               : 500);
 
-      return NextResponse.json(
-        {
-          code: statusCode,
-          message: error.message,
-          error: error.code,
-          details: `获取豆瓣详情失败 (ID: ${id})`,
-        },
-        {
-          status: statusCode,
-          headers: {
-            // 对于速率限制和超时，允许客户端缓存错误响应
-            ...(error.code === 'RATE_LIMIT' || error.code === 'TIMEOUT'
-              ? {
-                  'Cache-Control': 'public, max-age=60',
-                }
-              : {}),
-          },
-        },
-      );
+      const responseBody = {
+        code: statusCode,
+        message: error.message,
+        error: error.code,
+        details: `获取豆瓣详情失败 (ID: ${id})`,
+      };
+      await saveFailureCache(statusCode, responseBody);
+      return NextResponse.json(responseBody, {
+        status: statusCode,
+        headers: failureCacheHeaders,
+      });
     }
 
     // 解析错误
     if (error instanceof Error && error.message.includes('解析')) {
-      return NextResponse.json(
-        {
-          code: 500,
-          message: '解析豆瓣数据失败，可能是页面结构已变化',
-          error: 'PARSE_ERROR',
-          details: error.message,
-        },
-        { status: 500 },
-      );
+      const responseBody = {
+        code: 500,
+        message: '解析豆瓣数据失败，可能是页面结构已变化',
+        error: 'PARSE_ERROR',
+        details: error.message,
+      };
+      await saveFailureCache(500, responseBody);
+      return NextResponse.json(responseBody, {
+        status: 500,
+        headers: failureCacheHeaders,
+      });
     }
 
     // 未知错误
-    return NextResponse.json(
-      {
-        code: 500,
-        message: '获取豆瓣详情失败',
-        error: 'UNKNOWN_ERROR',
-        details: error instanceof Error ? error.message : '未知错误',
-      },
-      { status: 500 },
-    );
+    const responseBody = {
+      code: 500,
+      message: '获取豆瓣详情失败',
+      error: 'UNKNOWN_ERROR',
+      details: error instanceof Error ? error.message : '未知错误',
+    };
+    await saveFailureCache(500, responseBody);
+    return NextResponse.json(responseBody, {
+      status: 500,
+      headers: failureCacheHeaders,
+    });
   }
 }
 
