@@ -472,7 +472,13 @@ function PlayPageClient() {
     };
 
     loadMovieDetails();
-  }, [videoDoubanId, movieDetails, bangumiDetails]);
+  }, [
+    videoDoubanId,
+    loadingMovieDetails,
+    movieDetails,
+    loadingBangumiDetails,
+    bangumiDetails,
+  ]);
 
   // 加载豆瓣短评
   useEffect(() => {
