@@ -116,17 +116,17 @@ export async function GET(request: Request) {
       const filePath = path.join(CACHE_DIR, filename);
 
       if (fs.existsSync(filePath)) {
-        console.log(`[Cache] HIT: ${filename}`);
+        console.log(`[Video Cache] HIT: ${filename}`);
         try {
           // 强制返回完整文件
           return serveLocalFile(request, filePath);
         } catch (e) {
-          console.error('[Cache] Error serving local file:', e);
+          console.error('[Video Cache] Error serving local file:', e);
           cacheMiss = true;
         }
       } else {
         // 触发后台下载（不带 Range 头）
-        console.log(`[Cache] MISS: ${filename}`);
+        console.log(`[Video Cache] MISS: ${filename}`);
         cacheMiss = true;
         if (!downloadingFiles.has(filename)) {
           downloadingFiles.add(filename);
@@ -136,7 +136,7 @@ export async function GET(request: Request) {
 
           downloadToCache(videoUrl, filePath, downloadHeaders, MAX_CACHE_BYTES)
             .catch((err) =>
-              console.error('[Cache] Background download failed:', err),
+              console.error('[Video Cache] Background download failed:', err),
             )
             .finally(() => downloadingFiles.delete(filename));
         }
@@ -428,7 +428,7 @@ async function downloadToCache(
       signal: controller.signal,
     });
     if (!response.ok || !response.body) {
-      console.error(`[Cache] Failed to fetch source: ${response.status}`);
+      console.error(`[Video Cache] Failed to fetch source: ${response.status}`);
       return;
     }
 
@@ -459,13 +459,17 @@ async function downloadToCache(
     let isPartial = false;
     if (totalSize === null) {
       isPartial = true;
-      console.log(`[Cache] Size unknown, caching up to ${maxBytes}: ${url}`);
+      console.log(
+        `[Video Cache] Size unknown, caching up to ${maxBytes}: ${url}`,
+      );
     } else if (totalSize > maxBytes) {
       isPartial = true;
-      console.log(`[Cache] Capping cache (too large: ${totalSize}): ${url}`);
+      console.log(
+        `[Video Cache] Capping cache (too large: ${totalSize}): ${url}`,
+      );
     } else if (!isComplete) {
       isPartial = true;
-      console.log(`[Cache] Capping cache (partial range): ${url}`);
+      console.log(`[Video Cache] Capping cache (partial range): ${url}`);
     }
 
     const fileStream = fs.createWriteStream(tempPath);
@@ -521,7 +525,7 @@ async function downloadToCache(
 
     if (limitReached && !isPartial) {
       isPartial = true;
-      console.log(`[Cache] Capping cache (exceeded limit): ${url}`);
+      console.log(`[Video Cache] Capping cache (exceeded limit): ${url}`);
     }
 
     // 简单的重试机制，确保文件句柄释放
@@ -544,7 +548,7 @@ async function downloadToCache(
       }
     }
   } catch (error) {
-    console.error(`[Cache] Download error:`, error);
+    console.error(`[Video Cache] Download error:`, error);
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
   }
 }
