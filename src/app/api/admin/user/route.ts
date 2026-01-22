@@ -312,9 +312,8 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const { enabledApis, showAdultContent } = body as {
+        const { enabledApis } = body as {
           enabledApis?: string[];
-          showAdultContent?: boolean;
         };
 
         // 权限检查：站长可配置所有人的采集源，管理员可配置普通用户和自己的采集源
@@ -336,12 +335,6 @@ export async function POST(request: NextRequest) {
           // 如果为空数组或未提供，则删除该字段，表示无限制
           delete targetEntry.enabledApis;
         }
-
-        // 更新用户的成人内容显示权限
-        if (showAdultContent !== undefined) {
-          targetEntry.showAdultContent = showAdultContent;
-        }
-
         break;
       }
       case 'userGroup': {

@@ -1,10 +1,16 @@
 ﻿// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
 import stcasc, { ChineseType } from 'switch-chinese';
 
-import { API_CONFIG, ApiSite, getConfig } from '@/lib/config';
+import {
+  API_CONFIG,
+  ApiSite,
+  getConfig,
+  getShowAdultContent,
+} from '@/lib/config';
 import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
+import { yellowWords } from '@/lib/yellow';
 
 // 创建模块级别的繁简转换器实例
 const converter = stcasc();
@@ -149,6 +155,7 @@ export async function searchFromApi(
   apiSite: ApiSite,
   query: string,
   precomputedVariants?: string[], // 新增：预计算的变体
+  username?: string,
 ): Promise<SearchResult[]> {
   try {
     const apiBaseUrl = apiSite.api;
@@ -260,7 +267,15 @@ export async function searchFromApi(
         }
       });
     }
-
+    if (username) {
+      const showAdultContent = await getShowAdultContent(username);
+      if (!showAdultContent) {
+        results = results.filter((result) => {
+          const typeName = result.type_name || '';
+          return !yellowWords.some((word: string) => typeName.includes(word));
+        });
+      }
+    }
     return results;
   } catch (_error) {
     return [];

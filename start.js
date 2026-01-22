@@ -145,7 +145,7 @@ function executeCronJob() {
     console.error('Error executing cron job:', err);
   });
 
-  req.setTimeout(300000, () => {
+  req.setTimeout(600000, () => {
     console.error('Cron job timeout');
     req.destroy();
   });

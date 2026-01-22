@@ -168,7 +168,6 @@ export async function GET(request: NextRequest) {
     const mode = (searchParams.get('mode') || '').toLowerCase(); // 支持safe|min模式
     const token = searchParams.get('token'); // 获取token参数
     const forceSpiderRefresh = searchParams.get('forceSpiderRefresh') === '1'; // 强制刷新spider缓存
-    console.log(mode);
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -184,17 +183,12 @@ export async function GET(request: NextRequest) {
     let currentUser: {
       username: string;
       tvboxEnabledSources?: string[];
-      showAdultContent?: boolean;
     } | null = null;
-    let showAdultContent = false;
-    // 优先尝试用户专属 Token（支持用户级源限制）
-
+    const showAdultContent = await getShowAdultContent(user.username);
     currentUser = {
       username: user.username,
       tvboxEnabledSources: user.tvboxEnabledSources,
-      showAdultContent: user.showAdultContent,
     };
-    showAdultContent = await getShowAdultContent(user.username);
     console.log(
       `[TVBox] 识别到用户 ${user.username}，源限制:`,
       user.tvboxEnabledSources || '无限制',

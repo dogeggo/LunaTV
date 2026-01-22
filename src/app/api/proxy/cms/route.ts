@@ -130,7 +130,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 🔒 纵深防御第二层：成人内容源拦截
-    const shouldFilterAdult = filterParam !== 'off'; // 默认启用过滤
+    // const shouldFilterAdult = filterParam !== 'off'; // 默认启用过滤
+    const shouldFilterAdult = true; // 默认启用过滤
 
     // 获取配置（用于检查成人源和代理设置）
     const config = await getConfig();

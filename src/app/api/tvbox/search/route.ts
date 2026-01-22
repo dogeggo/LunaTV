@@ -49,7 +49,8 @@ export async function GET(request: NextRequest) {
     }
 
     const config = await getConfig();
-    const shouldFilter = filterParam === 'on' || filterParam === 'enable';
+    // const shouldFilter = filterParam === 'on' || filterParam === 'enable';
+    const shouldFilter = true;
 
     // 查找视频源配置
     const targetSource = config.SourceConfig.find((s) => s.key === sourceKey);

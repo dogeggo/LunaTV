@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
       DoubanProxy,
       DoubanImageProxyType,
       DoubanImageProxy,
-      DisableYellowFilter,
       ShowAdultContent,
       FluidSearch,
       TMDBApiKey,
@@ -53,7 +52,6 @@ export async function POST(request: NextRequest) {
       DoubanProxy: string;
       DoubanImageProxyType: string;
       DoubanImageProxy: string;
-      DisableYellowFilter: boolean;
       ShowAdultContent: boolean;
       FluidSearch: boolean;
       TMDBApiKey?: string;
@@ -71,7 +69,6 @@ export async function POST(request: NextRequest) {
       typeof DoubanProxy !== 'string' ||
       typeof DoubanImageProxyType !== 'string' ||
       typeof DoubanImageProxy !== 'string' ||
-      typeof DisableYellowFilter !== 'boolean' ||
       typeof FluidSearch !== 'boolean'
     ) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
@@ -101,7 +98,6 @@ export async function POST(request: NextRequest) {
       DoubanProxy,
       DoubanImageProxyType,
       DoubanImageProxy,
-      DisableYellowFilter,
       ShowAdultContent,
       FluidSearch,
       TMDBApiKey: TMDBApiKey || '',

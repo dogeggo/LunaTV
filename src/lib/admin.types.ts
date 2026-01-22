@@ -14,7 +14,6 @@ export interface AdminConfig {
     DoubanProxy: string;
     DoubanImageProxyType: string;
     DoubanImageProxy: string;
-    DisableYellowFilter: boolean;
     ShowAdultContent: boolean; // 是否显示成人内容，默认 false
     FluidSearch: boolean;
     // TMDB配置
@@ -40,7 +39,6 @@ export interface AdminConfig {
       createdAt?: number; // 用户注册时间戳
       tvboxToken?: string; // 用户专属的 TVBox Token
       tvboxEnabledSources?: string[]; // TVBox 可访问的源（为空则返回所有源）
-      showAdultContent?: boolean; // 用户级别的成人内容显示控制
       oidcSub?: string; // OIDC的唯一标识符(sub字段)
     }[];
     Tags?: {
