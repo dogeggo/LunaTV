@@ -1,12 +1,12 @@
+import { db } from '@/lib/db';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 /**
  * 刷新过期的 Douban trailer URL
- * 使用内存缓存，如果已请求过该id就从内存中返回
+ * 使用数据库缓存，缓存7天
  */
 
-// 简单的内存缓存
-const trailerDataCache = new Map<string, TrailerWithBackdrop>();
+const CACHE_EXPIRE_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 type TrailerFetchOptions = {
   includeBackdrop?: boolean;
@@ -58,14 +58,22 @@ export async function fetchTrailerWithRetry(
   options?: TrailerFetchOptions,
 ): Promise<string | TrailerWithBackdrop | null> {
   const includeBackdrop = options?.includeBackdrop === true;
-  const cachedData = trailerDataCache.get(id);
-  if (cachedData) {
-    if (includeBackdrop) {
-      return cachedData;
+  const cacheKey = `douban:trailer:${id}`;
+
+  try {
+    const cachedData = (await db.getCache(
+      cacheKey,
+    )) as TrailerWithBackdrop | null;
+    if (cachedData) {
+      if (includeBackdrop) {
+        return cachedData;
+      }
+      if (cachedData.trailerUrl) {
+        return cachedData.trailerUrl;
+      }
     }
-    if (cachedData.trailerUrl) {
-      return cachedData.trailerUrl;
-    }
+  } catch (e) {
+    console.error(`[refresh-trailer] 读取缓存失败: ${e}`);
   }
 
   const MAX_RETRIES = 2;
@@ -139,7 +147,7 @@ export async function fetchTrailerWithRetry(
       console.warn(`[refresh-trailer] 影片 ${id} 没有预告片数据`);
       if (includeBackdrop) {
         const cachedData = { trailerUrl: undefined, backdrop };
-        trailerDataCache.set(id, cachedData);
+        await db.setCache(cacheKey, cachedData, CACHE_EXPIRE_SECONDS);
         return cachedData;
       }
       throw new Error('该影片没有预告片');
@@ -147,12 +155,12 @@ export async function fetchTrailerWithRetry(
     console.log(`[refresh-trailer] 影片 ${id} 刷新成功. url = ${trailerUrl}`);
 
     // 写入缓存
+    const cachedData = { trailerUrl, backdrop };
+    await db.setCache(cacheKey, cachedData, CACHE_EXPIRE_SECONDS);
+
     if (includeBackdrop) {
-      const cachedData = { trailerUrl, backdrop };
-      trailerDataCache.set(id, cachedData);
       return cachedData;
     }
-    trailerDataCache.set(id, { trailerUrl });
     return trailerUrl;
   } catch (error) {
     const failTime = Date.now() - startTime;

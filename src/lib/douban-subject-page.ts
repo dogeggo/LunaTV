@@ -1,20 +1,14 @@
 import { createHash } from 'crypto';
 
-import { getCacheTime } from '@/lib/config';
+import { db } from '@/lib/db';
 import {
   getRandomUserAgentWithInfo,
   getSecChUaHeaders,
 } from '@/lib/user-agent';
 
-type CacheEntry = {
-  html: string;
-  expiresAt: number;
-  updatedAt: number;
-};
-
 export type DoubanSubjectFetchOptions = {
   cacheTtlMs?: number;
-  maxEntries?: number;
+  maxEntries?: number; // Deprecated, kept for compatibility
   timeoutMs?: number;
   minRequestIntervalMs?: number;
   randomDelayMs?: [number, number];
@@ -31,8 +25,8 @@ export class DoubanSubjectFetchError extends Error {
   }
 }
 
-const DEFAULT_CACHE_TTL_MS = (await getCacheTime()) * 1000;
-const DEFAULT_MAX_ENTRIES = 200;
+const CACHE_PREFIX = 'douban:subject:';
+const DEFAULT_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
 const DEFAULT_TIMEOUT_MS = 20000;
 const DEFAULT_MIN_REQUEST_INTERVAL_MS = 1000;
 const DEFAULT_RANDOM_DELAY_RANGE: [number, number] = [300, 1000];
@@ -47,7 +41,6 @@ type DoubanChallenge = {
 };
 
 export class DoubanSubjectPageScraper {
-  private static cache = new Map<string, CacheEntry>();
   private static inflight = new Map<string, Promise<string>>();
   private static lastRequestTime = 0;
 
@@ -55,19 +48,11 @@ export class DoubanSubjectPageScraper {
     id: string,
     options: DoubanSubjectFetchOptions = {},
   ): Promise<string> {
-    const cacheKey = id.trim();
-    const now = Date.now();
+    const cacheKey = CACHE_PREFIX + id.trim();
 
-    this.pruneExpired(now);
-
-    const cached = this.cache.get(cacheKey);
-    if (cached && cached.expiresAt > now) {
-      this.cache.delete(cacheKey);
-      this.cache.set(cacheKey, { ...cached, updatedAt: now });
-      return cached.html;
-    }
-    if (cached) {
-      this.cache.delete(cacheKey);
+    const cachedHtml = await db.getCache(cacheKey);
+    if (cachedHtml && typeof cachedHtml === 'string') {
+      return cachedHtml;
     }
 
     const inflight = this.inflight.get(cacheKey);
@@ -75,30 +60,11 @@ export class DoubanSubjectPageScraper {
       return inflight;
     }
 
-    const promise = this.fetchAndCache(cacheKey, options).finally(() => {
+    const promise = this.fetchAndCache(id, options).finally(() => {
       this.inflight.delete(cacheKey);
     });
     this.inflight.set(cacheKey, promise);
     return promise;
-  }
-
-  private static pruneExpired(now: number) {
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.expiresAt <= now) {
-        this.cache.delete(key);
-      }
-    }
-  }
-
-  private static evictIfNeeded(maxEntries: number) {
-    if (this.cache.size <= maxEntries) return;
-    const sorted = Array.from(this.cache.entries()).sort(
-      (a, b) => a[1].updatedAt - b[1].updatedAt,
-    );
-    const excess = this.cache.size - maxEntries;
-    for (let i = 0; i < excess; i += 1) {
-      this.cache.delete(sorted[i][0]);
-    }
   }
 
   private static async fetchAndCache(
@@ -106,15 +72,14 @@ export class DoubanSubjectPageScraper {
     options: DoubanSubjectFetchOptions,
   ): Promise<string> {
     const html = await this.fetchHtml(id, options);
-    const ttlMs = options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
-    if (ttlMs > 0) {
-      const now = Date.now();
-      this.cache.set(id, {
-        html,
-        expiresAt: now + ttlMs,
-        updatedAt: now,
-      });
-      this.evictIfNeeded(options.maxEntries ?? DEFAULT_MAX_ENTRIES);
+
+    const ttlSeconds = options.cacheTtlMs
+      ? Math.floor(options.cacheTtlMs / 1000)
+      : DEFAULT_CACHE_TTL_SECONDS;
+
+    if (ttlSeconds > 0) {
+      const cacheKey = CACHE_PREFIX + id.trim();
+      await db.setCache(cacheKey, html, ttlSeconds);
     }
     return html;
   }
