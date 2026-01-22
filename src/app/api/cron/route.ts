@@ -285,7 +285,7 @@ async function refreshRecordAndFavorites() {
           }
         }
         console.log(
-          `播放记录处理完成(${userName}), size = ${playRecords.length}`,
+          `播放记录处理完成(${userName}), size = ${Object.keys(playRecords).length}`,
         );
       } catch (err) {
         console.error(`获取用户播放记录失败 (${userName}):`, err);
@@ -326,7 +326,9 @@ async function refreshRecordAndFavorites() {
             console.error(`处理收藏失败 (${key}):`, err);
           }
         }
-        console.log(`收藏处理完成(${userName}), size = ${favorites.length}`);
+        console.log(
+          `收藏处理完成(${userName}), size = ${Object.keys(favorites).length}`,
+        );
       } catch (err) {
         console.error(`获取用户收藏失败 (${userName}):`, err);
       }
