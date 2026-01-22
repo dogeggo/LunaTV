@@ -185,7 +185,7 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
               备用API地址 <span className='text-red-500'>*</span>
             </label>
             <input
-              type='password'
+              type='text'
               value={shortDramaSettings.alternativeApiUrl}
               onChange={(e) =>
                 setShortDramaSettings((prev) => ({

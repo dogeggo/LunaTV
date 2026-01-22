@@ -572,8 +572,6 @@ async function handleDatabaseOperationFailure(
   error: any,
 ): Promise<void> {
   console.error(`数据库操作失败 (${dataType}):`, error);
-  triggerGlobalError(`数据库操作失败`);
-
   try {
     let freshData: any;
     let eventName: string;
@@ -1075,7 +1073,6 @@ export async function savePlayRecord(
       });
     } catch (err) {
       await handleDatabaseOperationFailure('playRecords', err);
-      triggerGlobalError('保存播放记录失败');
       throw err;
     }
     return;
@@ -1103,7 +1100,6 @@ export async function savePlayRecord(
     });
   } catch (err) {
     console.error('保存播放记录失败:', err);
-    triggerGlobalError('保存播放记录失败');
     throw err;
   }
 }

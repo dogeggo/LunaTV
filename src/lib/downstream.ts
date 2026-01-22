@@ -272,7 +272,10 @@ export async function searchFromApi(
       if (!showAdultContent) {
         results = results.filter((result) => {
           const typeName = result.type_name || '';
-          return !yellowWords.some((word: string) => typeName.includes(word));
+          const title = result.title || '';
+          return !yellowWords.some(
+            (word: string) => typeName.includes(word) || title.includes(word),
+          );
         });
       }
     }
