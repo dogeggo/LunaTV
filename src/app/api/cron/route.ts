@@ -100,8 +100,8 @@ async function cronJob() {
 
   try {
     console.log('📊 设置用户TvBox Token...');
-    await setUserTvBoxToken();
-    console.log('✅ 设置用户TvBox Token完成');
+    const count = await setUserTvBoxToken();
+    console.log('✅ 设置用户TvBox Token完成. sum = ', count);
   } catch (err) {
     console.error('❌ 设置用户TvBox Token失败:', err);
   }
@@ -112,13 +112,16 @@ async function cronJob() {
 async function setUserTvBoxToken() {
   const config = await getConfig();
   const users = config.UserConfig.Users;
+  let count = 0;
   for (const user of users) {
     if (user.tvboxToken) {
       continue;
     }
     user.tvboxToken = generateToken();
+    count++;
   }
   await db.saveAdminConfig(config);
+  return count;
 }
 
 async function refreshAllLiveChannels() {
@@ -243,7 +246,7 @@ async function refreshRecordAndFavorites() {
       }
       return promise;
     };
-    console.error(`开始处理播放记录...`);
+    console.error(`开始处理播放记录/收藏任务...`);
     for (const userName of userNames) {
       // 播放记录
       try {
@@ -285,7 +288,7 @@ async function refreshRecordAndFavorites() {
           }
         }
         console.log(
-          `播放记录处理完成(${userName}), size = ${Object.keys(playRecords).length}`,
+          `播放记录处理完成(${userName}), sum = ${Object.keys(playRecords).length}, success = ${processedRecords}`,
         );
       } catch (err) {
         console.error(`获取用户播放记录失败 (${userName}):`, err);
@@ -327,7 +330,7 @@ async function refreshRecordAndFavorites() {
           }
         }
         console.log(
-          `收藏处理完成(${userName}), size = ${Object.keys(favorites).length}`,
+          `收藏处理完成(${userName}), sum = ${Object.keys(favorites).length}, success = ${processedFavorites}`,
         );
       } catch (err) {
         console.error(`获取用户收藏失败 (${userName}):`, err);
