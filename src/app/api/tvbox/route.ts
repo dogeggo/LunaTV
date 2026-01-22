@@ -168,10 +168,15 @@ export async function GET(request: NextRequest) {
     const mode = (searchParams.get('mode') || '').toLowerCase(); // 支持safe|min模式
     const token = searchParams.get('token'); // 获取token参数
     const forceSpiderRefresh = searchParams.get('forceSpiderRefresh') === '1'; // 强制刷新spider缓存
-    const filterParam = searchParams.get('filter'); // 成人内容过滤控制参数
-
-    // 读取当前配置
+    console.log(mode);
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const config = await getConfig();
+    const user = config.UserConfig.Users.find((u) => u.tvboxToken === token);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const securityConfig = config.TVBoxSecurityConfig;
     const proxyConfig = config.TVBoxProxyConfig; // 🔑 读取代理配置
 
@@ -183,36 +188,17 @@ export async function GET(request: NextRequest) {
     } | null = null;
     let showAdultContent = false;
     // 优先尝试用户专属 Token（支持用户级源限制）
-    if (token) {
-      const user = config.UserConfig.Users.find((u) => u.tvboxToken === token);
-      if (user) {
-        currentUser = {
-          username: user.username,
-          tvboxEnabledSources: user.tvboxEnabledSources,
-          showAdultContent: user.showAdultContent,
-        };
-        showAdultContent = await getShowAdultContent(user.username);
-        console.log(
-          `[TVBox] 识别到用户 ${user.username}，源限制:`,
-          user.tvboxEnabledSources || '无限制',
-        );
-      }
-    }
 
-    // Token验证（兼容旧的全局 Token 模式）
-    if (securityConfig?.enableAuth) {
-      const validToken = securityConfig.token;
-      // 如果不是用户专属 Token，则必须是全局 Token
-      if (!currentUser && (!token || token !== validToken)) {
-        return NextResponse.json(
-          {
-            error: 'Invalid token. Please add ?token=YOUR_TOKEN to the URL',
-            hint: '请在URL中添加 ?token=你的密钥 参数',
-          },
-          { status: 401 },
-        );
-      }
-    }
+    currentUser = {
+      username: user.username,
+      tvboxEnabledSources: user.tvboxEnabledSources,
+      showAdultContent: user.showAdultContent,
+    };
+    showAdultContent = await getShowAdultContent(user.username);
+    console.log(
+      `[TVBox] 识别到用户 ${user.username}，源限制:`,
+      user.tvboxEnabledSources || '无限制',
+    );
 
     // IP白名单检查（从数据库配置读取）
     if (
@@ -318,17 +304,12 @@ export async function GET(request: NextRequest) {
       (source) => !source.disabled && source.api && source.api.trim() !== '',
     );
 
-    // 🔑 成人内容过滤：确定成人内容显示权限，优先级：用户 > 用户组 > 全局
-    // 🛡️ 纵深防御第一层：filter 参数控制（默认启用过滤，只有显式传 filter=off 才关闭）
-    const shouldFilterAdult = filterParam !== 'off'; // 默认启用过滤
     // 应用过滤逻辑：filter 参数和用户权限都要满足
     if (!showAdultContent) {
       enabledSources = enabledSources.filter((source) => !source.is_adult);
       console.log(
-        `[TVBox] 🛡️ 成人内容过滤已启用（filter=${filterParam || 'default'}, showAdultContent=${showAdultContent}），剩余源数量: ${enabledSources.length}`,
+        `[TVBox] 🛡️ 成人内容过滤已启用 showAdultContent=${showAdultContent}），剩余源数量: ${enabledSources.length}`,
       );
-    } else if (!shouldFilterAdult) {
-      console.log(`[TVBox] ⚠️ 成人内容过滤已通过 filter=off 显式关闭`);
     } else if (showAdultContent) {
       console.log(`[TVBox] ℹ️ 用户有成人内容访问权限，未过滤成人源`);
     }

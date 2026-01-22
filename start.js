@@ -121,9 +121,7 @@ function executeCronJob() {
     cleanExpiredFiles(dir, 7);
   });
 
-  const cronUrl = `http://${process.env.HOSTNAME || 'localhost'}:${
-    process.env.PORT || 3000
-  }/api/cron`;
+  const cronUrl = `http://127.0.0.1:${process.env.PORT || 3000}/api/cron`;
 
   console.log(`Executing cron job: ${cronUrl}`);
 

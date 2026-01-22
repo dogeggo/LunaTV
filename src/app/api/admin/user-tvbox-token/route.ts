@@ -3,19 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { clearConfigCache, getConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
-
-// 生成随机 Token
-function generateToken(length = 32): string {
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
 
 // POST - 为用户生成/更新 TVBox Token 和源权限
 export async function POST(request: NextRequest) {

@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
+import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -14,7 +15,15 @@ export const runtime = 'nodejs';
 let isRunning = false;
 
 export async function GET(request: NextRequest) {
-  console.log(request.url);
+  const hostname = request.nextUrl.hostname;
+  console.log(hostname);
+  if (
+    hostname !== '127.0.0.1' &&
+    hostname !== 'localhost' &&
+    hostname !== '0.0.0.0'
+  ) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
 
   if (isRunning) {
     console.log('⚠️ Cron job 已在运行中，跳过此次请求');
@@ -89,7 +98,27 @@ async function cronJob() {
     console.error('❌ 播放记录和收藏刷新失败:', err);
   }
 
+  try {
+    console.log('📊 设置用户TvBox Token...');
+    await setUserTvBoxToken();
+    console.log('✅ 设置用户TvBox Token完成');
+  } catch (err) {
+    console.error('❌ 设置用户TvBox Token失败:', err);
+  }
+
   console.log('🎉 定时任务执行完成');
+}
+
+async function setUserTvBoxToken() {
+  const config = await getConfig();
+  const users = config.UserConfig.Users;
+  for (const user of users) {
+    if (user.tvboxToken) {
+      continue;
+    }
+    user.tvboxToken = generateToken();
+  }
+  await db.saveAdminConfig(config);
 }
 
 async function refreshAllLiveChannels() {
@@ -178,12 +207,14 @@ async function refreshConfig() {
 
 async function refreshRecordAndFavorites() {
   try {
-    const users = await db.getAllUsers();
+    const config = await getConfig();
 
-    if (process.env.USERNAME && !users.includes(process.env.USERNAME)) {
-      users.push(process.env.USERNAME);
+    const userNames = config.UserConfig.Users.map((u) => u.username);
+
+    if (process.env.USERNAME && !userNames.includes(process.env.USERNAME)) {
+      userNames.push(process.env.USERNAME);
     }
-    console.log('📋 最终处理用户列表:', users);
+    console.log('📋 最终处理用户列表:', userNames);
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();
     // 获取详情 Promise（带缓存和错误处理）
@@ -212,31 +243,28 @@ async function refreshRecordAndFavorites() {
       }
       return promise;
     };
-
-    for (const user of users) {
+    console.error(`开始处理播放记录...`);
+    for (const userName of userNames) {
       // 播放记录
       try {
-        const playRecords = await db.getAllPlayRecords(user);
-        const totalRecords = Object.keys(playRecords).length;
+        const playRecords = await db.getAllPlayRecords(userName);
         let processedRecords = 0;
 
         for (const [key, record] of Object.entries(playRecords)) {
           try {
             const [source, id] = key.split('+');
             if (!source || !id) {
-              console.warn(`跳过无效的播放记录键: ${key}`);
               continue;
             }
 
             const detail = await getDetail(source, id, record.title);
             if (!detail) {
-              console.warn(`跳过无法获取详情的播放记录: ${key}`);
               continue;
             }
 
             const episodeCount = detail.episodes?.length || 0;
             if (episodeCount > 0 && episodeCount !== record.total_episodes) {
-              await db.savePlayRecord(user, source, id, {
+              await db.savePlayRecord(userName, source, id, {
                 title: detail.title || record.title,
                 source_name: record.source_name,
                 cover: detail.poster || record.cover,
@@ -253,39 +281,36 @@ async function refreshRecordAndFavorites() {
             }
             processedRecords++;
           } catch (err) {
-            console.error(`处理播放记录失败(${user}) (${key}):`, err);
+            console.error(`处理播放记录失败(${userName}) (${key}):`, err);
           }
         }
+        console.log(
+          `播放记录处理完成(${userName}), size = ${playRecords.length}`,
+        );
       } catch (err) {
-        console.error(`获取用户播放记录失败 (${user}):`, err);
+        console.error(`获取用户播放记录失败 (${userName}):`, err);
       }
-
       // 收藏
       try {
-        let favorites = await db.getAllFavorites(user);
+        let favorites = await db.getAllFavorites(userName);
         favorites = Object.fromEntries(
           Object.entries(favorites).filter(([_, fav]) => fav.origin !== 'live'),
         );
-        const totalFavorites = Object.keys(favorites).length;
         let processedFavorites = 0;
 
         for (const [key, fav] of Object.entries(favorites)) {
           try {
             const [source, id] = key.split('+');
             if (!source || !id) {
-              console.warn(`跳过无效的收藏键: ${key}`);
               continue;
             }
-
             const favDetail = await getDetail(source, id, fav.title);
             if (!favDetail) {
-              console.warn(`跳过无法获取详情的收藏: ${key}`);
               continue;
             }
-
             const favEpisodeCount = favDetail.episodes?.length || 0;
             if (favEpisodeCount > 0 && favEpisodeCount !== fav.total_episodes) {
-              await db.saveFavorite(user, source, id, {
+              await db.saveFavorite(userName, source, id, {
                 title: favDetail.title || fav.title,
                 source_name: fav.source_name,
                 cover: favDetail.poster || fav.cover,
@@ -294,23 +319,16 @@ async function refreshRecordAndFavorites() {
                 save_time: fav.save_time,
                 search_title: fav.search_title,
               });
-              console.log(
-                `更新收藏: ${fav.title} (${fav.total_episodes} -> ${favEpisodeCount})`,
-              );
             }
 
             processedFavorites++;
           } catch (err) {
             console.error(`处理收藏失败 (${key}):`, err);
-            // 继续处理下一个收藏
           }
         }
-
-        console.log(
-          `收藏处理完成(${user}): ${processedFavorites}/${totalFavorites}`,
-        );
+        console.log(`收藏处理完成(${userName}), size = ${favorites.length}`);
       } catch (err) {
-        console.error(`获取用户收藏失败 (${user}):`, err);
+        console.error(`获取用户收藏失败 (${userName}):`, err);
       }
     }
 
@@ -352,34 +370,12 @@ async function cleanupInactiveUsers() {
 
     for (const user of allUsers) {
       try {
-        console.log(`👤 正在检查用户: ${user.username} (角色: ${user.role})`);
-
         // 跳过管理员和owner用户
         if (user.role === 'admin' || user.role === 'owner') {
           continue;
         }
         // 跳过环境变量中的用户
         if (user.username === envUsername) {
-          continue;
-        }
-        // 检查用户是否存在于数据库
-        let userExists = true;
-        try {
-          userExists = (await Promise.race([
-            db.checkUserExist(user.username),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('checkUserExist超时')), 5000),
-            ),
-          ])) as boolean;
-        } catch (err) {
-          console.error(`  ❌ 检查用户存在状态失败: ${err}, 跳过该用户`);
-          continue;
-        }
-
-        if (!userExists) {
-          console.log(
-            `  ⚠️ 用户 ${user.username} 在配置中存在但数据库中不存在，跳过处理`,
-          );
           continue;
         }
         // 获取用户统计信息（5秒超时）
@@ -396,7 +392,6 @@ async function cleanupInactiveUsers() {
             loginCount?: number;
             [key: string]: any;
           };
-          console.log(`  📈 用户统计结果:`, userStats);
         } catch (err) {
           console.error(`  ❌ 获取用户统计失败: ${err}, 跳过该用户`);
           continue;
@@ -532,16 +527,18 @@ function calculateUserLevel(loginCount: number) {
 
 async function optimizeActiveUserLevels() {
   try {
-    const allUsers = await db.getAllUsers();
+    const config = await getConfig();
+
+    const userNames = config.UserConfig.Users.map((u) => u.username);
     let optimizedCount = 0;
 
-    for (const user of allUsers) {
+    for (const userName of userNames) {
       try {
         // 检查用户是否存在
-        const userExists = await db.checkUserExist(user);
+        const userExists = await db.checkUserExist(userName);
         if (!userExists) continue;
 
-        const userStats = await db.getUserPlayStat(user);
+        const userStats = await db.getUserPlayStat(userName);
         if (!userStats || !userStats.loginCount) continue;
 
         // 计算用户等级（所有用户都有等级）
@@ -572,11 +569,11 @@ async function optimizeActiveUserLevels() {
           optimizedCount++;
 
           console.log(
-            `🎯 用户等级: ${user} -> ${userLevel.icon} ${userLevel.name} (登录${userStats.loginCount}次)`,
+            `🎯 用户等级: ${userName} -> ${userLevel.icon} ${userLevel.name} (登录${userStats.loginCount}次)`,
           );
         }
       } catch (err) {
-        console.error(`❌ 优化用户等级失败 (${user}):`, err);
+        console.error(`❌ 优化用户等级失败 (${userName}):`, err);
       }
     }
 

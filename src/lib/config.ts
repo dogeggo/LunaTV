@@ -237,7 +237,7 @@ async function getInitConfig(
   // 补充用户信息
   let userNames: string[] = [];
   try {
-    userNames = await db.getAllUsers();
+    userNames = await db.getAllUserName();
   } catch (e) {
     console.error('获取用户列表失败:', e);
   }
@@ -351,7 +351,7 @@ export async function configSelfCheck(
 
   // 🔥 优化：只在必要时从数据库同步用户信息
   try {
-    const dbUsers = await db.getAllUsers();
+    const dbUsers = await db.getAllUserName();
     const ownerUser = process.env.USERNAME;
 
     // 建立现有用户配置的索引，提高查找效率

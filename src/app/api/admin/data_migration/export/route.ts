@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     };
 
     // 获取所有用户
-    let allUsers = await db.getAllUsers();
+    let allUsers = await db.getAllUserName();
     // 添加站长用户
     allUsers.push(process.env.USERNAME);
     allUsers = Array.from(new Set(allUsers));

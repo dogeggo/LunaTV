@@ -232,7 +232,7 @@ export class DbManager {
   }
 
   // 获取全部用户名
-  async getAllUsers(): Promise<string[]> {
+  async getAllUserName(): Promise<string[]> {
     if (typeof (this.storage as any).getAllUsers === 'function') {
       return (this.storage as any).getAllUsers();
     }
