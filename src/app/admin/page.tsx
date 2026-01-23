@@ -5546,22 +5546,6 @@ const SiteConfigComponent = ({
     }
   }, [isDoubanImageProxyDropdownOpen]);
 
-  // 处理豆瓣数据源变化
-  const handleDoubanDataSourceChange = (value: string) => {
-    setSiteSettings((prev) => ({
-      ...prev,
-      DoubanProxyType: value,
-    }));
-  };
-
-  // 处理豆瓣图片代理变化
-  const handleDoubanImageProxyChange = (value: string) => {
-    setSiteSettings((prev) => ({
-      ...prev,
-      DoubanImageProxyType: value,
-    }));
-  };
-
   // 保存站点配置
   const handleSave = async () => {
     await withLoading('saveSiteConfig', async () => {

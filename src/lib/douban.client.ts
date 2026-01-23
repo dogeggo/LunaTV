@@ -431,33 +431,12 @@ export async function getDoubanList(
     return cached;
   }
 
-  const { proxyType, proxyUrl } = getDoubanProxyConfig();
   let result: DoubanResult;
 
-  switch (proxyType) {
-    case 'cors-proxy-zwei':
-      result = await fetchDoubanList(params, 'https://ciao-cors.is-an.org/');
-      break;
-    case 'cmliussss-cdn-tencent':
-      result = await fetchDoubanList(params, '', true, false);
-      break;
-    case 'cmliussss-cdn-ali':
-      result = await fetchDoubanList(params, '', false, true);
-      break;
-    case 'cors-anywhere':
-      result = await fetchDoubanList(params, 'https://cors-anywhere.com/');
-      break;
-    case 'custom':
-      result = await fetchDoubanList(params, proxyUrl);
-      break;
-    case 'direct':
-    default:
-      const response = await fetch(
-        `/api/douban?tag=${tag}&type=${type}&pageSize=${pageLimit}&pageStart=${pageStart}`,
-      );
-      result = await response.json();
-      break;
-  }
+  const response = await fetch(
+    `/api/douban?tag=${tag}&type=${type}&pageSize=${pageLimit}&pageStart=${pageStart}`,
+  );
+  result = await response.json();
 
   // 保存到缓存
   if (result.code === 200) {
@@ -586,39 +565,11 @@ export async function getDoubanRecommends(
     return cached;
   }
 
-  const { proxyType, proxyUrl } = getDoubanProxyConfig();
   let result: DoubanResult;
-
-  switch (proxyType) {
-    case 'cors-proxy-zwei':
-      result = await fetchDoubanRecommends(
-        params,
-        'https://ciao-cors.is-an.org/',
-      );
-      break;
-    case 'cmliussss-cdn-tencent':
-      result = await fetchDoubanRecommends(params, '', true, false);
-      break;
-    case 'cmliussss-cdn-ali':
-      result = await fetchDoubanRecommends(params, '', false, true);
-      break;
-    case 'cors-anywhere':
-      result = await fetchDoubanRecommends(
-        params,
-        'https://cors-anywhere.com/',
-      );
-      break;
-    case 'custom':
-      result = await fetchDoubanRecommends(params, proxyUrl);
-      break;
-    case 'direct':
-    default:
-      const response = await fetch(
-        `/api/douban/recommends?kind=${kind}&limit=${pageLimit}&start=${pageStart}&category=${category}&format=${format}&region=${region}&year=${year}&platform=${platform}&sort=${sort}&label=${label}`,
-      );
-      result = await response.json();
-      break;
-  }
+  const response = await fetch(
+    `/api/douban/recommends?kind=${kind}&limit=${pageLimit}&start=${pageStart}&category=${category}&format=${format}&region=${region}&year=${year}&platform=${platform}&sort=${sort}&label=${label}`,
+  );
+  result = await response.json();
 
   // 保存到缓存
   if (result.code === 200) {
