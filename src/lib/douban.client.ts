@@ -301,30 +301,6 @@ async function fetchWithTimeout(
   }
 }
 
-function getDoubanProxyConfig(): {
-  proxyType:
-    | 'direct'
-    | 'cors-proxy-zwei'
-    | 'cmliussss-cdn-tencent'
-    | 'cmliussss-cdn-ali'
-    | 'cors-anywhere'
-    | 'custom';
-  proxyUrl: string;
-} {
-  const doubanProxyType =
-    localStorage.getItem('doubanDataSource') ||
-    (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY_TYPE ||
-    'cmliussss-cdn-tencent';
-  const doubanProxy =
-    localStorage.getItem('doubanProxyUrl') ||
-    (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY ||
-    '';
-  return {
-    proxyType: doubanProxyType,
-    proxyUrl: doubanProxy,
-  };
-}
-
 /**
  * 浏览器端豆瓣分类数据获取函数
  */
@@ -420,46 +396,18 @@ export async function getDoubanCategories(
     return cached;
   }
 
-  const { proxyType, proxyUrl } = getDoubanProxyConfig();
   let result: DoubanResult;
 
-  switch (proxyType) {
-    case 'cors-proxy-zwei':
-      result = await fetchDoubanCategories(
-        params,
-        'https://ciao-cors.is-an.org/',
-      );
-      break;
-    case 'cmliussss-cdn-tencent':
-      result = await fetchDoubanCategories(params, '', true, false);
-      break;
-    case 'cmliussss-cdn-ali':
-      result = await fetchDoubanCategories(params, '', false, true);
-      break;
-    case 'cors-anywhere':
-      result = await fetchDoubanCategories(
-        params,
-        'https://cors-anywhere.com/',
-      );
-      break;
-    case 'custom':
-      result = await fetchDoubanCategories(params, proxyUrl);
-      break;
-    case 'direct':
-    default:
-      const response = await fetch(
-        `/api/douban/categories?kind=${kind}&category=${category}&type=${type}&limit=${pageLimit}&start=${pageStart}`,
-      );
-      result = await response.json();
-      break;
-  }
+  const response = await fetch(
+    `/api/douban/categories?kind=${kind}&category=${category}&type=${type}&limit=${pageLimit}&start=${pageStart}`,
+  );
+  result = await response.json();
 
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.categories);
     console.log(`豆瓣分类已缓存: ${kind}/${category}/${type}`);
   }
-
   return result;
 }
 

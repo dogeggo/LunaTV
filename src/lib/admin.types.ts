@@ -10,10 +10,6 @@ export interface AdminConfig {
     Announcement: string;
     SearchDownstreamMaxPage: number;
     SiteInterfaceCacheTime: number;
-    DoubanProxyType: string;
-    DoubanProxy: string;
-    DoubanImageProxyType: string;
-    DoubanImageProxy: string;
     ShowAdultContent: boolean; // 是否显示成人内容，默认 false
     FluidSearch: boolean;
     // TMDB配置

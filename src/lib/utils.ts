@@ -85,65 +85,6 @@ export {
   isWebKit,
 };
 
-function getDoubanImageProxyConfig(): {
-  proxyType:
-    | 'direct'
-    | 'server'
-    | 'img3'
-    | 'cmliussss-cdn-tencent'
-    | 'cmliussss-cdn-ali'
-    | 'baidu'
-    | 'custom';
-  proxyUrl: string;
-} {
-  // 安全地访问 localStorage（避免服务端渲染报错）
-  let doubanImageProxyType:
-    | 'direct'
-    | 'server'
-    | 'img3'
-    | 'cmliussss-cdn-tencent'
-    | 'cmliussss-cdn-ali'
-    | 'baidu'
-    | 'custom' = 'server'; // 默认值
-  let doubanImageProxy = '';
-
-  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-    const storedType = localStorage.getItem('doubanImageProxyType');
-    const runtimeType = (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY_TYPE;
-
-    // 自动修复：如果localStorage或RUNTIME_CONFIG是'direct'，自动改为'server'
-    let effectiveStoredType = storedType;
-    if (storedType === 'direct') {
-      effectiveStoredType = 'server';
-      // 自动更新localStorage，避免下次还是'direct'
-      localStorage.setItem('doubanImageProxyType', 'server');
-    }
-
-    const effectiveRuntimeType =
-      runtimeType === 'direct' ? 'server' : runtimeType;
-
-    doubanImageProxyType = (effectiveStoredType ||
-      effectiveRuntimeType ||
-      'server') as
-      | 'direct'
-      | 'server'
-      | 'img3'
-      | 'cmliussss-cdn-tencent'
-      | 'cmliussss-cdn-ali'
-      | 'baidu'
-      | 'custom';
-    doubanImageProxy =
-      localStorage.getItem('doubanImageProxyUrl') ||
-      (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY ||
-      '';
-  }
-
-  return {
-    proxyType: doubanImageProxyType,
-    proxyUrl: doubanImageProxy,
-  };
-}
-
 /**
  * 处理图片 URL，如果设置了图片代理则使用代理
  */
@@ -156,45 +97,6 @@ export function processImageUrl(originalUrl: string): string {
   }
 
   return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-  // // 处理 manmankan 图片防盗链
-  // if (originalUrl.includes('manmankan.com')) {
-  //   return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-  // }
-
-  // // 强制所有非 HTTPS 图片都走代理
-  // if (originalUrl.startsWith('http://')) {
-  //   return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-  // }
-
-  // // 仅处理豆瓣图片代理
-  // if (!originalUrl.includes('doubanio.com')) {
-  //   return originalUrl;
-  // }
-
-  // const { proxyType, proxyUrl } = getDoubanImageProxyConfig();
-  // switch (proxyType) {
-  //   case 'server':
-  //     return `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-  //   case 'img3':
-  //     return originalUrl.replace(/img\d+\.doubanio\.com/g, 'img3.doubanio.com');
-  //   case 'cmliussss-cdn-tencent':
-  //     return originalUrl.replace(
-  //       /img\d+\.doubanio\.com/g,
-  //       'img.doubanio.cmliussss.net',
-  //     );
-  //   case 'cmliussss-cdn-ali':
-  //     return originalUrl.replace(
-  //       /img\d+\.doubanio\.com/g,
-  //       'img.doubanio.cmliussss.com',
-  //     );
-  //   case 'baidu':
-  //     return `https://image.baidu.com/search/down?url=${encodeURIComponent(originalUrl)}`;
-  //   case 'custom':
-  //     return `${proxyUrl}${encodeURIComponent(originalUrl)}`;
-  //   case 'direct':
-  //   default:
-  //     return originalUrl;
-  // }
 }
 
 /**

@@ -211,11 +211,6 @@ async function getInitConfig(
       SearchDownstreamMaxPage:
         Number(process.env.NEXT_PUBLIC_SEARCH_MAX_PAGE) || 5,
       SiteInterfaceCacheTime: cfgFile.cache_time || 7200,
-      DoubanProxyType: process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct',
-      DoubanProxy: process.env.NEXT_PUBLIC_DOUBAN_PROXY || '',
-      DoubanImageProxyType:
-        process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE || 'server',
-      DoubanImageProxy: process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '',
       ShowAdultContent: false, // 默认不显示成人内容，可在管理面板修改
       FluidSearch: process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
       // TMDB配置默认值

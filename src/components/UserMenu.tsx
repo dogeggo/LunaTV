@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
@@ -41,6 +41,8 @@ interface AuthInfo {
   username?: string;
   role?: 'owner' | 'admin' | 'user';
 }
+
+const SETTINGS_RESET_FLAG_KEY = 'settingsResetDone';
 
 export const UserMenu: React.FC = () => {
   const router = useRouter();
@@ -106,24 +108,17 @@ export const UserMenu: React.FC = () => {
 
   // 设置相关状态
   const [defaultAggregateSearch, setDefaultAggregateSearch] = useState(true);
-  const [doubanProxyUrl, setDoubanProxyUrl] = useState('');
   const [enableOptimization, setEnableOptimization] = useState(true);
   const [fluidSearch, setFluidSearch] = useState(true);
   const [liveDirectConnect, setLiveDirectConnect] = useState(false);
   const [playerBufferMode, setPlayerBufferMode] = useState<
     'standard' | 'enhanced' | 'max'
   >('enhanced');
-  const [doubanDataSource, setDoubanDataSource] = useState('direct');
-  const [doubanImageProxyType, setDoubanImageProxyType] = useState('direct');
-  const [doubanImageProxyUrl, setDoubanImageProxyUrl] = useState('');
   const [continueWatchingMinProgress, setContinueWatchingMinProgress] =
     useState(5);
   const [continueWatchingMaxProgress, setContinueWatchingMaxProgress] =
     useState(100);
   const [enableContinueWatchingFilter, setEnableContinueWatchingFilter] =
-    useState(false);
-  const [isDoubanDropdownOpen, setIsDoubanDropdownOpen] = useState(false);
-  const [isDoubanImageProxyDropdownOpen, setIsDoubanImageProxyDropdownOpen] =
     useState(false);
   // 跳过片头片尾相关设置
   const [enableAutoSkip, setEnableAutoSkip] = useState(false);
@@ -131,36 +126,10 @@ export const UserMenu: React.FC = () => {
 
   // 清空继续观看确认设置（默认关闭，需要的用户可以开启）
   const [requireClearConfirmation, setRequireClearConfirmation] =
-    useState(false);
+    useState(true);
 
   // 下载相关设置
   const [downloadFormat, setDownloadFormat] = useState<'TS' | 'MP4'>('TS');
-
-  // 豆瓣数据源选项
-  const doubanDataSourceOptions = [
-    { value: 'direct', label: '直连（服务器直接请求豆瓣）' },
-    { value: 'cors-proxy-zwei', label: 'Cors Proxy By Zwei' },
-    {
-      value: 'cmliussss-cdn-tencent',
-      label: '豆瓣 CDN By CMLiussss（腾讯云）',
-    },
-    { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
-    { value: 'custom', label: '自定义代理' },
-  ];
-
-  // 豆瓣图片代理选项
-  const doubanImageProxyTypeOptions = [
-    { value: 'direct', label: '直连（浏览器直接请求豆瓣）' },
-    { value: 'server', label: '服务器代理（由服务器代理请求豆瓣）' },
-    { value: 'img3', label: '豆瓣官方精品 CDN（阿里云）' },
-    {
-      value: 'cmliussss-cdn-tencent',
-      label: '豆瓣 CDN By CMLiussss（腾讯云）',
-    },
-    { value: 'cmliussss-cdn-ali', label: '豆瓣 CDN By CMLiussss（阿里云）' },
-    { value: 'baidu', label: '百度图片代理（境内CDN，Chrome可能触发下载）' },
-    { value: 'custom', label: '自定义代理' },
-  ];
 
   // 播放缓冲模式选项
   const bufferModeOptions = [
@@ -214,50 +183,6 @@ export const UserMenu: React.FC = () => {
       );
       if (savedAggregateSearch !== null) {
         setDefaultAggregateSearch(JSON.parse(savedAggregateSearch));
-      }
-
-      // const savedDoubanDataSource = localStorage.getItem('doubanDataSource');
-      // const defaultDoubanProxyType =
-      //   (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY_TYPE || 'direct';
-      // if (savedDoubanDataSource !== null) {
-      //   setDoubanDataSource(savedDoubanDataSource);
-      // } else if (defaultDoubanProxyType) {
-      //   setDoubanDataSource(defaultDoubanProxyType);
-      // }
-
-      setDoubanDataSource('direct');
-
-      const savedDoubanProxyUrl = localStorage.getItem('doubanProxyUrl');
-      const defaultDoubanProxy =
-        (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY || '';
-      if (savedDoubanProxyUrl !== null) {
-        setDoubanProxyUrl(savedDoubanProxyUrl);
-      } else if (defaultDoubanProxy) {
-        setDoubanProxyUrl(defaultDoubanProxy);
-      }
-
-      // const savedDoubanImageProxyType = localStorage.getItem(
-      //   'doubanImageProxyType',
-      // );
-      // const defaultDoubanImageProxyType =
-      //   (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY_TYPE || 'server';
-      // if (savedDoubanImageProxyType !== null) {
-      //   setDoubanImageProxyType(savedDoubanImageProxyType);
-      // } else if (defaultDoubanImageProxyType) {
-      //   setDoubanImageProxyType(defaultDoubanImageProxyType);
-      // }
-
-      setDoubanImageProxyType('server');
-
-      const savedDoubanImageProxyUrl = localStorage.getItem(
-        'doubanImageProxyUrl',
-      );
-      const defaultDoubanImageProxyUrl =
-        (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY || '';
-      if (savedDoubanImageProxyUrl !== null) {
-        setDoubanImageProxyUrl(savedDoubanImageProxyUrl);
-      } else if (defaultDoubanImageProxyUrl) {
-        setDoubanImageProxyUrl(defaultDoubanImageProxyUrl);
       }
 
       const savedEnableOptimization =
@@ -527,41 +452,6 @@ export const UserMenu: React.FC = () => {
     }
   }, [authInfo, storageType]);
 
-  // 点击外部区域关闭下拉框
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isDoubanDropdownOpen) {
-        const target = event.target as Element;
-        if (!target.closest('[data-dropdown="douban-datasource"]')) {
-          setIsDoubanDropdownOpen(false);
-        }
-      }
-    };
-
-    if (isDoubanDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () =>
-        document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isDoubanDropdownOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isDoubanImageProxyDropdownOpen) {
-        const target = event.target as Element;
-        if (!target.closest('[data-dropdown="douban-image-proxy"]')) {
-          setIsDoubanImageProxyDropdownOpen(false);
-        }
-      }
-    };
-
-    if (isDoubanImageProxyDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () =>
-        document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isDoubanImageProxyDropdownOpen]);
-
   const handleMenuClick = async () => {
     const willOpen = !isOpen;
     setIsOpen(willOpen);
@@ -768,13 +658,6 @@ export const UserMenu: React.FC = () => {
     }
   };
 
-  const handleDoubanProxyUrlChange = (value: string) => {
-    setDoubanProxyUrl(value);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('doubanProxyUrl', value);
-    }
-  };
-
   const handleOptimizationToggle = (value: boolean) => {
     setEnableOptimization(value);
     if (typeof window !== 'undefined') {
@@ -852,27 +735,6 @@ export const UserMenu: React.FC = () => {
     }
   };
 
-  const handleDoubanDataSourceChange = (value: string) => {
-    setDoubanDataSource(value);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('doubanDataSource', value);
-    }
-  };
-
-  const handleDoubanImageProxyTypeChange = (value: string) => {
-    setDoubanImageProxyType(value);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('doubanImageProxyType', value);
-    }
-  };
-
-  const handleDoubanImageProxyUrlChange = (value: string) => {
-    setDoubanImageProxyUrl(value);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('doubanImageProxyUrl', value);
-    }
-  };
-
   const handleDownloadFormatChange = (value: 'TS' | 'MP4') => {
     setDownloadFormat(value);
     if (typeof window !== 'undefined') {
@@ -880,75 +742,53 @@ export const UserMenu: React.FC = () => {
     }
   };
 
-  // 获取感谢信息
-  const getThanksInfo = (dataSource: string) => {
-    switch (dataSource) {
-      case 'cors-proxy-zwei':
-        return {
-          text: 'Thanks to @Zwei',
-          url: 'https://github.com/bestzwei',
-        };
-      case 'cmliussss-cdn-tencent':
-      case 'cmliussss-cdn-ali':
-        return {
-          text: 'Thanks to @CMLiussss',
-          url: 'https://github.com/cmliu',
-        };
-      default:
-        return null;
-    }
-  };
-
-  const handleResetSettings = () => {
-    const defaultDoubanProxyType =
-      (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY_TYPE || 'direct';
-    const defaultDoubanProxy =
-      (window as any).RUNTIME_CONFIG?.DOUBAN_PROXY || '';
-    const defaultDoubanImageProxyType =
-      (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY_TYPE || 'server';
-    const defaultDoubanImageProxyUrl =
-      (window as any).RUNTIME_CONFIG?.DOUBAN_IMAGE_PROXY || '';
+  const handleResetSettings = useCallback(() => {
     const defaultFluidSearch =
       (window as any).RUNTIME_CONFIG?.FLUID_SEARCH !== false;
 
     setDefaultAggregateSearch(true);
-    setEnableOptimization(false);
+    setEnableOptimization(true);
     setFluidSearch(defaultFluidSearch);
     setLiveDirectConnect(false);
-    setDoubanProxyUrl(defaultDoubanProxy);
-    setDoubanDataSource(defaultDoubanProxyType);
-    setDoubanImageProxyType(defaultDoubanImageProxyType);
-    setDoubanImageProxyUrl(defaultDoubanImageProxyUrl);
     setContinueWatchingMinProgress(5);
     setContinueWatchingMaxProgress(100);
     setEnableContinueWatchingFilter(false);
-    setEnableAutoSkip(true);
+    setEnableAutoSkip(false);
     setEnableAutoNextEpisode(true);
-    setPlayerBufferMode('standard');
+    setPlayerBufferMode('enhanced');
     setDownloadFormat('TS');
+    setRequireClearConfirmation(true);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('defaultAggregateSearch', JSON.stringify(true));
-      localStorage.setItem('enableOptimization', JSON.stringify(false));
+      localStorage.setItem('enableOptimization', JSON.stringify(true));
       localStorage.setItem('fluidSearch', JSON.stringify(defaultFluidSearch));
       localStorage.setItem('liveDirectConnect', JSON.stringify(false));
-      localStorage.setItem('doubanProxyUrl', defaultDoubanProxy);
-      localStorage.setItem('doubanDataSource', defaultDoubanProxyType);
-      localStorage.setItem('doubanImageProxyType', defaultDoubanImageProxyType);
-      localStorage.setItem('doubanImageProxyUrl', defaultDoubanImageProxyUrl);
       localStorage.setItem('continueWatchingMinProgress', '5');
       localStorage.setItem('continueWatchingMaxProgress', '100');
       localStorage.setItem(
         'enableContinueWatchingFilter',
         JSON.stringify(false),
       );
-      localStorage.setItem('enableAutoSkip', JSON.stringify(true));
+      localStorage.setItem('enableAutoSkip', JSON.stringify(false));
       localStorage.setItem('enableAutoNextEpisode', JSON.stringify(true));
-      localStorage.setItem('requireClearConfirmation', JSON.stringify(false));
-      localStorage.setItem('playerBufferMode', 'standard');
+      localStorage.setItem('requireClearConfirmation', JSON.stringify(true));
+      localStorage.setItem('playerBufferMode', 'enhanced');
       localStorage.setItem('downloadFormat', 'TS');
+      localStorage.setItem(SETTINGS_RESET_FLAG_KEY, 'true');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const hasResetSettings = localStorage.getItem(SETTINGS_RESET_FLAG_KEY);
+    if (!hasResetSettings) {
+      handleResetSettings();
+    }
+  }, [handleResetSettings]);
 
   // 检查是否显示管理面板按钮
   const showAdminPanel =
@@ -1450,7 +1290,7 @@ export const UserMenu: React.FC = () => {
                 <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
                   跳过片头片尾设置
                 </h4>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                <p className='text-xs text-gray-400 dark:text-gray-500 mt-1'>
                   控制播放器默认的片头片尾跳过行为
                 </p>
               </div>

@@ -298,10 +298,6 @@ interface SiteConfig {
   Announcement: string;
   SearchDownstreamMaxPage: number;
   SiteInterfaceCacheTime: number;
-  DoubanProxyType: string;
-  DoubanProxy: string;
-  DoubanImageProxyType: string;
-  DoubanImageProxy: string;
   ShowAdultContent: boolean;
   FluidSearch: boolean;
   // TMDB配置
@@ -5443,10 +5439,6 @@ const SiteConfigComponent = ({
     Announcement: '',
     SearchDownstreamMaxPage: 1,
     SiteInterfaceCacheTime: 7200,
-    DoubanProxyType: 'direct',
-    DoubanProxy: '',
-    DoubanImageProxyType: 'direct',
-    DoubanImageProxy: '',
     ShowAdultContent: false,
     FluidSearch: true,
     // TMDB配置默认值
@@ -5509,11 +5501,6 @@ const SiteConfigComponent = ({
     if (config?.SiteConfig) {
       setSiteSettings({
         ...config.SiteConfig,
-        DoubanProxyType: config.SiteConfig.DoubanProxyType || 'direct',
-        DoubanProxy: config.SiteConfig.DoubanProxy || '',
-        DoubanImageProxyType:
-          config.SiteConfig.DoubanImageProxyType || 'direct',
-        DoubanImageProxy: config.SiteConfig.DoubanImageProxy || '',
         ShowAdultContent: config.SiteConfig.ShowAdultContent || false,
         FluidSearch: config.SiteConfig.FluidSearch || true,
         // TMDB配置

@@ -55,11 +55,6 @@ export default async function RootLayout({
     process.env.ANNOUNCEMENT ||
     '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。';
 
-  let doubanProxyType = process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct';
-  let doubanProxy = process.env.NEXT_PUBLIC_DOUBAN_PROXY || '';
-  let doubanImageProxyType =
-    process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE || 'server';
-  let doubanImageProxy = process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '';
   let fluidSearch = process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false';
   let customCategories = [] as {
     name: string;
@@ -71,10 +66,6 @@ export default async function RootLayout({
     siteName = config.SiteConfig.SiteName;
     announcement = config.SiteConfig.Announcement;
 
-    doubanProxyType = config.SiteConfig.DoubanProxyType;
-    doubanProxy = config.SiteConfig.DoubanProxy;
-    doubanImageProxyType = config.SiteConfig.DoubanImageProxyType;
-    doubanImageProxy = config.SiteConfig.DoubanImageProxy;
     customCategories = config.CustomCategories.filter(
       (category) => !category.disabled,
     ).map((category) => ({
@@ -88,10 +79,6 @@ export default async function RootLayout({
   // 将运行时配置注入到全局 window 对象，供客户端在运行时读取
   const runtimeConfig = {
     STORAGE_TYPE: process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage',
-    DOUBAN_PROXY_TYPE: doubanProxyType,
-    DOUBAN_PROXY: doubanProxy,
-    DOUBAN_IMAGE_PROXY_TYPE: doubanImageProxyType,
-    DOUBAN_IMAGE_PROXY: doubanImageProxy,
     CUSTOM_CATEGORIES: customCategories,
     FLUID_SEARCH: fluidSearch,
   };
