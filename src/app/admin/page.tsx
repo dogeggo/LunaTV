@@ -446,6 +446,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   // 用户组筛选状态
   const [filterUserGroup, setFilterUserGroup] = useState<string>('all');
+  const [userPage, setUserPage] = useState(1);
+  const [userPageSize, setUserPageSize] = useState(10);
 
   // 🔑 TVBox Token 管理状态
   const [showTVBoxTokenModal, setShowTVBoxTokenModal] = useState(false);
@@ -475,6 +477,57 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   // 获取用户组列表
   const userGroups = config?.UserConfig?.Tags || [];
+
+  // 按规则排序并筛选用户列表
+  const filteredUsers = useMemo(() => {
+    const sortedUsers = [...(config?.UserConfig?.Users ?? [])]
+      .sort((a, b) => {
+        type UserInfo = (typeof config.UserConfig.Users)[number];
+        const priority = (u: UserInfo) => {
+          if (u.username === currentUsername) return 0;
+          if (u.role === 'owner') return 1;
+          if (u.role === 'admin') return 2;
+          return 3;
+        };
+        return priority(a) - priority(b);
+      })
+      .filter((user) => {
+        if (filterUserGroup === 'all') {
+          return true;
+        }
+        if (filterUserGroup === 'none') {
+          return !user.tags || user.tags.length === 0;
+        }
+        return user.tags && user.tags.includes(filterUserGroup);
+      });
+
+    return sortedUsers;
+  }, [config?.UserConfig?.Users, filterUserGroup, currentUsername]);
+
+  const totalFilteredUsers = filteredUsers.length;
+  const totalUserPages = Math.max(
+    1,
+    Math.ceil(totalFilteredUsers / userPageSize),
+  );
+
+  const pagedUsers = useMemo(() => {
+    const startIndex = (userPage - 1) * userPageSize;
+    return filteredUsers.slice(startIndex, startIndex + userPageSize);
+  }, [filteredUsers, userPage, userPageSize]);
+
+  const userRangeStart =
+    totalFilteredUsers === 0 ? 0 : (userPage - 1) * userPageSize + 1;
+  const userRangeEnd = Math.min(userPage * userPageSize, totalFilteredUsers);
+
+  useEffect(() => {
+    setUserPage(1);
+  }, [filterUserGroup, userPageSize]);
+
+  useEffect(() => {
+    if (userPage > totalUserPages) {
+      setUserPage(totalUserPages);
+    }
+  }, [userPage, totalUserPages]);
 
   // 处理用户组相关操作
   const handleUserGroupAction = async (
@@ -1577,6 +1630,46 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
           </div>
         )}
 
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-2 mb-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/80 dark:bg-gray-900/60'>
+          <div className='text-sm text-gray-600 dark:text-gray-400'>
+            显示 {userRangeStart}-{userRangeEnd} / {totalFilteredUsers}
+          </div>
+          <div className='flex flex-wrap items-center gap-2'>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>
+              每页
+            </span>
+            <select
+              value={userPageSize}
+              onChange={(e) => setUserPageSize(Number(e.target.value))}
+              className='px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <div className='w-px h-5 bg-gray-300 dark:bg-gray-600' />
+            <button
+              onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}
+              disabled={userPage === 1}
+              className={`${buttonStyles.secondarySmall} ${userPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              上一页
+            </button>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>
+              第 {userPage} / {totalUserPages} 页
+            </span>
+            <button
+              onClick={() =>
+                setUserPage((prev) => Math.min(totalUserPages, prev + 1))
+              }
+              disabled={userPage === totalUserPages}
+              className={`${buttonStyles.secondarySmall} ${userPage === totalUserPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              下一页
+            </button>
+          </div>
+        </div>
+
         {/* 用户列表 */}
         <div
           className='border border-gray-200 dark:border-gray-700 rounded-lg max-h-[28rem] overflow-auto relative'
@@ -1655,27 +1748,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
             </thead>
             {/* 按规则排序用户：自己 -> 站长(若非自己) -> 管理员 -> 其他 */}
             {(() => {
-              const sortedUsers = [...config.UserConfig.Users]
-                .sort((a, b) => {
-                  type UserInfo = (typeof config.UserConfig.Users)[number];
-                  const priority = (u: UserInfo) => {
-                    if (u.username === currentUsername) return 0;
-                    if (u.role === 'owner') return 1;
-                    if (u.role === 'admin') return 2;
-                    return 3;
-                  };
-                  return priority(a) - priority(b);
-                })
-                .filter((user) => {
-                  // 根据选择的用户组筛选用户
-                  if (filterUserGroup === 'all') {
-                    return true; // 显示所有用户
-                  } else if (filterUserGroup === 'none') {
-                    return !user.tags || user.tags.length === 0; // 显示无用户组的用户
-                  } else {
-                    return user.tags && user.tags.includes(filterUserGroup); // 显示包含指定用户组的用户
-                  }
-                });
+              const sortedUsers = pagedUsers;
               return (
                 <tbody className='divide-y divide-gray-200 dark:divide-gray-700'>
                   {sortedUsers.map((user) => {
