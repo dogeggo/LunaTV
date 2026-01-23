@@ -64,12 +64,16 @@ function PlayPageClient() {
   const [detail, setDetail] = useState<SearchResult | null>(null);
 
   // 测速进度状态
-  const [speedTestProgress, setSpeedTestProgress] = useState<{
+  const [, setSpeedTestProgress] = useState<{
     current: number;
     total: number;
     currentSource: string;
     result?: string;
   } | null>(null);
+  const [pendingPreferSources, setPendingPreferSources] = useState<
+    SearchResult[] | null
+  >(null);
+  const preferTestRunIdRef = useRef(0);
 
   // 收藏状态
   const [favorited, setFavorited] = useState(false);
@@ -1330,7 +1334,6 @@ function PlayPageClient() {
     const _isIPad =
       /iPad/i.test(userAgent) ||
       (userAgent.includes('Macintosh') && navigator.maxTouchPoints >= 1);
-    const _isIOS = isIOSGlobal;
     const isIOS13 = isIOS13Global;
     const isMobile = isMobileGlobal;
 
@@ -1350,7 +1353,7 @@ function PlayPageClient() {
         'qq',
       ];
 
-      const sortedSources = sources.sort((a, b) => {
+      const sortedSources = [...sources].sort((a, b) => {
         const aIndex = sourcePreference.findIndex((name) =>
           a.source_name?.toLowerCase().includes(name),
         );
@@ -3082,8 +3085,8 @@ function PlayPageClient() {
       }
 
       let detailData: SearchResult = sourcesInfo[0];
-      // 指定源和id且无需优选
-      if (currentSource && currentId && !needPreferRef.current) {
+      // 指定源和id则优先使用指定源
+      if (currentSource && currentId) {
         const target = sourcesInfo.find(
           (source) =>
             source.source === currentSource && source.id === currentId,
@@ -3097,16 +3100,9 @@ function PlayPageClient() {
         }
       }
 
-      // 未指定源和 id 或需要优选，且开启优选开关
-      if (
+      const shouldPrefer =
         (!currentSource || !currentId || needPreferRef.current) &&
-        optimizationEnabled
-      ) {
-        setLoadingStage('preferring');
-        setLoadingMessage('⚡ 正在优选最佳播放源...');
-
-        detailData = await preferBestSource(sourcesInfo);
-      }
+        optimizationEnabled;
 
       setNeedPrefer(false);
       setCurrentSource(detailData.source);
@@ -3117,6 +3113,7 @@ function PlayPageClient() {
       // 优先保留URL参数中的豆瓣ID，如果URL中没有则使用详情数据中的
       setVideoDoubanId(videoDoubanIdRef.current || detailData.douban_id || 0);
       setDetail(detailData);
+      setPendingPreferSources(shouldPrefer ? sourcesInfo : null);
       if (currentEpisodeIndex >= detailData.episodes.length) {
         setCurrentEpisodeIndex(0);
       }
@@ -3144,6 +3141,33 @@ function PlayPageClient() {
 
     initAll();
   }, [reloadTrigger]); // 添加 reloadTrigger 作为依赖，当它变化时重新执行 initAll
+
+  useEffect(() => {
+    if (loading || !pendingPreferSources || !optimizationEnabled) return;
+
+    let canceled = false;
+    const runId = ++preferTestRunIdRef.current;
+
+    const runPreferTest = async () => {
+      setSpeedTestProgress(null);
+
+      try {
+        await preferBestSource(pendingPreferSources);
+      } catch (error) {
+        console.error('优选测速失败:', error);
+      } finally {
+        if (canceled || runId !== preferTestRunIdRef.current) return;
+        setPendingPreferSources(null);
+      }
+    };
+
+    runPreferTest();
+
+    return () => {
+      canceled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, pendingPreferSources, optimizationEnabled]);
 
   // 播放记录处理
   useEffect(() => {
@@ -5146,6 +5170,11 @@ function PlayPageClient() {
           };
 
           const updateResolution = () => {
+            const player = artPlayerRef.current;
+            if (!player || !player.layers) {
+              return;
+            }
+
             if (video.videoWidth && video.videoHeight) {
               const width = video.videoWidth;
               const label =
@@ -5196,7 +5225,7 @@ function PlayPageClient() {
               }
 
               // 更新layer内容和样式
-              const badge = artPlayerRef.current.layers['resolution-badge'];
+              const badge = player.layers['resolution-badge'];
               if (badge) {
                 badge.innerHTML = label;
                 badge.style.background = gradientStyle;
@@ -5228,7 +5257,7 @@ function PlayPageClient() {
             'keydown',
           ];
           userInteractionEvents.forEach((eventName) => {
-            artPlayerRef.current.on(eventName, showBadge);
+            artPlayerRef.current?.on(eventName, showBadge);
           });
 
           // iOS设备自动播放优化：如果是静音启动的，在开始播放后恢复音量
@@ -6278,86 +6307,6 @@ function PlayPageClient() {
               <p className='text-xl font-semibold text-gray-800 dark:text-gray-200 animate-pulse'>
                 {loadingMessage}
               </p>
-
-              {/* Netflix风格测速进度显示 */}
-              {speedTestProgress && (
-                <div className='mt-6 space-y-3'>
-                  {/* 进度条容器 */}
-                  <div className='relative w-full'>
-                    {/* 背景进度条 */}
-                    <div className='h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden'>
-                      {/* 动态进度条 - Netflix红色 */}
-                      <div
-                        className='h-full bg-gradient-to-r from-red-600 to-red-500 rounded-full transition-all duration-300 ease-out relative overflow-hidden'
-                        style={{
-                          width: `${(speedTestProgress.current / speedTestProgress.total) * 100}%`,
-                        }}
-                      >
-                        {/* 闪烁效果 */}
-                        <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer'></div>
-                      </div>
-                    </div>
-
-                    {/* 进度数字 - 靠右显示 */}
-                    <div className='absolute -top-6 right-0 text-xs font-medium text-gray-500 dark:text-gray-400'>
-                      {speedTestProgress.current}/{speedTestProgress.total}
-                    </div>
-                  </div>
-
-                  {/* 当前测试源信息卡片 */}
-                  <div className='bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700'>
-                    <div className='flex items-center gap-2'>
-                      {/* 脉动指示器 */}
-                      <div className='relative'>
-                        <div className='w-2 h-2 bg-red-500 rounded-full animate-pulse'></div>
-                        <div className='absolute inset-0 w-2 h-2 bg-red-500 rounded-full animate-ping'></div>
-                      </div>
-
-                      {/* 源名称 */}
-                      <span className='text-sm font-semibold text-gray-700 dark:text-gray-300 truncate flex-1'>
-                        {speedTestProgress.currentSource}
-                      </span>
-                    </div>
-
-                    {/* 测试结果 */}
-                    {speedTestProgress.result && (
-                      <div className='mt-2 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 font-mono'>
-                        {speedTestProgress.result === '测速失败' ? (
-                          <span className='text-red-500 flex items-center gap-1'>
-                            <svg
-                              className='w-3 h-3'
-                              fill='currentColor'
-                              viewBox='0 0 20 20'
-                            >
-                              <path
-                                fillRule='evenodd'
-                                d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
-                                clipRule='evenodd'
-                              />
-                            </svg>
-                            连接失败
-                          </span>
-                        ) : (
-                          <span className='text-green-600 dark:text-green-400 flex items-center gap-1'>
-                            <svg
-                              className='w-3 h-3'
-                              fill='currentColor'
-                              viewBox='0 0 20 20'
-                            >
-                              <path
-                                fillRule='evenodd'
-                                d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
-                                clipRule='evenodd'
-                              />
-                            </svg>
-                            {speedTestProgress.result}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -7162,9 +7111,9 @@ function PlayPageClient() {
                       <div className='flex gap-4 overflow-x-auto pb-4 scrollbar-hide'>
                         {movieDetails.celebrities
                           .slice(0, 15)
-                          .map((celebrity: any) => (
+                          .map((celebrity: any, index: number) => (
                             <div
-                              key={celebrity.id}
+                              key={`${celebrity.id}-${celebrity.name}-${index}`}
                               onClick={() =>
                                 handleCelebrityClick(celebrity.name)
                               }
