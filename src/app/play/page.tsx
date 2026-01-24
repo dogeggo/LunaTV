@@ -81,6 +81,8 @@ function PlayPageClient() {
   // 豆瓣详情状态
   const [movieDetails, setMovieDetails] = useState<any>(null);
   const [loadingMovieDetails, setLoadingMovieDetails] = useState(false);
+  const [lastMovieDetailsFetchTime, setLastMovieDetailsFetchTime] =
+    useState<number>(0); // 记录上次请求时间
 
   // 豆瓣短评状态
   const [movieComments, setMovieComments] = useState<any[]>([]);
@@ -449,19 +451,6 @@ function PlayPageClient() {
           return;
         }
 
-        const bangumiRequestState = doubanDetailsRequestRef.current;
-        const bangumiNow = Date.now();
-        if (
-          bangumiRequestState.id === videoDoubanId &&
-          (bangumiRequestState.inFlight ||
-            bangumiNow - bangumiRequestState.lastAttempt < 5000)
-        ) {
-          return;
-        }
-        bangumiRequestState.id = videoDoubanId;
-        bangumiRequestState.inFlight = true;
-        bangumiRequestState.lastAttempt = bangumiNow;
-
         setLoadingBangumiDetails(true);
         try {
           const bangumiData = await fetchBangumiDetails(videoDoubanId);
@@ -472,9 +461,6 @@ function PlayPageClient() {
           console.error('Failed to load bangumi details:', error);
         } finally {
           setLoadingBangumiDetails(false);
-          if (bangumiRequestState.id === videoDoubanId) {
-            bangumiRequestState.inFlight = false;
-          }
         }
       } else {
         // 加载豆瓣详情
@@ -482,32 +468,39 @@ function PlayPageClient() {
           return;
         }
 
-        const doubanRequestState = doubanDetailsRequestRef.current;
-        const doubanNow = Date.now();
+        // 🎯 防止频繁重试：如果上次请求在1分钟内，则跳过
+        const now = Date.now();
+        const oneMinute = 60 * 1000; // 1分钟 = 60秒 = 60000毫秒
         if (
-          doubanRequestState.id === videoDoubanId &&
-          (doubanRequestState.inFlight ||
-            doubanNow - doubanRequestState.lastAttempt < 5000)
+          lastMovieDetailsFetchTime > 0 &&
+          now - lastMovieDetailsFetchTime < oneMinute
         ) {
+          console.log(
+            `⏱️ 距离上次请求不足1分钟，跳过重试（${Math.floor((now - lastMovieDetailsFetchTime) / 1000)}秒前）`,
+          );
           return;
         }
-        doubanRequestState.id = videoDoubanId;
-        doubanRequestState.inFlight = true;
-        doubanRequestState.lastAttempt = doubanNow;
 
         setLoadingMovieDetails(true);
+        setLastMovieDetailsFetchTime(now); // 记录本次请求时间
         try {
           const response = await getDoubanDetails(videoDoubanId.toString());
-          if (response.code === 200 && response.data) {
+          // 🎯 只有在数据有效（title 存在）时才设置 movieDetails
+          if (response.code === 200 && response.data && response.data.title) {
             setMovieDetails(response.data);
+          } else if (
+            response.code === 200 &&
+            response.data &&
+            !response.data.title
+          ) {
+            console.warn('⚠️ Douban 返回空数据（缺少标题），1分钟后将自动重试');
+            setMovieDetails(null);
           }
         } catch (error) {
           console.error('Failed to load movie details:', error);
+          setMovieDetails(null);
         } finally {
           setLoadingMovieDetails(false);
-          if (doubanRequestState.id === videoDoubanId) {
-            doubanRequestState.inFlight = false;
-          }
         }
       }
     };
@@ -519,6 +512,7 @@ function PlayPageClient() {
     movieDetails,
     loadingBangumiDetails,
     bangumiDetails,
+    lastMovieDetailsFetchTime,
   ]);
 
   // 加载豆瓣短评
@@ -3493,13 +3487,22 @@ function PlayPageClient() {
       // 🔥 优化：检查目标集数是否有历史播放记录
       try {
         const allRecords = await getAllPlayRecords();
-        const key = generateStorageKey(currentSourceRef.current, currentIdRef.current);
+        const key = generateStorageKey(
+          currentSourceRef.current,
+          currentIdRef.current,
+        );
         const record = allRecords[key];
 
         // 如果历史记录的集数与目标集数匹配，且有播放进度
-        if (record && record.index - 1 === episodeNumber && record.play_time > 0) {
+        if (
+          record &&
+          record.index - 1 === episodeNumber &&
+          record.play_time > 0
+        ) {
           resumeTimeRef.current = record.play_time;
-          console.log(`🎯 切换到第${episodeNumber + 1}集，恢复历史进度: ${record.play_time.toFixed(2)}s`);
+          console.log(
+            `🎯 切换到第${episodeNumber + 1}集，恢复历史进度: ${record.play_time.toFixed(2)}s`,
+          );
         } else {
           resumeTimeRef.current = 0;
           console.log(`🔄 切换到第${episodeNumber + 1}集，从头播放`);
