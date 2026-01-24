@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     // 只返回 TVBox 安全配置和站点名称（不返回其他敏感信息）
     return NextResponse.json({
       securityConfig: securityConfig,
-      siteName: config.SiteConfig?.SiteName || 'MoonTV',
+      siteName: config.SiteConfig?.SiteName || 'Dong Media',
       // 🔑 新增：用户专属信息
       userToken: userTvboxToken,
       userEnabledSources: userEnabledSources,

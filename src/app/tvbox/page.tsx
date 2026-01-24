@@ -166,7 +166,7 @@ export default function TVBoxConfigPage() {
   const [securityConfig, setSecurityConfig] = useState<SecurityConfig | null>(
     null,
   );
-  const [siteName, setSiteName] = useState('MoonTV');
+  const [siteName, setSiteName] = useState('Dong Media');
   const [loading, setLoading] = useState(true);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosisResult, setDiagnosisResult] =
@@ -204,7 +204,7 @@ export default function TVBoxConfigPage() {
       if (response.ok) {
         const data = await response.json();
         setSecurityConfig(data.securityConfig || null);
-        setSiteName(data.siteName || 'MoonTV');
+        setSiteName(data.siteName || 'Dong Media');
         // 🔑 新增：设置用户专属配置
         setUserToken(data.userToken || '');
         setUserEnabledSources(data.userEnabledSources || []);
