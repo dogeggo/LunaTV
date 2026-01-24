@@ -274,12 +274,40 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
       let hasSpeedCalculated = false;
       let hasMetadataLoaded = false;
       let fragmentStartTime = 0;
+      const speedSamples: number[] = [];
+      const minSampleDurationMs = isMobile ? 120 : 80;
+      const maxSpeedMBps = 50;
+      const requiredSamples = isMobile ? 1 : 2;
+      const maxSampleAttempts = isMobile ? 2 : 3;
+      let sampleAttempts = 0;
+
+      const formatSpeed = (speedKBps: number) =>
+        speedKBps >= 1024
+          ? `${(speedKBps / 1024).toFixed(2)} MB/s`
+          : `${speedKBps.toFixed(2)} KB/s`;
+
+      const getFragmentLoadMetrics = (data: any) => {
+        const stats = data?.frag?.stats || data?.stats;
+        const loadedBytes =
+          stats?.loaded ?? stats?.total ?? data?.payload?.byteLength ?? 0;
+        const loading = stats?.loading;
+        let loadTimeMs = 0;
+
+        if (loading?.start && loading?.end) {
+          loadTimeMs = loading.end - loading.start;
+        } else if (loading?.first && loading?.end) {
+          loadTimeMs = loading.end - loading.first;
+        } else if (stats?.trequest && stats?.tload) {
+          loadTimeMs = stats.tload - stats.trequest;
+        } else if (fragmentStartTime > 0) {
+          loadTimeMs = performance.now() - fragmentStartTime;
+        }
+
+        return { loadedBytes, loadTimeMs };
+      };
 
       const checkAndResolve = async () => {
-        if (
-          hasMetadataLoaded &&
-          (hasSpeedCalculated || actualLoadSpeed !== '未知')
-        ) {
+        if (hasMetadataLoaded && hasSpeedCalculated) {
           await pingPromise;
 
           const width = video.videoWidth;
@@ -317,24 +345,32 @@ export async function getVideoResolutionFromM3u8(m3u8Url: string): Promise<{
       });
 
       hls.on(Hls.Events.FRAG_LOADED, (event: any, data: any) => {
-        if (
-          fragmentStartTime > 0 &&
-          data &&
-          data.payload &&
-          !hasSpeedCalculated
-        ) {
-          const loadTime = performance.now() - fragmentStartTime;
-          const size = data.payload.byteLength || 0;
+        if (hasSpeedCalculated) return;
 
-          if (loadTime > 0 && size > 0) {
-            const speedKBps = size / 1024 / (loadTime / 1000);
-            actualLoadSpeed =
-              speedKBps >= 1024
-                ? `${(speedKBps / 1024).toFixed(2)} MB/s`
-                : `${speedKBps.toFixed(2)} KB/s`;
-            hasSpeedCalculated = true;
-            checkAndResolve();
+        sampleAttempts += 1;
+        const { loadedBytes, loadTimeMs } = getFragmentLoadMetrics(data);
+
+        if (loadedBytes > 0 && loadTimeMs > 0) {
+          const normalizedTimeMs = Math.max(loadTimeMs, minSampleDurationMs);
+          let speedKBps = loadedBytes / 1024 / (normalizedTimeMs / 1000);
+          speedKBps = Math.min(speedKBps, maxSpeedMBps * 1024);
+          speedSamples.push(speedKBps);
+        }
+
+        if (
+          speedSamples.length >= requiredSamples ||
+          sampleAttempts >= maxSampleAttempts
+        ) {
+          if (speedSamples.length > 0) {
+            const avgSpeed =
+              speedSamples.reduce((sum, value) => sum + value, 0) /
+              speedSamples.length;
+            actualLoadSpeed = formatSpeed(avgSpeed);
+          } else {
+            actualLoadSpeed = '未知';
           }
+          hasSpeedCalculated = true;
+          checkAndResolve();
         }
       });
 

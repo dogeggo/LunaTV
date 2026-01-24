@@ -42,6 +42,8 @@ interface EpisodeSelectorProps {
   precomputedVideoInfo?: Map<string, VideoInfo>;
   /** 重新测速时重置内部缓存 */
   speedTestResetKey?: number;
+  /** 是否允许测速（页面完全加载后再开启） */
+  speedTestEnabled?: boolean;
 }
 
 /**
@@ -62,6 +64,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   sourceSearchError = null,
   precomputedVideoInfo,
   speedTestResetKey = 0,
+  speedTestEnabled = true,
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -200,6 +203,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   useEffect(() => {
     const fetchVideoInfosInBatches = async () => {
       if (
+        !speedTestEnabled ||
         !optimizationEnabled || // 若关闭测速则直接退出
         activeTab !== 'sources' ||
         availableSources.length === 0
@@ -224,7 +228,13 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
     fetchVideoInfosInBatches();
     // 依赖项保持与之前一致
-  }, [activeTab, availableSources, getVideoInfo, optimizationEnabled]);
+  }, [
+    activeTab,
+    availableSources,
+    getVideoInfo,
+    optimizationEnabled,
+    speedTestEnabled,
+  ]);
 
   // 升序分页标签
   const categoriesAsc = useMemo(() => {

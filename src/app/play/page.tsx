@@ -227,6 +227,22 @@ function PlayPageClient() {
     anime4kScaleRef.current = anime4kScale;
   }, [anime4kEnabled, anime4kMode, anime4kScale]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleLoad = () => setPageLoadComplete(true);
+
+    if (document.readyState === 'complete') {
+      handleLoad();
+      return;
+    }
+
+    window.addEventListener('load', handleLoad, { once: true });
+    return () => {
+      window.removeEventListener('load', handleLoad);
+    };
+  }, []);
+
   // 获取 HLS 缓冲配置（根据用户设置的模式）
   const getHlsBufferConfig = () => {
     const mode =
@@ -702,6 +718,7 @@ function PlayPageClient() {
   );
   const [isSpeedTestRunning, setIsSpeedTestRunning] = useState(false);
   const [speedTestResetKey, setSpeedTestResetKey] = useState(0);
+  const [pageLoadComplete, setPageLoadComplete] = useState(false);
 
   // 优选和测速开关
   const [optimizationEnabled] = useState<boolean>(() => {
@@ -849,6 +866,7 @@ function PlayPageClient() {
 
   // 播放器就绪状态
   const [playerReady, setPlayerReady] = useState(false);
+  const speedTestReady = pageLoadComplete && playerReady && !loading;
 
   // Wake Lock 相关
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -1465,7 +1483,7 @@ function PlayPageClient() {
     sources: SearchResult[],
   ): Promise<SearchResult> => {
     // 桌面设备使用小批量并发，避免创建过多实例
-    const concurrency = 3;
+    const concurrency = 2;
 
     console.log(`开始测速: 共${sources.length}个源。`);
 
@@ -1479,7 +1497,7 @@ function PlayPageClient() {
     for (let i = 0; i < sources.length; i += concurrency) {
       const batch = sources.slice(i, i + concurrency);
       const batchResults = await Promise.all(
-        batch.map(async (source, batchIndex) => {
+        batch.map(async (source) => {
           try {
             if (!source.episodes || source.episodes.length === 0) {
               return null;
@@ -1663,6 +1681,7 @@ function PlayPageClient() {
 
   const handleRetestSources = async () => {
     if (
+      !speedTestReady ||
       isSpeedTestRunning ||
       sourceSearchLoading ||
       loading ||
@@ -3106,7 +3125,13 @@ function PlayPageClient() {
   }, [reloadTrigger]); // 添加 reloadTrigger 作为依赖，当它变化时重新执行 initAll
 
   useEffect(() => {
-    if (loading || !pendingPreferSources || !optimizationEnabled) return;
+    if (
+      loading ||
+      !pendingPreferSources ||
+      !optimizationEnabled ||
+      !speedTestReady
+    )
+      return;
 
     let canceled = false;
     const runId = ++preferTestRunIdRef.current;
@@ -3128,7 +3153,7 @@ function PlayPageClient() {
       canceled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, pendingPreferSources, optimizationEnabled]);
+  }, [loading, pendingPreferSources, optimizationEnabled, speedTestReady]);
 
   // 播放记录处理
   useEffect(() => {
@@ -6371,6 +6396,7 @@ function PlayPageClient() {
                   handleRetestSources();
                 }}
                 disabled={
+                  !speedTestReady ||
                   isSpeedTestRunning ||
                   sourceSearchLoading ||
                   loading ||
@@ -6564,6 +6590,7 @@ function PlayPageClient() {
                   sourceSearchError={sourceSearchError}
                   precomputedVideoInfo={precomputedVideoInfo}
                   speedTestResetKey={speedTestResetKey}
+                  speedTestEnabled={speedTestReady}
                 />
               </div>
             </div>
