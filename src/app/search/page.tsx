@@ -1800,11 +1800,14 @@ function SearchPageClient() {
                   {useVirtualization ? (
                     <VirtualSearchGrid
                       ref={virtualGridRef}
+                      allResults={searchResults}
                       filteredResults={filteredAllResults}
+                      aggregatedResults={aggregatedResults}
                       filteredAggResults={filteredAggResults}
                       viewMode={viewMode}
                       searchQuery={searchQuery}
                       isLoading={isLoading}
+                      groupRefs={groupRefs}
                       groupStatsRef={groupStatsRef}
                       getGroupRef={getGroupRef}
                       computeGroupStats={computeGroupStats}
