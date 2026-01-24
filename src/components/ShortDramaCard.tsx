@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
-import { Heart, Play, Star } from 'lucide-react';
+import { ExternalLink, Heart, Play, PlayCircle, Star } from 'lucide-react';
 import Link from 'next/link';
 import { memo, useCallback, useEffect, useState } from 'react';
 
@@ -11,29 +13,37 @@ import {
   saveFavorite,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import {
+  getCache,
+  getCacheKey,
+  setCache,
+  SHORTDRAMA_CACHE_EXPIRE,
+} from '@/lib/shortdrama-cache';
 import { ShortDramaItem } from '@/lib/types';
-import { processImageUrl } from '@/lib/utils';
+import { useLongPress } from '@/hooks/useLongPress';
+
+import MobileActionSheet from '@/components/MobileActionSheet';
 
 interface ShortDramaCardProps {
   drama: ShortDramaItem;
   showDescription?: boolean;
   className?: string;
-  priority?: boolean;
 }
 
 function ShortDramaCard({
   drama,
   showDescription = false,
   className = '',
-  priority = false,
 }: ShortDramaCardProps) {
-  // 直接使用 props 中的 episode_count，不再尝试异步获取真实集数
-  const realEpisodeCount = drama.episode_count;
-  const showEpisodeCount = drama.episode_count > 1;
+  const [realEpisodeCount, setRealEpisodeCount] = useState<number>(
+    drama.episode_count,
+  );
+  const [showEpisodeCount, setShowEpisodeCount] = useState(
+    drama.episode_count > 1,
+  ); // 如果初始集数>1就显示
   const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
   const [favorited, setFavorited] = useState(false); // 收藏状态
-  // 🚀 性能优化：延迟加载收藏状态
-  const [shouldCheckStatus, setShouldCheckStatus] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(false); // 移动端操作面板
 
   // 短剧的source固定为shortdrama
   const source = 'shortdrama';
@@ -41,8 +51,6 @@ function ShortDramaCard({
 
   // 检查收藏状态
   useEffect(() => {
-    if (!shouldCheckStatus) return;
-
     const fetchFavoriteStatus = async () => {
       try {
         const fav = await isFavorited(source, id);
@@ -65,7 +73,96 @@ function ShortDramaCard({
     );
 
     return unsubscribe;
-  }, [source, id, shouldCheckStatus]);
+  }, [source, id]);
+
+  // 获取真实集数（优先使用备用API）
+  useEffect(() => {
+    const fetchEpisodeCount = async () => {
+      const cacheKey = getCacheKey('episodes', { id: drama.id });
+
+      // 检查统一缓存
+      const cached = await getCache(cacheKey);
+      if (cached && typeof cached === 'number') {
+        if (cached > 1) {
+          setRealEpisodeCount(cached);
+          setShowEpisodeCount(true);
+        } else {
+          setShowEpisodeCount(false);
+        }
+        return;
+      }
+
+      try {
+        // 优先尝试使用备用API（通过剧名获取集数，更快更可靠）
+        const episodeCountResponse = await fetch(
+          `/api/shortdrama/episode-count?name=${encodeURIComponent(drama.name)}`,
+        );
+
+        if (episodeCountResponse.ok) {
+          const episodeCountData = await episodeCountResponse.json();
+          if (episodeCountData.episodeCount > 1) {
+            setRealEpisodeCount(episodeCountData.episodeCount);
+            setShowEpisodeCount(true);
+            // 使用统一缓存系统缓存结果
+            await setCache(
+              cacheKey,
+              episodeCountData.episodeCount,
+              SHORTDRAMA_CACHE_EXPIRE.episodes,
+            );
+            return; // 成功获取，直接返回
+          }
+        }
+
+        // 备用API失败，fallback到主API解析方式
+        console.log('备用API获取集数失败，尝试主API...');
+
+        // 先尝试第1集（episode=0）
+        let response = await fetch(
+          `/api/shortdrama/parse?id=${drama.id}&episode=0&name=${encodeURIComponent(drama.name)}`,
+        );
+        let result = null;
+
+        if (response.ok) {
+          result = await response.json();
+        }
+
+        // 如果第1集失败，尝试第2集（episode=1）
+        if (!result || !result.totalEpisodes) {
+          response = await fetch(
+            `/api/shortdrama/parse?id=${drama.id}&episode=1&name=${encodeURIComponent(drama.name)}`,
+          );
+          if (response.ok) {
+            result = await response.json();
+          }
+        }
+
+        if (result && result.totalEpisodes > 1) {
+          setRealEpisodeCount(result.totalEpisodes);
+          setShowEpisodeCount(true);
+          // 使用统一缓存系统缓存结果
+          await setCache(
+            cacheKey,
+            result.totalEpisodes,
+            SHORTDRAMA_CACHE_EXPIRE.episodes,
+          );
+        } else {
+          // 如果解析失败或集数<=1，不显示集数标签，缓存0避免重复请求
+          setShowEpisodeCount(false);
+          await setCache(cacheKey, 0, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
+        }
+      } catch (error) {
+        console.error('获取集数失败:', error);
+        // 网络错误时不显示集数标签
+        setShowEpisodeCount(false);
+        await setCache(cacheKey, 0, SHORTDRAMA_CACHE_EXPIRE.episodes / 24); // 1小时后重试
+      }
+    };
+
+    // 只有当前集数为1（默认值）时才尝试获取真实集数
+    if (drama.episode_count === 1) {
+      fetchEpisodeCount();
+    }
+  }, [drama.id, drama.episode_count, drama.name]);
 
   // 处理收藏切换
   const handleToggleFavorite = useCallback(
@@ -98,6 +195,37 @@ function ShortDramaCard({
     [favorited, source, id, drama.name, drama.cover, realEpisodeCount],
   );
 
+  // 处理长按事件
+  const handleLongPress = useCallback(() => {
+    setShowMobileActions(true);
+  }, []);
+
+  // 处理点击事件（跳转到播放页面）
+  const handleClick = useCallback(() => {
+    // Link 组件会处理导航，这里不需要额外操作
+  }, []);
+
+  // 处理播放（在操作面板中使用）
+  const handlePlay = useCallback(() => {
+    window.location.href = `/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`;
+  }, [drama.name, drama.id]);
+
+  // 处理新标签页播放
+  const handlePlayInNewTab = useCallback(() => {
+    window.open(
+      `/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }, [drama.name, drama.id]);
+
+  // 配置长按功能
+  const longPressProps = useLongPress({
+    onLongPress: handleLongPress,
+    onClick: handleClick,
+    longPressDelay: 500,
+  });
+
   const formatScore = (score: number) => {
     return score > 0 ? score.toFixed(1) : '--';
   };
@@ -114,13 +242,17 @@ function ShortDramaCard({
   return (
     <div
       className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-30 hover:shadow-2xl`}
-      onMouseEnter={() => setShouldCheckStatus(true)}
-      onTouchStart={() => setShouldCheckStatus(true)}
-      onFocus={() => setShouldCheckStatus(true)}
     >
       <Link
         href={`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`}
         className='block'
+        {...longPressProps}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowMobileActions(true);
+          return false;
+        }}
       >
         {/* 封面图片 */}
         <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800'>
@@ -136,14 +268,14 @@ function ShortDramaCard({
           />
 
           <img
-            src={processImageUrl(drama.cover)}
+            src={drama.cover}
             alt={drama.name}
             className={`h-full w-full object-cover transition-all duration-700 ease-out ${
               imageLoaded
                 ? 'opacity-100 blur-0 scale-100 group-hover:scale-105'
                 : 'opacity-0 blur-md scale-105'
             }`}
-            loading={priority ? 'eager' : 'lazy'}
+            loading='lazy'
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/placeholder-cover.jpg';
@@ -250,6 +382,61 @@ function ShortDramaCard({
           )}
         </div>
       </Link>
+
+      {/* 移动端操作面板 */}
+      <MobileActionSheet
+        isOpen={showMobileActions}
+        onClose={() => setShowMobileActions(false)}
+        title={drama.name}
+        poster={drama.cover}
+        actions={[
+          {
+            id: 'play',
+            label: '播放',
+            icon: <PlayCircle size={20} />,
+            onClick: handlePlay,
+            color: 'primary' as const,
+          },
+          {
+            id: 'play-new-tab',
+            label: '新标签页播放',
+            icon: <ExternalLink size={20} />,
+            onClick: handlePlayInNewTab,
+            color: 'default' as const,
+          },
+          {
+            id: 'favorite',
+            label: favorited ? '取消收藏' : '添加收藏',
+            icon: favorited ? (
+              <Heart size={20} className='fill-red-600 stroke-red-600' />
+            ) : (
+              <Heart size={20} className='fill-transparent stroke-red-500' />
+            ),
+            onClick: async () => {
+              try {
+                if (favorited) {
+                  await deleteFavorite(source, id);
+                  setFavorited(false);
+                } else {
+                  await saveFavorite(source, id, {
+                    title: drama.name,
+                    source_name: '短剧',
+                    year: '',
+                    cover: drama.cover,
+                    total_episodes: realEpisodeCount,
+                    save_time: Date.now(),
+                    search_title: drama.name,
+                  });
+                  setFavorited(true);
+                }
+              } catch (err) {
+                console.error('切换收藏状态失败:', err);
+              }
+            },
+            color: favorited ? ('danger' as const) : ('default' as const),
+          },
+        ]}
+      />
     </div>
   );
 }
