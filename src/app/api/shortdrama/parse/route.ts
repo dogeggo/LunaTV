@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
 import { parseShortDramaEpisode } from '@/lib/shortdrama.client';
+import { processImageUrl } from '@/lib/utils';
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
@@ -69,9 +70,7 @@ export async function GET(request: NextRequest) {
       title: result.data!.videoName || '',
       episode: result.data!.currentEpisode || episodeNum,
       totalEpisodes: result.data!.totalEpisodes || 1,
-      cover: result.data!.cover
-        ? `/api/image-proxy?url=${encodeURIComponent(result.data!.cover)}`
-        : '',
+      cover: result.data!.cover ? processImageUrl(result.data!.cover) : '',
     };
 
     // 设置与豆瓣一致的缓存策略

@@ -11,8 +11,6 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-import { processImageUrl } from '@/lib/utils';
-
 import {
   detectProvider,
   getProviderButtonStyle,
@@ -48,8 +46,6 @@ function LoginPageClient() {
     }>
   >([]);
   const [oidcEnabled, setOidcEnabled] = useState(false);
-  const [oidcButtonText, setOidcButtonText] = useState('使用OIDC登录');
-  const [oidcIssuer, setOidcIssuer] = useState<string>('');
 
   const { siteName } = useSite();
 
@@ -200,7 +196,7 @@ function LoginPageClient() {
       {bingWallpaper && (
         <div
           className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 animate-ken-burns'
-          style={{ backgroundImage: `url(${processImageUrl(bingWallpaper)})` }}
+          style={{ backgroundImage: `url(${bingWallpaper})` }}
         />
       )}
 
@@ -411,7 +407,7 @@ function LoginPageClient() {
             </div>
 
             {/* 多 Provider 按钮 */}
-            {oidcProviders.length > 0 ? (
+            {oidcProviders.length > 0 && (
               <div className='mt-3 sm:mt-4 space-y-2.5 sm:space-y-3'>
                 {oidcProviders.map((provider) => {
                   // 优先使用 provider.id，如果是自定义provider则从issuer推断
@@ -460,30 +456,6 @@ function LoginPageClient() {
                   );
                 })}
               </div>
-            ) : (
-              /* 单 Provider 按钮（向后兼容） */
-              (() => {
-                const provider = detectProvider(oidcIssuer || oidcButtonText);
-                const buttonStyle = getProviderButtonStyle(provider);
-                const customText =
-                  oidcButtonText && oidcButtonText !== '使用OIDC登录'
-                    ? oidcButtonText
-                    : undefined;
-                const buttonText = getProviderButtonText(provider, customText);
-
-                return (
-                  <button
-                    type='button'
-                    onClick={() =>
-                      (window.location.href = '/api/auth/oidc/login')
-                    }
-                    className={`mt-3 sm:mt-4 w-full inline-flex justify-center items-center rounded-lg py-2.5 sm:py-3 text-sm sm:text-base font-semibold shadow-sm transition-all duration-200 active:scale-95 ${buttonStyle}`}
-                  >
-                    <OIDCProviderLogo provider={provider} />
-                    <span className='ml-2'>{buttonText}</span>
-                  </button>
-                );
-              })()
             )}
           </div>
         )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, getConfig } from '@/lib/config';
 import { parseShortDramaEpisode } from '@/lib/shortdrama.client';
+import { processImageUrl } from '@/lib/utils';
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
@@ -91,9 +92,7 @@ export async function GET(request: NextRequest) {
     const response: any = {
       id: id, // 使用原始请求ID，保持一致性
       title: result.data!.videoName,
-      poster: result.data!.cover
-        ? `/api/image-proxy?url=${encodeURIComponent(result.data!.cover)}`
-        : '',
+      poster: result.data!.cover ? processImageUrl(result.data!.cover) : '',
       episodes: Array.from(
         { length: totalEpisodes },
         (_, i) => `shortdrama:${id}:${i}`, // 使用原始请求ID

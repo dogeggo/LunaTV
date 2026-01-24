@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { processImageUrl } from '@/lib/utils';
+
 /**
  * Bangumi API 代理路由
  * 解决客户端直接调用 Bangumi API 可能遇到的 CORS 问题
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
               typeof value === 'string' &&
               value.startsWith('http')
             ) {
-              newObj[key] = `/api/image-proxy?url=${encodeURIComponent(value)}`;
+              newObj[key] = processImageUrl(value);
             } else {
               newObj[key] = processImages(value);
             }

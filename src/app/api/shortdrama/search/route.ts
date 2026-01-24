@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { processImageUrl } from '@/lib/utils';
+
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,9 +29,7 @@ async function searchShortDramasInternal(query: string, page = 1, size = 20) {
   const list = items.map((item: any) => ({
     id: item.id,
     name: item.name,
-    cover: item.cover
-      ? `/api/image-proxy?url=${encodeURIComponent(item.cover)}`
-      : '',
+    cover: item.cover ? processImageUrl(item.cover) : '',
     update_time: item.update_time || new Date().toISOString(),
     score: item.score || 0,
     episode_count: 1, // 搜索API没有集数信息，ShortDramaCard会自动获取

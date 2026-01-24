@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
+import { processImageUrl } from '@/lib/utils';
 
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
@@ -35,7 +36,7 @@ async function getRecommendedShortDramasInternal(category?: number, size = 10) {
     name: item.vod_name || item.name,
     cover:
       item.vod_pic || item.cover
-        ? `/api/image-proxy?url=${encodeURIComponent(item.vod_pic || item.cover)}`
+        ? processImageUrl(item.vod_pic || item.cover)
         : '',
     update_time: item.vod_time || item.update_time || new Date().toISOString(),
     score: item.vod_score || item.score || 0,
