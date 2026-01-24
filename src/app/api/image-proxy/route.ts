@@ -189,7 +189,14 @@ export async function OPTIONS() {
 async function downloadToCache(url: string, filePath: string, headers: any) {
   const tempPath = `${filePath}.tmp`;
   try {
-    const response = await fetch(url, { headers });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch(url, {
+      headers,
+      signal: controller.signal,
+    }).finally(() => {
+      clearTimeout(timeoutId);
+    });
     if (!response.ok || !response.body) {
       console.error(`[ImageCache] Failed to fetch source: ${response.status}`);
       return;
@@ -206,7 +213,7 @@ async function downloadToCache(url: string, filePath: string, headers: any) {
     let retries = 3;
     while (retries > 0) {
       try {
-        fs.renameSync(tempPath, filePath);
+        await fs.promises.rename(tempPath, filePath);
         console.log(`[ImageCache] Successfully cached: ${filePath}`);
         break;
       } catch (e: any) {

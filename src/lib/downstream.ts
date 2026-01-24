@@ -586,9 +586,9 @@ export async function getDetailFromApi(
   const response = await fetch(detailUrl, {
     headers: API_CONFIG.detail.headers,
     signal: controller.signal,
+  }).finally(() => {
+    clearTimeout(timeoutId);
   });
-
-  clearTimeout(timeoutId);
 
   if (!response.ok) {
     throw new Error(`详情请求失败: ${response.status}`);
@@ -667,14 +667,13 @@ async function handleSpecialSourceDetail(
   const detailUrl = `${apiSite.detail}/index.php/vod/detail/id/${id}.html`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
   const response = await fetch(detailUrl, {
     headers: API_CONFIG.detail.headers,
     signal: controller.signal,
+  }).finally(() => {
+    clearTimeout(timeoutId);
   });
-
-  clearTimeout(timeoutId);
 
   if (!response.ok) {
     throw new Error(`详情页请求失败: ${response.status}`);

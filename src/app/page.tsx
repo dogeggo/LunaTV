@@ -253,8 +253,68 @@ function HomeClient() {
       cleanExpiredCache().catch(console.error);
     }, 2000);
 
-    const fetchSecondary = async () => {
+    const fetchAll = async () => {
       try {
+        const moviesPromise = withTimeout(
+          getDoubanCategories({
+            kind: 'movie',
+            category: '热门',
+            type: '全部',
+          }),
+          'hot-movies',
+        )
+          .then((data) => {
+            if (data?.code === 200) {
+              runTransition(() => {
+                setHotMovies(data.list);
+              });
+            } else {
+              console.warn('Failed to load hot movies:', data);
+              runTransition(() => {
+                setHotMovies([]);
+              });
+            }
+          })
+          .catch((error) => {
+            console.warn('Failed to load hot movies:', error);
+            runTransition(() => {
+              setHotMovies([]);
+            });
+          })
+          .finally(() => {
+            runTransition(() => {
+              setLoadingHotMovies(false);
+            });
+          });
+
+        const tvPromise = withTimeout(
+          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
+          'hot-tv',
+        )
+          .then((data) => {
+            if (data?.code === 200) {
+              runTransition(() => {
+                setHotTvShows(data.list);
+              });
+            } else {
+              console.warn('Failed to load hot tv shows:', data);
+              runTransition(() => {
+                setHotTvShows([]);
+              });
+            }
+          })
+          .catch((error) => {
+            console.warn('Failed to load hot tv shows:', error);
+            runTransition(() => {
+              setHotTvShows([]);
+            });
+          })
+          .finally(() => {
+            runTransition(() => {
+              setLoadingHotTvShows(false);
+            });
+          });
+
         const varietyPromise = withTimeout(
           getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
           'hot-variety',
@@ -387,6 +447,8 @@ function HomeClient() {
           });
 
         await Promise.allSettled([
+          moviesPromise,
+          tvPromise,
           varietyPromise,
           animePromise,
           shortDramaPromise,
@@ -396,6 +458,8 @@ function HomeClient() {
       } catch (error) {
         console.error('Failed to load secondary recommendations:', error);
         runTransition(() => {
+          setLoadingHotMovies(false);
+          setLoadingHotTvShows(false);
           setLoadingVarietyShows(false);
           setLoadingShortDramas(false);
           setLoadingBangumi(false);
@@ -403,84 +467,7 @@ function HomeClient() {
         });
       }
     };
-
-    const fetchCore = async () => {
-      try {
-        const moviesPromise = withTimeout(
-          getDoubanCategories({
-            kind: 'movie',
-            category: '热门',
-            type: '全部',
-          }),
-          'hot-movies',
-        )
-          .then((data) => {
-            if (data?.code === 200) {
-              runTransition(() => {
-                setHotMovies(data.list);
-              });
-            } else {
-              console.warn('Failed to load hot movies:', data);
-              runTransition(() => {
-                setHotMovies([]);
-              });
-            }
-          })
-          .catch((error) => {
-            console.warn('Failed to load hot movies:', error);
-            runTransition(() => {
-              setHotMovies([]);
-            });
-          })
-          .finally(() => {
-            runTransition(() => {
-              setLoadingHotMovies(false);
-            });
-          });
-
-        const tvPromise = withTimeout(
-          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
-          'hot-tv',
-        )
-          .then((data) => {
-            if (data?.code === 200) {
-              runTransition(() => {
-                setHotTvShows(data.list);
-              });
-            } else {
-              console.warn('Failed to load hot tv shows:', data);
-              runTransition(() => {
-                setHotTvShows([]);
-              });
-            }
-          })
-          .catch((error) => {
-            console.warn('Failed to load hot tv shows:', error);
-            runTransition(() => {
-              setHotTvShows([]);
-            });
-          })
-          .finally(() => {
-            runTransition(() => {
-              setLoadingHotTvShows(false);
-            });
-          });
-
-        await Promise.allSettled([moviesPromise, tvPromise]);
-
-        scheduleIdle(() => {
-          fetchSecondary();
-        }, 1200);
-      } catch (error) {
-        console.error('Failed to load core recommendations:', error);
-        runTransition(() => {
-          setLoadingHotMovies(false);
-          setLoadingHotTvShows(false);
-        });
-      }
-    };
-
-    fetchCore();
+    fetchAll();
   }, []);
 
   const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
