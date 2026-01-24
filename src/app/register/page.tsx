@@ -11,8 +11,6 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-import { processImageUrl } from '@/lib/utils';
-
 import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -155,7 +153,7 @@ function RegisterPageClient() {
           <div
             className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 animate-ken-burns'
             style={{
-              backgroundImage: `url(${processImageUrl(bingWallpaper)})`,
+              backgroundImage: `url(${bingWallpaper})`,
             }}
           />
         )}
