@@ -1,7 +1,7 @@
 'use client';
 
 import Hls from 'hls.js';
-import { ChevronUp, Download, Heart, X } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
@@ -27,6 +27,11 @@ import DownloadEpisodeSelector from '@/components/download/DownloadEpisodeSelect
 import EpisodeSelector from '@/components/EpisodeSelector';
 import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import PageLayout from '@/components/PageLayout';
+import BackToTopButton from '@/components/play/BackToTopButton';
+import CommentSection from '@/components/play/CommentSection';
+import DownloadButtons from '@/components/play/DownloadButtons';
+import FavoriteButton from '@/components/play/FavoriteButton';
+import LoadingScreen from '@/components/play/LoadingScreen';
 import SkipController from '@/components/SkipController';
 import VideoCard from '@/components/VideoCard';
 
@@ -63,13 +68,6 @@ function PlayPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<SearchResult | null>(null);
 
-  // 测速进度状态
-  const [, setSpeedTestProgress] = useState<{
-    current: number;
-    total: number;
-    currentSource: string;
-    result?: string;
-  } | null>(null);
   const [pendingPreferSources, setPendingPreferSources] = useState<
     SearchResult[] | null
   >(null);
@@ -671,6 +669,25 @@ function PlayPageClient() {
 
   // 总集数
   const totalEpisodes = detail?.episodes?.length || 0;
+  const filteredSources = availableSources.filter((source) => {
+    // 必须有集数数据
+    if (!source.episodes || source.episodes.length < 1) return false;
+
+    // 短剧源始终显示，不受集数差异限制
+    if (source.source === 'shortdrama') return true;
+
+    // 如果当前有 detail，只显示集数相近的源（允许约30%的差异）
+    if (detail && detail.episodes && detail.episodes.length > 0) {
+      const currentEpisodes = detail.episodes.length;
+      const sourceEpisodes = source.episodes.length;
+      const tolerance = Math.max(5, Math.ceil(currentEpisodes * 0.3)); // 至少5集的容差
+
+      // 在合理范围内
+      return Math.abs(sourceEpisodes - currentEpisodes) <= tolerance;
+    }
+
+    return true;
+  });
 
   // 用于记录是否需要在播放器 ready 后跳转到指定进度
   const resumeTimeRef = useRef<number | null>(null);
@@ -683,6 +700,8 @@ function PlayPageClient() {
   const [sourceSearchError, setSourceSearchError] = useState<string | null>(
     null,
   );
+  const [isSpeedTestRunning, setIsSpeedTestRunning] = useState(false);
+  const [speedTestResetKey, setSpeedTestResetKey] = useState(0);
 
   // 优选和测速开关
   const [optimizationEnabled] = useState<boolean>(() => {
@@ -1375,10 +1394,10 @@ function PlayPageClient() {
     }
 
     // 移动设备使用轻量级测速（仅ping，不创建HLS）
-    if (isMobile) {
-      console.log('移动设备使用轻量级优选');
-      return await lightweightPreference(sources);
-    }
+    // if (isMobile) {
+    //   console.log('移动设备使用轻量级优选');
+    //   return await lightweightPreference(sources);
+    // }
 
     // 桌面设备使用原来的测速方法（控制并发）
     return await fullSpeedTest(sources);
@@ -1447,122 +1466,40 @@ function PlayPageClient() {
   ): Promise<SearchResult> => {
     // 桌面设备使用小批量并发，避免创建过多实例
     const concurrency = 3;
-    // 限制最大测试数量为20个源（平衡速度和覆盖率）
-    const maxTestCount = 20;
-    const topPriorityCount = 5; // 前5个优先级最高的源
 
-    // 🎯 混合策略：前5个 + 随机15个
-    let sourcesToTest: SearchResult[];
-    if (sources.length <= maxTestCount) {
-      // 如果源总数不超过20个，全部测试
-      sourcesToTest = sources;
-    } else {
-      // 保留前5个（搜索结果通常已按相关性/质量排序）
-      const prioritySources = sources.slice(0, topPriorityCount);
-
-      // 从剩余源中随机选择15个
-      const remainingSources = sources.slice(topPriorityCount);
-      const shuffled = remainingSources.sort(() => 0.5 - Math.random());
-      const randomSources = shuffled.slice(0, maxTestCount - topPriorityCount);
-
-      sourcesToTest = [...prioritySources, ...randomSources];
-    }
-
-    console.log(
-      `开始测速: 共${sources.length}个源，将测试前${topPriorityCount}个 + 随机${sourcesToTest.length - Math.min(topPriorityCount, sources.length)}个 = ${sourcesToTest.length}个`,
-    );
+    console.log(`开始测速: 共${sources.length}个源。`);
 
     const allResults: Array<{
       source: SearchResult;
       testResult: { quality: string; loadSpeed: string; pingTime: number };
     } | null> = [];
 
-    let shouldStop = false; // 早停标志
     let testedCount = 0; // 已测试数量
 
-    for (let i = 0; i < sourcesToTest.length && !shouldStop; i += concurrency) {
-      const batch = sourcesToTest.slice(i, i + concurrency);
-      console.log(
-        `测速批次 ${Math.floor(i / concurrency) + 1}/${Math.ceil(sourcesToTest.length / concurrency)}: ${batch.length} 个源`,
-      );
-
+    for (let i = 0; i < sources.length; i += concurrency) {
+      const batch = sources.slice(i, i + concurrency);
       const batchResults = await Promise.all(
         batch.map(async (source, batchIndex) => {
           try {
-            // 更新进度：显示当前正在测试的源
-            const currentIndex = i + batchIndex + 1;
-            setSpeedTestProgress({
-              current: currentIndex,
-              total: sourcesToTest.length,
-              currentSource: source.source_name,
-            });
-
             if (!source.episodes || source.episodes.length === 0) {
               return null;
             }
-
             const episodeUrl =
               source.episodes.length > 1
                 ? source.episodes[1]
                 : source.episodes[0];
-
             const testResult = await getVideoResolutionFromM3u8(episodeUrl);
-
-            // 更新进度：显示测试结果
-            setSpeedTestProgress({
-              current: currentIndex,
-              total: sourcesToTest.length,
-              currentSource: source.source_name,
-              result: `${testResult.quality} | ${testResult.loadSpeed} | ${testResult.pingTime}ms`,
-            });
-
             return { source, testResult };
           } catch (error) {
             console.warn(`测速失败: ${source.source_name}`, error);
-
-            // 更新进度：显示失败
-            const currentIndex = i + batchIndex + 1;
-            setSpeedTestProgress({
-              current: currentIndex,
-              total: sourcesToTest.length,
-              currentSource: source.source_name,
-              result: '测速失败',
-            });
-
             return null;
           }
         }),
       );
-
       allResults.push(...batchResults);
       testedCount += batch.length;
-
-      // 🎯 保守策略早停判断：找到高质量源
-      const successfulInBatch = batchResults.filter(Boolean) as Array<{
-        source: SearchResult;
-        testResult: { quality: string; loadSpeed: string; pingTime: number };
-      }>;
-
-      for (const result of successfulInBatch) {
-        const { quality, loadSpeed } = result.testResult;
-        const speedMatch = loadSpeed.match(/^([\d.]+)\s*MB\/s$/);
-        const speedMBps = speedMatch ? parseFloat(speedMatch[1]) : 0;
-
-        // 🛑 保守策略：只有非常优质的源才早停
-        const is4KHighSpeed = quality === '4K' && speedMBps >= 8;
-        const is2KHighSpeed = quality === '2K' && speedMBps >= 6;
-
-        if (is4KHighSpeed || is2KHighSpeed) {
-          console.log(
-            `✓ 找到顶级优质源: ${result.source.source_name} (${quality}, ${loadSpeed})，停止测速`,
-          );
-          shouldStop = true;
-          break;
-        }
-      }
-
       // 批次间延迟，让资源有时间清理（减少延迟时间）
-      if (i + concurrency < sourcesToTest.length && !shouldStop) {
+      if (i + concurrency < sources.length) {
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
@@ -1651,9 +1588,6 @@ function PlayPageClient() {
       );
     });
 
-    // 清除测速进度状态
-    setSpeedTestProgress(null);
-
     return resultsWithScore[0].source;
   };
 
@@ -1725,6 +1659,29 @@ function PlayPageClient() {
     score += pingScore * 0.2;
 
     return Math.round(score * 100) / 100; // 保留两位小数
+  };
+
+  const handleRetestSources = async () => {
+    if (
+      isSpeedTestRunning ||
+      sourceSearchLoading ||
+      loading ||
+      !!pendingPreferSources ||
+      filteredSources.length === 0
+    ) {
+      return;
+    }
+
+    setIsSpeedTestRunning(true);
+    try {
+      setPrecomputedVideoInfo(new Map());
+      setSpeedTestResetKey((prev) => prev + 1);
+      await fullSpeedTest(filteredSources);
+    } catch (error) {
+      console.error('重新测速失败:', error);
+    } finally {
+      setIsSpeedTestRunning(false);
+    }
   };
 
   // 更新视频地址
@@ -3155,8 +3112,6 @@ function PlayPageClient() {
     const runId = ++preferTestRunIdRef.current;
 
     const runPreferTest = async () => {
-      setSpeedTestProgress(null);
-
       try {
         await preferBestSource(pendingPreferSources);
       } catch (error) {
@@ -6268,93 +6223,10 @@ function PlayPageClient() {
 
   if (loading) {
     return (
-      <PageLayout activePath='/play'>
-        <div className='flex items-center justify-center min-h-screen bg-transparent'>
-          <div className='text-center max-w-md mx-auto px-6'>
-            {/* 动画影院图标 */}
-            <div className='relative mb-8'>
-              <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
-                <div className='text-white text-4xl'>
-                  {loadingStage === 'searching' && '🔍'}
-                  {loadingStage === 'preferring' && '⚡'}
-                  {loadingStage === 'fetching' && '🎬'}
-                  {loadingStage === 'ready' && '✨'}
-                </div>
-                {/* 旋转光环 */}
-                <div className='absolute -inset-2 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
-              </div>
-
-              {/* 浮动粒子效果 */}
-              <div className='absolute top-0 left-0 w-full h-full pointer-events-none'>
-                <div className='absolute top-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-bounce'></div>
-                <div
-                  className='absolute top-4 right-4 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce'
-                  style={{ animationDelay: '0.5s' }}
-                ></div>
-                <div
-                  className='absolute bottom-3 left-6 w-1 h-1 bg-lime-400 rounded-full animate-bounce'
-                  style={{ animationDelay: '1s' }}
-                ></div>
-              </div>
-            </div>
-
-            {/* 进度指示器 */}
-            <div className='mb-6 w-80 mx-auto'>
-              <div className='flex justify-center space-x-2 mb-4'>
-                <div
-                  className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                    loadingStage === 'searching' || loadingStage === 'fetching'
-                      ? 'bg-green-500 scale-125'
-                      : loadingStage === 'preferring' ||
-                          loadingStage === 'ready'
-                        ? 'bg-green-500'
-                        : 'bg-gray-300'
-                  }`}
-                ></div>
-                <div
-                  className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                    loadingStage === 'preferring'
-                      ? 'bg-green-500 scale-125'
-                      : loadingStage === 'ready'
-                        ? 'bg-green-500'
-                        : 'bg-gray-300'
-                  }`}
-                ></div>
-                <div
-                  className={`w-3 h-3 rounded-full transition-all duration-500 ${
-                    loadingStage === 'ready'
-                      ? 'bg-green-500 scale-125'
-                      : 'bg-gray-300'
-                  }`}
-                ></div>
-              </div>
-
-              {/* 进度条 */}
-              <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden'>
-                <div
-                  className='h-full bg-linear-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-1000 ease-out'
-                  style={{
-                    width:
-                      loadingStage === 'searching' ||
-                      loadingStage === 'fetching'
-                        ? '33%'
-                        : loadingStage === 'preferring'
-                          ? '66%'
-                          : '100%',
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            {/* 加载消息 */}
-            <div className='space-y-2'>
-              <p className='text-xl font-semibold text-gray-800 dark:text-gray-200 animate-pulse'>
-                {loadingMessage}
-              </p>
-            </div>
-          </div>
-        </div>
-      </PageLayout>
+      <LoadingScreen
+        loadingStage={loadingStage}
+        loadingMessage={loadingMessage}
+      />
     );
   }
 
@@ -6485,41 +6357,39 @@ function PlayPageClient() {
                 )}
               </button>
 
-              {/* 下载按钮 */}
-              {downloadEnabled && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDownloadEpisodeSelector(true);
-                  }}
-                  className='flex group relative items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-2xl bg-linear-to-br from-white/90 via-white/80 to-white/70 hover:from-white hover:via-white/95 hover:to-white/90 dark:from-gray-800/90 dark:via-gray-800/80 dark:to-gray-800/70 dark:hover:from-gray-800 dark:hover:via-gray-800/95 dark:hover:to-gray-800/90 backdrop-blur-md border border-white/60 dark:border-gray-700/60 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.25)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.3)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden'
-                  title='下载视频'
-                >
-                  <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent group-hover:via-white/30 dark:group-hover:via-white/10 transition-all duration-500'></div>
-                  <Download className='relative z-10 w-3.5 sm:w-4 h-3.5 sm:h-4 text-gray-600 dark:text-gray-400' />
-                  <span className='relative z-10 hidden sm:inline text-xs font-medium text-gray-600 dark:text-gray-300'>
-                    下载
-                  </span>
-                </button>
-              )}
+              {/* 下载按钮 - 使用独立组件优化性能 */}
+              <DownloadButtons
+                downloadEnabled={downloadEnabled}
+                onDownloadClick={() => setShowDownloadEpisodeSelector(true)}
+                onDownloadPanelClick={() => setShowDownloadPanel(true)}
+              />
 
-              {/* 下载管理按钮 */}
-              {downloadEnabled && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDownloadPanel(true);
-                  }}
-                  className='flex group relative items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-2xl bg-linear-to-br from-white/90 via-white/80 to-white/70 hover:from-white hover:via-white/95 hover:to-white/90 dark:from-gray-800/90 dark:via-gray-800/80 dark:to-gray-800/70 dark:hover:from-gray-800 dark:hover:via-gray-800/95 dark:hover:to-gray-800/90 backdrop-blur-md border border-white/60 dark:border-gray-700/60 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.25)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.3)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden'
-                  title='下载管理'
-                >
-                  <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent group-hover:via-white/30 dark:group-hover:via-white/10 transition-all duration-500'></div>
-                  <span className='relative z-10 text-sm sm:text-base'>📥</span>
-                  <span className='relative z-10 hidden sm:inline text-xs font-medium text-gray-600 dark:text-gray-300'>
-                    管理
-                  </span>
-                </button>
-              )}
+              {/* 重新测速按钮 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRetestSources();
+                }}
+                disabled={
+                  isSpeedTestRunning ||
+                  sourceSearchLoading ||
+                  loading ||
+                  !!pendingPreferSources ||
+                  filteredSources.length === 0
+                }
+                className='flex group relative items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 min-h-[40px] sm:min-h-[44px] rounded-2xl bg-linear-to-br from-white/90 via-white/80 to-white/70 hover:from-white hover:via-white/95 hover:to-white/90 dark:from-gray-800/90 dark:via-gray-800/80 dark:to-gray-800/70 dark:hover:from-gray-800 dark:hover:via-gray-800/95 dark:hover:to-gray-800/90 backdrop-blur-md border border-white/60 dark:border-gray-700/60 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.25)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.3)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed'
+                title={isSpeedTestRunning ? '测速中...' : '重新测速'}
+              >
+                <div className='absolute inset-0 bg-linear-to-r from-transparent via-white/0 to-transparent group-hover:via-white/30 dark:group-hover:via-white/10 transition-all duration-500'></div>
+                <RefreshCw
+                  className={`relative z-10 w-3.5 sm:w-4 h-3.5 sm:h-4 text-gray-600 dark:text-gray-400 ${
+                    isSpeedTestRunning ? 'animate-spin' : ''
+                  }`}
+                />
+                <span className='relative z-10 hidden sm:inline text-xs font-medium text-gray-600 dark:text-gray-300'>
+                  {isSpeedTestRunning ? '测速中' : '重新测速'}
+                </span>
+              </button>
 
               {/* 折叠控制按钮 - 仅在 lg 及以上屏幕显示 */}
               <button
@@ -6689,38 +6559,11 @@ function PlayPageClient() {
                   currentSource={currentSource}
                   currentId={currentId}
                   videoTitle={searchTitle || videoTitle}
-                  availableSources={availableSources.filter((source) => {
-                    // 必须有集数数据
-                    if (!source.episodes || source.episodes.length < 1)
-                      return false;
-
-                    // 短剧源始终显示，不受集数差异限制
-                    if (source.source === 'shortdrama') return true;
-
-                    // 如果当前有 detail，只显示集数相近的源（允许 ±30% 的差异）
-                    if (
-                      detail &&
-                      detail.episodes &&
-                      detail.episodes.length > 0
-                    ) {
-                      const currentEpisodes = detail.episodes.length;
-                      const sourceEpisodes = source.episodes.length;
-                      const tolerance = Math.max(
-                        5,
-                        Math.ceil(currentEpisodes * 0.3),
-                      ); // 至少5集的容差
-
-                      // 在合理范围内
-                      return (
-                        Math.abs(sourceEpisodes - currentEpisodes) <= tolerance
-                      );
-                    }
-
-                    return true;
-                  })}
+                  availableSources={filteredSources}
                   sourceSearchLoading={sourceSearchLoading}
                   sourceSearchError={sourceSearchError}
                   precomputedVideoInfo={precomputedVideoInfo}
+                  speedTestResetKey={speedTestResetKey}
                 />
               </div>
             </div>
@@ -6740,17 +6583,11 @@ function PlayPageClient() {
 
                     {/* 按钮组 */}
                     <div className='flex items-center justify-center md:justify-start gap-2 flex-wrap'>
-                      {/* 收藏按钮 */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleFavorite();
-                        }}
-                        className='group relative shrink-0 transition-all duration-300 hover:scale-110'
-                      >
-                        <div className='absolute inset-0 bg-linear-to-r from-red-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-300'></div>
-                        <FavoriteIcon filled={favorited} />
-                      </button>
+                      {/* 收藏按钮 - 使用独立组件优化性能 */}
+                      <FavoriteButton
+                        favorited={favorited}
+                        onToggle={handleToggleFavorite}
+                      />
                     </div>
                   </div>
                 </div>
@@ -7506,120 +7343,13 @@ function PlayPageClient() {
                     </div>
                   )}
 
-                {/* 豆瓣短评 */}
-                {movieComments && movieComments.length > 0 && (
-                  <div className='mt-6 border-t border-gray-200 dark:border-gray-700 pt-6'>
-                    <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2'>
-                      <span>💬</span>
-                      <span>豆瓣短评</span>
-                    </h3>
-                    <div className='space-y-4'>
-                      {movieComments
-                        .slice(0, 10)
-                        .map((comment: any, index: number) => (
-                          <div
-                            key={index}
-                            className='bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
-                          >
-                            <div className='flex items-start gap-3'>
-                              {/* 用户头像 */}
-                              <div className='shrink-0'>
-                                {comment.avatar ? (
-                                  <img
-                                    src={comment.avatar}
-                                    alt={comment.username}
-                                    className='w-10 h-10 rounded-full object-cover'
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                ) : (
-                                  <div className='w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-400'>
-                                    {comment.username.charAt(0)}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* 短评内容 */}
-                              <div className='flex-1 min-w-0'>
-                                <div className='flex items-center gap-2 mb-1 flex-wrap'>
-                                  <span className='font-medium text-gray-800 dark:text-gray-200'>
-                                    {comment.username}
-                                  </span>
-
-                                  {/* 评分星级 */}
-                                  {comment.rating > 0 && (
-                                    <div className='flex items-center'>
-                                      {[...Array(5)].map((_, i) => (
-                                        <svg
-                                          key={i}
-                                          className={`w-3 h-3 ${
-                                            i < comment.rating
-                                              ? 'text-yellow-400'
-                                              : 'text-gray-300 dark:text-gray-600'
-                                          }`}
-                                          fill='currentColor'
-                                          viewBox='0 0 20 20'
-                                        >
-                                          <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                                        </svg>
-                                      ))}
-                                    </div>
-                                  )}
-
-                                  {/* 时间和地点 */}
-                                  <span className='text-xs text-gray-500 dark:text-gray-400'>
-                                    {comment.time}
-                                    {comment.location &&
-                                      ` · ${comment.location}`}
-                                  </span>
-                                </div>
-
-                                {/* 短评正文 */}
-                                <p className='text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap'>
-                                  {comment.content}
-                                </p>
-
-                                {/* 有用数 */}
-                                {comment.useful_count > 0 && (
-                                  <div className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
-                                    {comment.useful_count} 人认为有用
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-
-                    {/* 查看更多链接 */}
-                    {videoDoubanId && (
-                      <div className='mt-4 text-center'>
-                        <a
-                          href={`https://movie.douban.com/subject/${videoDoubanId}/comments?status=P`}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline'
-                        >
-                          查看更多短评
-                          <svg
-                            className='w-4 h-4'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'
-                            />
-                          </svg>
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* 豆瓣短评 - 使用独立组件优化性能 */}
+                <CommentSection
+                  comments={movieComments}
+                  loading={loadingComments}
+                  error={commentsError}
+                  videoDoubanId={videoDoubanId}
+                />
               </div>
             </div>
 
@@ -7698,36 +7428,8 @@ function PlayPageClient() {
           </div>
         </div>
 
-        {/* 返回顶部悬浮按钮 */}
-        <button
-          onClick={scrollToTop}
-          className={`fixed z-500 w-12 h-12 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group relative overflow-hidden ${
-            showBackToTop
-              ? 'opacity-100 translate-y-0 pointer-events-auto'
-              : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
-          style={{
-            position: 'fixed',
-            right: '1.5rem',
-            bottom:
-              typeof window !== 'undefined' && window.innerWidth < 768
-                ? '5rem'
-                : '1.5rem',
-            left: 'auto',
-          }}
-          aria-label='返回顶部'
-        >
-          {/* 渐变背景 */}
-          <div className='absolute inset-0 bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 transition-all duration-300'></div>
-
-          {/* 发光效果 */}
-          <div className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-50 blur-md transition-all duration-300'></div>
-
-          {/* 脉冲光环 */}
-          <div className='absolute inset-0 rounded-full border-2 border-white/30 animate-ping group-hover:opacity-0 transition-opacity duration-300'></div>
-
-          <ChevronUp className='w-6 h-6 text-white relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1' />
-        </button>
+        {/* 返回顶部悬浮按钮 - 使用独立组件优化性能 */}
+        <BackToTopButton show={showBackToTop} onClick={scrollToTop} />
       </PageLayout>
 
       {/* 网盘资源模态框 */}
@@ -7962,31 +7664,6 @@ function PlayPageClient() {
     </>
   );
 }
-
-// FavoriteIcon 组件
-const FavoriteIcon = ({ filled }: { filled: boolean }) => {
-  if (filled) {
-    return (
-      <svg
-        className='h-7 w-7'
-        viewBox='0 0 24 24'
-        xmlns='http://www.w3.org/2000/svg'
-      >
-        <path
-          d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'
-          fill='#ef4444' /* Tailwind red-500 */
-          stroke='#ef4444'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        />
-      </svg>
-    );
-  }
-  return (
-    <Heart className='h-7 w-7 stroke-[1] text-gray-600 dark:text-gray-300' />
-  );
-};
 
 export default function PlayPage() {
   return (

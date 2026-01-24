@@ -40,6 +40,8 @@ interface EpisodeSelectorProps {
   sourceSearchError?: string | null;
   /** 预计算的测速结果，避免重复测速 */
   precomputedVideoInfo?: Map<string, VideoInfo>;
+  /** 重新测速时重置内部缓存 */
+  speedTestResetKey?: number;
 }
 
 /**
@@ -59,6 +61,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   sourceSearchLoading = false,
   sourceSearchError = null,
   precomputedVideoInfo,
+  speedTestResetKey = 0,
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -83,6 +86,13 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   useEffect(() => {
     videoInfoMapRef.current = videoInfoMap;
   }, [videoInfoMap]);
+
+  useEffect(() => {
+    setVideoInfoMap(new Map());
+    setAttemptedSources(new Set());
+    attemptedSourcesRef.current = new Set();
+    videoInfoMapRef.current = new Map();
+  }, [speedTestResetKey]);
 
   // 主要的 tab 状态：'episodes' 或 'sources'
   // 当只有一集时默认展示 "换源"，并隐藏 "选集" 标签
@@ -638,7 +648,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                     >
                       {/* 当前源标记 */}
                       {isCurrentSource && (
-                        <div className='absolute top-2 right-2 z-10'>
+                        <div className='absolute bottom-2 right-2 z-10'>
                           <div className='relative'>
                             <div className='absolute inset-0 bg-green-500 rounded-full blur opacity-60 animate-pulse'></div>
                             <div className='relative bg-linear-to-r from-green-500 to-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-semibold shadow-lg'>

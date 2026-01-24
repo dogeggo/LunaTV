@@ -534,6 +534,7 @@ function LivePageClient() {
         // 不抛出错误，而是设置空频道列表
         setCurrentChannels([]);
         setGroupedChannels({});
+        setSelectedGroup('');
         setFilteredChannels([]);
 
         // 更新直播源的频道数为 0
@@ -620,7 +621,8 @@ function LivePageClient() {
         targetGroup = Object.keys(grouped)[0] || '';
       }
 
-      // 先设置过滤后的频道列表，但不设置选中的分组
+      // 先设置过滤后的频道列表，并同步选中的分组
+      setSelectedGroup(targetGroup);
       setFilteredChannels(targetGroup ? grouped[targetGroup] : channels);
 
       // 触发模拟点击分组，让模拟点击来设置分组状态和触发滚动
@@ -640,6 +642,7 @@ function LivePageClient() {
       // 不设置错误，而是设置空频道列表
       setCurrentChannels([]);
       setGroupedChannels({});
+      setSelectedGroup('');
       setFilteredChannels([]);
 
       // 更新直播源的频道数为 0
@@ -2359,7 +2362,11 @@ function LivePageClient() {
                                 sx={{ borderBottom: 1, borderColor: 'divider' }}
                               >
                                 <Tabs
-                                  value={selectedGroup}
+                                  value={
+                                    groupedChannels[selectedGroup]
+                                      ? selectedGroup
+                                      : false
+                                  }
                                   onChange={(_event, newValue) =>
                                     handleGroupChange(newValue)
                                   }

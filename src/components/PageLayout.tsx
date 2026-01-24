@@ -12,7 +12,7 @@ import { UserMenu } from './UserMenu';
 interface PageLayoutProps {
   children: React.ReactNode;
   activePath?: string;
-  useModernNav?: boolean; // 新增：是否使用2025现代化导航
+  useModernNav?: boolean; // 新增:是否使用2025现代化导航
 }
 
 const PageLayout = ({
@@ -46,20 +46,13 @@ const PageLayout = ({
             </div>
           </div>
 
-          {/* Main Content - 移动端44px顶部 + 底部导航栏空间，桌面端64px */}
+          {/* Main Content - 移动端44px顶部 + 底部导航栏空间,桌面端64px */}
           <main className='w-full min-h-screen pt-[44px] md:pt-16 pb-16 md:pb-8'>
             <div className='w-full max-w-[2560px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20'>
               {children}
             </div>
           </main>
         </div>
-
-        {/* Main Content - 移动端44px顶部 + 底部导航栏空间，桌面端64px */}
-        <main className='w-full min-h-screen pt-[44px] md:pt-16 pb-16 md:pb-8'>
-          <div className='w-full max-w-[2560px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20'>
-            {children}
-          </div>
-        </main>
       </>
     );
   }
@@ -72,7 +65,7 @@ const PageLayout = ({
 
       {/* 主要布局容器 */}
       <div className='flex md:grid md:grid-cols-[auto_1fr] w-full min-h-screen md:min-h-auto'>
-        {/* 侧边栏 - 桌面端显示，移动端隐藏 */}
+        {/* 侧边栏 - 桌面端显示,移动端隐藏 */}
         <div className='hidden md:block'>
           <Sidebar activePath={activePath} />
         </div>
