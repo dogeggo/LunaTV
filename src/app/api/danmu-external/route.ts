@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   DoubanSubjectFetchError,
   DoubanSubjectPageScraper,
-} from '@/lib/douban-subject-page';
+} from '@/lib/douban-challenge';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 interface PlatformUrl {

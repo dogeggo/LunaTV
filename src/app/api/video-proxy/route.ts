@@ -5,14 +5,16 @@ import stream from 'stream';
 import { promisify } from 'util';
 
 import { fetchTrailerWithRetry } from '@/lib/douban-api';
+import {
+  fetchDoubanWithAntiScraping,
+  isDoubanUrl,
+} from '@/lib/douban-challenge';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 const pipeline = promisify(stream.pipeline);
 const CACHE_DIR = path.join(process.cwd(), 'cache', 'video');
 const MAX_CACHE_BYTES = 10 * 1024 * 1024;
 const downloadingFiles = new Set<string>();
-// 内存缓存：douban_id -> trailerUrl
-const doubanIdToTrailerUrl = new Map<string, string>();
 
 // Ensure cache directory exists
 try {
@@ -41,24 +43,14 @@ export async function GET(request: Request) {
   }
 
   // 仅轮播视频：如果没有 url 但有 id，尝试获取 url
-  if (!videoUrl && doubanId && isCarousel) {
-    // 1. 查内存缓存
-    if (doubanIdToTrailerUrl.has(doubanId)) {
-      videoUrl = doubanIdToTrailerUrl.get(doubanId)!;
-    } else {
-      // 2. 调用豆瓣 API 获取
-      try {
-        const fetchedUrl = await fetchTrailerWithRetry(doubanId);
-        if (fetchedUrl) {
-          videoUrl = fetchedUrl;
-          doubanIdToTrailerUrl.set(doubanId, fetchedUrl);
-        }
-      } catch (e) {
-        console.error(
-          `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
-          e,
-        );
-      }
+  if (doubanId && isCarousel) {
+    try {
+      videoUrl = await fetchTrailerWithRetry(doubanId);
+    } catch (e) {
+      console.error(
+        `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
+        e,
+      );
     }
   }
 
@@ -84,21 +76,8 @@ export async function GET(request: Request) {
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
 
   try {
-    // 动态设置 Referer 和 Origin（根据视频源域名）
-    const videoUrlObj = new URL(videoUrl);
-    const sourceOrigin = `${videoUrlObj.protocol}//${videoUrlObj.host}`;
-
-    // 针对豆瓣的特殊处理
-    let referer = sourceOrigin + '/';
-    if (videoUrl.includes('douban')) {
-      referer = 'https://movie.douban.com/';
-    }
-
     // 构建请求头
     const fetchHeaders: HeadersInit = {
-      Referer: referer,
-      Origin: sourceOrigin,
-      'User-Agent': DEFAULT_USER_AGENT,
       Accept:
         'video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5',
       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
@@ -290,22 +269,14 @@ export async function HEAD(request: Request) {
     videoUrl = null;
   }
 
-  if (!videoUrl && doubanId && isCarousel) {
-    if (doubanIdToTrailerUrl.has(doubanId)) {
-      videoUrl = doubanIdToTrailerUrl.get(doubanId)!;
-    } else {
-      try {
-        const fetchedUrl = await fetchTrailerWithRetry(doubanId);
-        if (fetchedUrl) {
-          videoUrl = fetchedUrl;
-          doubanIdToTrailerUrl.set(doubanId, fetchedUrl);
-        }
-      } catch (e) {
-        console.error(
-          `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
-          e,
-        );
-      }
+  if (doubanId && isCarousel) {
+    try {
+      videoUrl = await fetchTrailerWithRetry(doubanId);
+    } catch (e) {
+      console.error(
+        `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
+        e,
+      );
     }
   }
 
@@ -423,12 +394,31 @@ async function downloadToCache(
   const controller = new AbortController();
   try {
     const cappedHeaders = { ...headers, Range: `bytes=0-${maxBytes - 1}` };
-    const response = await fetch(url, {
-      headers: cappedHeaders,
-      signal: controller.signal,
-    });
+    const response = isDoubanUrl(url)
+      ? await fetchDoubanWithAntiScraping(url, {
+          headers: cappedHeaders,
+          signal: controller.signal,
+          timeoutMs: 0,
+        })
+      : await fetch(url, {
+          headers: cappedHeaders,
+          signal: controller.signal,
+        });
     if (!response.ok || !response.body) {
-      console.error(`[Video Cache] Failed to fetch source: ${response.status}`);
+      console.error(
+        `[Video Cache] Failed to fetch source: ${response.status}, url = ${response.url}`,
+      );
+      return;
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (
+      contentType.includes('text/html') ||
+      contentType.includes('application/xhtml+xml')
+    ) {
+      console.error(
+        `[Video Cache] Unexpected HTML response, skip caching: ${url}`,
+      );
       return;
     }
 

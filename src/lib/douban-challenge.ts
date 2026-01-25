@@ -12,7 +12,14 @@ export type DoubanSubjectFetchOptions = {
   timeoutMs?: number;
   minRequestIntervalMs?: number;
   randomDelayMs?: [number, number];
-  headers?: Record<string, string>;
+  headers?: HeadersInit;
+};
+
+export type DoubanFetchRequestOptions = DoubanSubjectFetchOptions & {
+  method?: string;
+  body?: BodyInit | null;
+  redirect?: RequestRedirect;
+  signal?: AbortSignal;
 };
 
 export class DoubanSubjectFetchError extends Error {
@@ -32,6 +39,7 @@ const DEFAULT_MIN_REQUEST_INTERVAL_MS = 1000;
 const DEFAULT_RANDOM_DELAY_RANGE: [number, number] = [300, 1000];
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const MAX_REDIRECTS = 3;
+let lastRequestTime = 0;
 
 type DoubanChallenge = {
   tok: string;
@@ -40,9 +48,104 @@ type DoubanChallenge = {
   action?: string;
 };
 
+type DoubanFetchContext = {
+  response: Response;
+  currentUrl: string;
+  cookieJar: Map<string, string>;
+};
+
+function normalizeDoubanUrl(input: string): string {
+  const trimmed = input.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  const sanitizedId = trimmed.replace(/\/+$/, '');
+  return `https://movie.douban.com/subject/${sanitizedId}/`;
+}
+
+function removeHeaderCaseInsensitive(
+  headers: Record<string, string>,
+  key: string,
+): void {
+  const target = key.toLowerCase();
+  Object.keys(headers).forEach((name) => {
+    if (name.toLowerCase() === target) {
+      delete headers[name];
+    }
+  });
+}
+
+function buildDoubanRequestHeaders(
+  targetUrl: string,
+  extraHeaders?: HeadersInit,
+): Record<string, string> {
+  const { ua, browser, platform } = getRandomUserAgentWithInfo();
+  const secChHeaders = getSecChUaHeaders(browser, platform);
+  const origin = new URL(targetUrl).origin;
+  const baseHeaders: Record<string, string> = {
+    Accept:
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'max-age=0',
+    DNT: '1',
+    ...secChHeaders,
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'same-site',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': ua,
+    Referer: `${origin}/`,
+    Origin: origin,
+  };
+
+  const mergedHeaders = {
+    ...baseHeaders,
+    ...normalizeHeaders(extraHeaders),
+  };
+
+  removeHeaderCaseInsensitive(mergedHeaders, 'User-Agent');
+  removeHeaderCaseInsensitive(mergedHeaders, 'Sec-CH-UA');
+  removeHeaderCaseInsensitive(mergedHeaders, 'Sec-CH-UA-Mobile');
+  removeHeaderCaseInsensitive(mergedHeaders, 'Sec-CH-UA-Platform');
+
+  mergedHeaders['User-Agent'] = baseHeaders['User-Agent'];
+  if (baseHeaders['Sec-CH-UA']) {
+    mergedHeaders['Sec-CH-UA'] = baseHeaders['Sec-CH-UA'];
+  }
+  if (baseHeaders['Sec-CH-UA-Mobile']) {
+    mergedHeaders['Sec-CH-UA-Mobile'] = baseHeaders['Sec-CH-UA-Mobile'];
+  }
+  if (baseHeaders['Sec-CH-UA-Platform']) {
+    mergedHeaders['Sec-CH-UA-Platform'] = baseHeaders['Sec-CH-UA-Platform'];
+  }
+
+  return mergedHeaders;
+}
+
+async function applyDoubanRequestDelay(
+  options: DoubanSubjectFetchOptions,
+): Promise<void> {
+  const minInterval =
+    options.minRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
+  const [minDelay, maxDelay] =
+    options.randomDelayMs ?? DEFAULT_RANDOM_DELAY_RANGE;
+
+  if (minInterval > 0) {
+    const now = Date.now();
+    const delta = now - lastRequestTime;
+    if (delta < minInterval) {
+      await new Promise((resolve) => setTimeout(resolve, minInterval - delta));
+    }
+    lastRequestTime = Date.now();
+  }
+
+  await randomDelay(minDelay, maxDelay);
+}
+
 export class DoubanSubjectPageScraper {
   private static inflight = new Map<string, Promise<string>>();
-  private static lastRequestTime = 0;
 
   static async getHtml(
     id: string,
@@ -88,87 +191,17 @@ export class DoubanSubjectPageScraper {
     id: string,
     options: DoubanSubjectFetchOptions,
   ): Promise<string> {
-    const minInterval =
-      options.minRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
-    const [minDelay, maxDelay] =
-      options.randomDelayMs ?? DEFAULT_RANDOM_DELAY_RANGE;
+    await applyDoubanRequestDelay(options);
 
-    if (minInterval > 0) {
-      const now = Date.now();
-      const delta = now - this.lastRequestTime;
-      if (delta < minInterval) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, minInterval - delta),
-        );
-      }
-      this.lastRequestTime = Date.now();
-    }
-
-    await randomDelay(minDelay, maxDelay);
-
-    const sanitizedId = id.replace(/\/+$/, '');
-    const target = `https://movie.douban.com/subject/${sanitizedId}/`;
-    const { ua, browser, platform } = getRandomUserAgentWithInfo();
-    const secChHeaders = getSecChUaHeaders(browser, platform);
-    const headers: Record<string, string> = {
-      Accept:
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Cache-Control': 'max-age=0',
-      DNT: '1',
-      ...secChHeaders,
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'same-site',
-      'Sec-Fetch-User': '?1',
-      'Upgrade-Insecure-Requests': '1',
-      'User-Agent': ua,
-      Referer: 'https://movie.douban.com/',
-      Origin: 'https://movie.douban.com',
-      ...(options.headers ?? {}),
-    };
+    const target = normalizeDoubanUrl(id);
+    const headers = buildDoubanRequestHeaders(target, options.headers);
 
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    let response = await fetchWithTimeout(
+    const { response, currentUrl, cookieJar } = await fetchDoubanWithRedirects(
       target,
-      {
-        headers,
-        redirect: 'manual',
-      },
+      headers,
       timeoutMs,
     );
-    let currentUrl = target;
-    const cookieJar = new Map<string, string>();
-    applySetCookies(cookieJar, getSetCookieHeaders(response.headers));
-
-    for (
-      let redirectCount = 0;
-      redirectCount < MAX_REDIRECTS && REDIRECT_STATUSES.has(response.status);
-      redirectCount += 1
-    ) {
-      const location = response.headers.get('location');
-      if (!location) break;
-      const nextUrl = new URL(location, currentUrl).toString();
-      const redirectHeaders: Record<string, string> = {
-        ...headers,
-        Referer: currentUrl,
-      };
-      const cookieHeader = buildCookieHeader(cookieJar);
-      if (cookieHeader) {
-        redirectHeaders['Cookie'] = cookieHeader;
-      }
-      response = await fetchWithTimeout(
-        nextUrl,
-        {
-          headers: redirectHeaders,
-          redirect: 'manual',
-        },
-        timeoutMs,
-      );
-      applySetCookies(cookieJar, getSetCookieHeaders(response.headers));
-      currentUrl = nextUrl;
-    }
 
     const html = await response.text();
     const hasChallenge = parseDoubanChallenge(html) !== null;
@@ -180,14 +213,86 @@ export class DoubanSubjectPageScraper {
       );
     }
 
-    return resolveDoubanChallenge({
+    const resolved = await resolveDoubanChallenge({
       html,
       url: currentUrl,
       headers,
       responseHeaders: response.headers,
       cookieJar,
     });
+    return resolved.html;
   }
+}
+
+export function isDoubanUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname.endsWith('douban.com') || hostname.endsWith('doubanio.com');
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchDoubanWithAntiScraping(
+  url: string,
+  options: DoubanFetchRequestOptions = {},
+): Promise<Response> {
+  await applyDoubanRequestDelay(options);
+
+  const target = normalizeDoubanUrl(url);
+  const headers = buildDoubanRequestHeaders(target, options.headers);
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+  const { response, currentUrl, cookieJar } = await fetchDoubanWithRedirects(
+    target,
+    headers,
+    timeoutMs,
+    options.signal,
+  );
+
+  const contentType = response.headers.get('content-type') ?? '';
+  const shouldInspect =
+    contentType.includes('text/html') ||
+    contentType.includes('application/xhtml+xml') ||
+    response.status === 403 ||
+    response.status === 429;
+
+  if (!shouldInspect) {
+    return response;
+  }
+
+  const html = await response.text();
+  const hasChallenge = parseDoubanChallenge(html) !== null;
+  if (!hasChallenge) {
+    return new Response(html, {
+      status: response.status,
+      headers: response.headers,
+    });
+  }
+
+  const resolved = await resolveDoubanChallenge({
+    html,
+    url: currentUrl,
+    headers,
+    responseHeaders: response.headers,
+    cookieJar,
+  });
+
+  const finalHeaders = { ...headers };
+  const cookieHeader = buildCookieHeader(resolved.cookieJar);
+  if (cookieHeader) {
+    finalHeaders['Cookie'] = cookieHeader;
+  }
+
+  const finalResult = await fetchDoubanWithRedirects(
+    target,
+    finalHeaders,
+    timeoutMs,
+    options.signal,
+    resolved.cookieJar,
+  );
+
+  return finalResult.response;
 }
 
 function randomDelay(min = 0, max = 0): Promise<void> {
@@ -296,6 +401,60 @@ function buildCookieHeader(cookieJar: Map<string, string>): string {
     .join('; ');
 }
 
+async function fetchDoubanWithRedirects(
+  url: string,
+  baseHeaders: Record<string, string>,
+  timeoutMs: number,
+  signal?: AbortSignal,
+  initialCookieJar?: Map<string, string>,
+): Promise<DoubanFetchContext> {
+  let currentUrl = url;
+  const cookieJar = new Map<string, string>(initialCookieJar ?? []);
+  const applyCookies = (headers: Record<string, string>) => {
+    const cookieHeader = buildCookieHeader(cookieJar);
+    if (!cookieHeader) return headers;
+    return { ...headers, Cookie: cookieHeader };
+  };
+
+  let response = await fetchWithTimeout(
+    currentUrl,
+    {
+      headers: applyCookies(baseHeaders),
+      redirect: 'manual',
+      signal,
+    },
+    timeoutMs,
+  );
+  applySetCookies(cookieJar, getSetCookieHeaders(response.headers));
+
+  for (
+    let redirectCount = 0;
+    redirectCount < MAX_REDIRECTS && REDIRECT_STATUSES.has(response.status);
+    redirectCount += 1
+  ) {
+    const location = response.headers.get('location');
+    if (!location) break;
+    const nextUrl = new URL(location, currentUrl).toString();
+    const redirectHeaders: Record<string, string> = applyCookies({
+      ...baseHeaders,
+      Referer: currentUrl,
+    });
+    response = await fetchWithTimeout(
+      nextUrl,
+      {
+        headers: redirectHeaders,
+        redirect: 'manual',
+        signal,
+      },
+      timeoutMs,
+    );
+    applySetCookies(cookieJar, getSetCookieHeaders(response.headers));
+    currentUrl = nextUrl;
+  }
+
+  return { response, currentUrl, cookieJar };
+}
+
 function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
   const normalized: Record<string, string> = {};
   if (!headers) return normalized;
@@ -339,12 +498,28 @@ async function fetchWithTimeout(
   timeoutMs: number,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const { signal: externalSignal, ...rest } = options;
+  let timeoutId: NodeJS.Timeout | null = null;
+  const onAbort = () => controller.abort();
+  if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  }
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', onAbort, { once: true });
+    }
+  }
   try {
-    const { signal: _ignored, ...rest } = options;
     return await fetch(url, { ...rest, signal: controller.signal });
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onAbort);
+    }
   }
 }
 
@@ -354,21 +529,22 @@ async function resolveDoubanChallenge(params: {
   headers?: HeadersInit;
   responseHeaders: Headers;
   cookieJar?: Map<string, string>;
-}): Promise<string> {
+}): Promise<{ html: string; cookieJar: Map<string, string>; url: string }> {
   let html = params.html;
+  let currentUrl = params.url;
   const baseHeaders = normalizeHeaders(params.headers);
   const cookieJar = new Map<string, string>(params.cookieJar ?? []);
   applySetCookies(cookieJar, getSetCookieHeaders(params.responseHeaders));
 
-  const pageOrigin = new URL(params.url).origin;
   const maxAttempts = 3;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const challenge = parseDoubanChallenge(html);
     if (!challenge) {
-      return html;
+      return { html, cookieJar, url: currentUrl };
     }
 
+    const pageOrigin = new URL(currentUrl).origin;
     const nonce = solveDoubanChallenge(challenge.cha);
     const postBody = new URLSearchParams({
       tok: challenge.tok,
@@ -379,16 +555,17 @@ async function resolveDoubanChallenge(params: {
 
     let actionUrl = '';
     try {
-      actionUrl = new URL(challenge.action || '/c', params.url).toString();
+      actionUrl = new URL(challenge.action || '/c', currentUrl).toString();
     } catch {
-      actionUrl = new URL('/c', params.url).toString();
+      actionUrl = new URL('/c', currentUrl).toString();
     }
-    const postCandidates = [actionUrl];
-    if (!postCandidates.includes('https://movie.douban.com/c')) {
-      postCandidates.push('https://movie.douban.com/c');
-    }
+    const originCandidate = new URL('/c', currentUrl).toString();
+    const postCandidates = [actionUrl, originCandidate];
     if (!postCandidates.includes('https://www.douban.com/c')) {
       postCandidates.push('https://www.douban.com/c');
+    }
+    if (!postCandidates.includes('https://movie.douban.com/c')) {
+      postCandidates.push('https://movie.douban.com/c');
     }
 
     let postResponse: Response | null = null;
@@ -398,7 +575,7 @@ async function resolveDoubanChallenge(params: {
       const postHeaders: Record<string, string> = {
         ...baseHeaders,
         Origin: pageOrigin,
-        Referer: params.url,
+        Referer: currentUrl,
         'Content-Type': 'application/x-www-form-urlencoded',
       };
       const initialCookie = buildCookieHeader(cookieJar);
@@ -440,7 +617,8 @@ async function resolveDoubanChallenge(params: {
 
     const finalHeaders: Record<string, string> = {
       ...baseHeaders,
-      Referer: params.url,
+      Origin: pageOrigin,
+      Referer: currentUrl,
     };
     const finalCookie = buildCookieHeader(cookieJar);
     if (finalCookie) {
@@ -463,6 +641,7 @@ async function resolveDoubanChallenge(params: {
 
     applySetCookies(cookieJar, getSetCookieHeaders(finalResponse.headers));
     html = finalHtml;
+    currentUrl = redirectUrl;
   }
 
   throw new DoubanSubjectFetchError(

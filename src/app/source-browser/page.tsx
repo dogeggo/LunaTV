@@ -52,6 +52,7 @@ export default function SourceBrowserPage() {
   const [itemsError, setItemsError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const hasMore = page < pageCount;
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const lastFetchAtRef = useRef(0);
@@ -866,8 +867,19 @@ export default function SourceBrowserPage() {
                               <img
                                 src={processImageUrl(item.poster)}
                                 alt={item.title}
-                                className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
+                                className={`'object-cover' transition-all duration-500 ease-out ${
+                                  imageLoaded
+                                    ? 'opacity-100 blur-0 scale-100'
+                                    : 'opacity-0 blur-md scale-105'
+                                }`}
                                 loading='lazy'
+                                onLoad={() => setImageLoaded(true)}
+                                onError={(e) => {
+                                  const img = e.currentTarget;
+                                  img.src =
+                                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300"%3E%3Crect fill="%23374151" width="200" height="300"/%3E%3Cg fill="%239CA3AF"%3E%3Cpath d="M100 80 L100 120 M80 100 L120 100" stroke="%239CA3AF" stroke-width="8" stroke-linecap="round"/%3E%3Crect x="60" y="140" width="80" height="100" rx="5" fill="none" stroke="%239CA3AF" stroke-width="4"/%3E%3Cpath d="M70 160 L90 180 L130 140" stroke="%239CA3AF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/%3E%3C/g%3E%3Ctext x="100" y="270" font-family="Arial" font-size="12" fill="%239CA3AF" text-anchor="middle"%3E暂无海报%3C/text%3E%3C/svg%3E';
+                                  setImageLoaded(true);
+                                }}
                               />
                             ) : (
                               <div className='w-full h-full flex items-center justify-center text-gray-400 text-xs sm:text-sm'>

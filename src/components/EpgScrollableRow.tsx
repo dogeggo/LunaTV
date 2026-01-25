@@ -1,5 +1,5 @@
-import { Clock, Target, Tv } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Clock, Target, Tv } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { formatTimeToHHMM, parseCustomTimeFormat } from '@/lib/time';
 
@@ -23,6 +23,33 @@ export default function EpgScrollableRow({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(-1);
+  const [now, setNow] = useState<Date>(currentTime);
+
+  useEffect(() => {
+    setNow(currentTime);
+  }, [currentTime]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getCurrentProgramIndex = useCallback(
+    (time: Date) =>
+      programs.findIndex((program) => {
+        try {
+          const start = parseCustomTimeFormat(program.start);
+          const end = parseCustomTimeFormat(program.end);
+          return time >= start && time < end;
+        } catch {
+          return false;
+        }
+      }),
+    [programs],
+  );
 
   // 处理滚轮事件，实现横向滚动
   const handleWheel = (e: WheelEvent) => {
@@ -47,34 +74,52 @@ export default function EpgScrollableRow({
     }
   };
 
+  const scrollToProgramIndex = useCallback((programIndex: number) => {
+    if (!containerRef.current) return;
+
+    const programElement = containerRef.current.children[
+      programIndex
+    ] as HTMLElement;
+
+    if (!programElement) return;
+
+    const container = containerRef.current;
+    const programLeft = programElement.offsetLeft;
+    const containerWidth = container.clientWidth;
+    const programWidth = programElement.offsetWidth;
+
+    const scrollLeft = programLeft - containerWidth / 2 + programWidth / 2;
+
+    container.scrollTo({
+      left: Math.max(0, scrollLeft),
+      behavior: 'smooth',
+    });
+  }, []);
+
+  const scrollByPage = useCallback((direction: 'left' | 'right') => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const scrollAmount = Math.max(200, container.clientWidth * 0.8);
+
+    container.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
+  }, []);
+
   // 自动滚动到正在播放的节目
-  const scrollToCurrentProgram = () => {
-    if (containerRef.current) {
-      const currentProgramIndex = programs.findIndex((program) =>
-        isCurrentlyPlaying(program),
-      );
-      if (currentProgramIndex !== -1) {
-        const programElement = containerRef.current.children[
-          currentProgramIndex
-        ] as HTMLElement;
-        if (programElement) {
-          const container = containerRef.current;
-          const programLeft = programElement.offsetLeft;
-          const containerWidth = container.clientWidth;
-          const programWidth = programElement.offsetWidth;
 
-          // 计算滚动位置，使正在播放的节目居中显示
-          const scrollLeft =
-            programLeft - containerWidth / 2 + programWidth / 2;
+  const scrollToCurrentProgram = useCallback(() => {
+    const targetIndex =
+      currentPlayingIndex !== -1
+        ? currentPlayingIndex
+        : getCurrentProgramIndex(now);
 
-          container.scrollTo({
-            left: Math.max(0, scrollLeft),
-            behavior: 'smooth',
-          });
-        }
-      }
-    }
-  };
+    if (targetIndex === -1) return;
+
+    scrollToProgramIndex(targetIndex);
+  }, [currentPlayingIndex, getCurrentProgramIndex, now, scrollToProgramIndex]);
 
   useEffect(() => {
     if (isHovered) {
@@ -93,45 +138,22 @@ export default function EpgScrollableRow({
     };
   }, [isHovered]);
 
-  // 组件加载后自动滚动到正在播放的节目
   useEffect(() => {
-    // 延迟执行，确保DOM完全渲染
+    const nextIndex = getCurrentProgramIndex(now);
+    setCurrentPlayingIndex((prevIndex) =>
+      prevIndex === nextIndex ? prevIndex : nextIndex,
+    );
+  }, [getCurrentProgramIndex, now]);
+
+  useEffect(() => {
+    if (currentPlayingIndex === -1) return;
+
     const timer = setTimeout(() => {
-      // 初始化当前正在播放的节目索引
-      const initialPlayingIndex = programs.findIndex((program) =>
-        isCurrentlyPlaying(program),
-      );
-      setCurrentPlayingIndex(initialPlayingIndex);
-      scrollToCurrentProgram();
-    }, 100);
+      scrollToProgramIndex(currentPlayingIndex);
+    }, 80);
 
     return () => clearTimeout(timer);
-  }, [programs, currentTime]);
-
-  // 定时刷新正在播放状态
-  useEffect(() => {
-    // 每分钟刷新一次正在播放状态
-    const interval = setInterval(() => {
-      // 更新当前正在播放的节目索引
-      const newPlayingIndex = programs.findIndex((program) => {
-        try {
-          const start = parseCustomTimeFormat(program.start);
-          const end = parseCustomTimeFormat(program.end);
-          return currentTime >= start && currentTime < end;
-        } catch {
-          return false;
-        }
-      });
-
-      if (newPlayingIndex !== currentPlayingIndex) {
-        setCurrentPlayingIndex(newPlayingIndex);
-        // 如果正在播放的节目发生变化，自动滚动到新位置
-        scrollToCurrentProgram();
-      }
-    }, 60000); // 60秒 = 1分钟
-
-    return () => clearInterval(interval);
-  }, [programs, currentTime, currentPlayingIndex]);
+  }, [currentPlayingIndex, programs, scrollToProgramIndex]);
 
   // 格式化时间显示
   const formatTime = (timeString: string) => {
@@ -143,7 +165,7 @@ export default function EpgScrollableRow({
     try {
       const start = parseCustomTimeFormat(program.start);
       const end = parseCustomTimeFormat(program.end);
-      return currentTime >= start && currentTime < end;
+      return now >= start && now < end;
     } catch {
       return false;
     }
@@ -153,7 +175,7 @@ export default function EpgScrollableRow({
   if (isLoading) {
     return (
       <div className='pt-4'>
-        <div className='mb-3 flex items-center justify-between'>
+        <div className='mb-3 flex items-center justify-between gap-2'>
           <h4 className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2'>
             <Clock className='w-3 h-3 sm:w-4 sm:h-4' />
             今日节目单
@@ -174,7 +196,7 @@ export default function EpgScrollableRow({
   if (!programs || programs.length === 0) {
     return (
       <div className='pt-4'>
-        <div className='mb-3 flex items-center justify-between'>
+        <div className='mb-3 flex items-center justify-between gap-2'>
           <h4 className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2'>
             <Clock className='w-3 h-3 sm:w-4 sm:h-4' />
             今日节目单
@@ -193,22 +215,42 @@ export default function EpgScrollableRow({
 
   return (
     <div className='pt-4 mt-2'>
-      <div className='mb-3 flex items-center justify-between'>
+      <div className='mb-3 flex items-center justify-between gap-2'>
         <h4 className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2'>
           <Clock className='w-3 h-3 sm:w-4 sm:h-4' />
           今日节目单
         </h4>
-        {currentPlayingIndex !== -1 && (
+        <div className='flex items-center gap-2'>
           <button
-            onClick={scrollToCurrentProgram}
-            className='flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 bg-gray-300/50 dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200'
-            title='滚动到当前播放位置'
+            type='button'
+            onClick={() => scrollByPage('left')}
+            className='flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-all'
+            title='向左滚动'
+            aria-label='向左滚动'
           >
-            <Target className='w-2.5 h-2.5 sm:w-3 sm:h-3' />
-            <span className='hidden sm:inline'>当前播放</span>
-            <span className='sm:hidden'>当前</span>
+            <ChevronLeft className='w-4 h-4' />
           </button>
-        )}
+          <button
+            type='button'
+            onClick={() => scrollByPage('right')}
+            className='flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-all'
+            title='向右滚动'
+            aria-label='向右滚动'
+          >
+            <ChevronRight className='w-4 h-4' />
+          </button>
+          {currentPlayingIndex !== -1 && (
+            <button
+              onClick={scrollToCurrentProgram}
+              className='flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 sm:py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 bg-gray-300/50 dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200'
+              title='滚动到当前播放位置'
+            >
+              <Target className='w-2.5 h-2.5 sm:w-3 sm:h-3' />
+              <span className='hidden sm:inline'>当前播放</span>
+              <span className='sm:hidden'>当前</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div

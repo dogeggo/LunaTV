@@ -7,7 +7,7 @@ import { fetchTrailerWithRetry } from '@/lib/douban-api';
 import {
   DoubanSubjectFetchError,
   DoubanSubjectPageScraper,
-} from '@/lib/douban-subject-page';
+} from '@/lib/douban-challenge';
 
 export const runtime = 'nodejs';
 const FAILURE_CACHE_SECONDS = 30 * 60;
