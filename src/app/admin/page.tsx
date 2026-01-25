@@ -446,6 +446,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   // 用户组筛选状态
   const [filterUserGroup, setFilterUserGroup] = useState<string>('all');
+  const [userSearch, setUserSearch] = useState('');
   const [userPage, setUserPage] = useState(1);
   const [userPageSize, setUserPageSize] = useState(10);
 
@@ -480,6 +481,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   // 按规则排序并筛选用户列表
   const filteredUsers = useMemo(() => {
+    const normalizedSearch = userSearch.trim().toLowerCase();
     const sortedUsers = [...(config?.UserConfig?.Users ?? [])]
       .sort((a, b) => {
         type UserInfo = (typeof config.UserConfig.Users)[number];
@@ -492,6 +494,12 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         return priority(a) - priority(b);
       })
       .filter((user) => {
+        if (normalizedSearch) {
+          const username = user.username?.toLowerCase() ?? '';
+          if (!username.includes(normalizedSearch)) {
+            return false;
+          }
+        }
         if (filterUserGroup === 'all') {
           return true;
         }
@@ -502,7 +510,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
       });
 
     return sortedUsers;
-  }, [config?.UserConfig?.Users, filterUserGroup, currentUsername]);
+  }, [config?.UserConfig?.Users, filterUserGroup, currentUsername, userSearch]);
 
   const totalFilteredUsers = filteredUsers.length;
   const totalUserPages = Math.max(
@@ -521,7 +529,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
   useEffect(() => {
     setUserPage(1);
-  }, [filterUserGroup, userPageSize]);
+  }, [filterUserGroup, userPageSize, userSearch]);
 
   useEffect(() => {
     if (userPage > totalUserPages) {
@@ -1464,6 +1472,13 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 </option>
               ))}
             </select>
+            <input
+              type='text'
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              placeholder='按用户名搜索'
+              className='w-44 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            />
           </div>
           <div className='flex items-center space-x-2'>
             {/* 批量操作按钮 */}

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { loadConfig } from '@/lib/config';
@@ -265,9 +265,8 @@ export async function GET(request: NextRequest) {
         });
       }
     }
-
-    // 按观看时间降序排序
-    userStats.sort((a, b) => b.totalWatchTime - a.totalWatchTime);
+    // 按最近登录时间降序排序
+    userStats.sort((a, b) => b.lastLoginTime - a.lastLoginTime);
 
     // 整理热门来源数据（取前5个）
     const topSources = Object.entries(sourceCount)

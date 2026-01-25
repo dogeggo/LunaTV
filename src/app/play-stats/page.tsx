@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
@@ -138,7 +138,7 @@ import { PlayStatsResult } from '@/app/api/admin/play-stats/route';
 
 const PlayStatsPage: React.FC = () => {
   const router = useRouter();
-  const USER_STATS_PAGE_SIZE = 10;
+  const DEFAULT_USER_STATS_PAGE_SIZE = 10;
   const [statsData, setStatsData] = useState<PlayStatsResult | null>(null);
   const [userStats, setUserStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -155,6 +155,10 @@ const PlayStatsPage: React.FC = () => {
   );
   const [showWatchingUpdates, setShowWatchingUpdates] = useState(false);
   const [userStatsPage, setUserStatsPage] = useState(1);
+  const [userStatsPageSize, setUserStatsPageSize] = useState(
+    DEFAULT_USER_STATS_PAGE_SIZE,
+  );
+  const [userStatsSearch, setUserStatsSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'admin' | 'personal'>('admin'); // 新增Tab状态
   const [upcomingReleases, setUpcomingReleases] = useState<
     ReleaseCalendarItem[]
@@ -475,7 +479,7 @@ const PlayStatsPage: React.FC = () => {
     if (statsData?.userStats) {
       setUserStatsPage(1);
     }
-  }, [statsData?.userStats.length]);
+  }, [statsData?.userStats.length, userStatsPageSize, userStatsSearch]);
 
   useEffect(() => {
     if (authInfo) {
@@ -737,23 +741,29 @@ const PlayStatsPage: React.FC = () => {
 
   // 管理员统计页面渲染
   if (isAdmin && statsData && userStats) {
-    const totalUserStats = statsData.userStats.length;
+    const normalizedUserStatsSearch = userStatsSearch.trim().toLowerCase();
+    const filteredUserStats = normalizedUserStatsSearch
+      ? statsData.userStats.filter((userStat) =>
+          userStat.username.toLowerCase().includes(normalizedUserStatsSearch),
+        )
+      : statsData.userStats;
+    const totalUserStats = filteredUserStats.length;
     const totalUserStatsPages = Math.max(
       1,
-      Math.ceil(totalUserStats / USER_STATS_PAGE_SIZE),
+      Math.ceil(totalUserStats / userStatsPageSize),
     );
     const currentUserStatsPage = Math.min(userStatsPage, totalUserStatsPages);
     const userStatsPageStartIndex =
       totalUserStats === 0
         ? 0
-        : (currentUserStatsPage - 1) * USER_STATS_PAGE_SIZE + 1;
+        : (currentUserStatsPage - 1) * userStatsPageSize + 1;
     const userStatsPageEndIndex = Math.min(
-      currentUserStatsPage * USER_STATS_PAGE_SIZE,
+      currentUserStatsPage * userStatsPageSize,
       totalUserStats,
     );
-    const paginatedUserStats = statsData.userStats.slice(
-      (currentUserStatsPage - 1) * USER_STATS_PAGE_SIZE,
-      currentUserStatsPage * USER_STATS_PAGE_SIZE,
+    const paginatedUserStats = filteredUserStats.slice(
+      (currentUserStatsPage - 1) * userStatsPageSize,
+      currentUserStatsPage * userStatsPageSize,
     );
 
     return (
@@ -1049,14 +1059,41 @@ const PlayStatsPage: React.FC = () => {
                   用户播放统计
                 </h3>
                 <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4'>
-                  <div className='text-sm text-gray-500 dark:text-gray-400'>
-                    共 {totalUserStats} 位用户
-                    {totalUserStats > 0 && (
-                      <>
-                        ，显示第 {userStatsPageStartIndex}-
-                        {userStatsPageEndIndex} 位
-                      </>
-                    )}
+                  <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4'>
+                    <div className='text-sm text-gray-500 dark:text-gray-400'>
+                      共 {totalUserStats} 位用户
+                      {totalUserStats > 0 && (
+                        <>
+                          ，显示第 {userStatsPageStartIndex}-
+                          {userStatsPageEndIndex} 位
+                        </>
+                      )}
+                    </div>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <input
+                        type='text'
+                        value={userStatsSearch}
+                        onChange={(e) => setUserStatsSearch(e.target.value)}
+                        placeholder='搜索用户名'
+                        className='w-full sm:w-48 px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+                        aria-label='搜索用户名'
+                      />
+                      <label className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                        每页
+                        <select
+                          value={userStatsPageSize}
+                          onChange={(e) =>
+                            setUserStatsPageSize(Number(e.target.value))
+                          }
+                          className='px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+                          aria-label='每页显示数量'
+                        >
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </select>
+                      </label>
+                    </div>
                   </div>
                   {totalUserStatsPages > 1 && (
                     <div className='flex items-center gap-2'>
@@ -1088,7 +1125,7 @@ const PlayStatsPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className='space-y-4'>
+                <div className='space-y-3'>
                   {paginatedUserStats.map((userStat) => (
                     <div
                       key={userStat.username}
@@ -1096,88 +1133,97 @@ const PlayStatsPage: React.FC = () => {
                     >
                       {/* 用户概览行 */}
                       <div
-                        className='p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
+                        className='p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'
                         onClick={() => toggleUserExpanded(userStat.username)}
                       >
                         <div className='flex items-center justify-between'>
-                          <div className='flex items-center space-x-4'>
+                          <div className='flex items-center space-x-3'>
                             <div className='shrink-0'>
-                              <div className='w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center'>
-                                <span className='text-sm font-medium text-blue-600 dark:text-blue-400'>
+                              <div className='w-9 h-9 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center'>
+                                <span className='text-xs font-medium text-blue-600 dark:text-blue-400'>
                                   {userStat.username.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             </div>
-                            <div>
-                              <h5 className='text-sm font-medium text-gray-900 dark:text-gray-100'>
-                                {userStat.username}
-                              </h5>
-                              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                                最后播放:{' '}
-                                {userStat.lastPlayTime
-                                  ? formatDateTime(userStat.lastPlayTime)
-                                  : '从未播放'}
-                              </p>
-                              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                                注册天数: {userStat.registrationDays} 天
-                              </p>
-                              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                                最后登入:{' '}
-                                {userStat.lastLoginTime !== userStat.createdAt
-                                  ? formatDateTime(userStat.lastLoginTime)
-                                  : '注册时'}
-                              </p>
-                              <div className='text-xs text-gray-500 dark:text-gray-400'>
-                                {(() => {
-                                  const loginCount = userStat.loginCount || 0;
-                                  const loginDisplay =
-                                    formatLoginDisplay(loginCount);
-
-                                  return (
-                                    <div className='space-y-1'>
-                                      <div className='flex items-center gap-1.5'>
-                                        <span className='text-base shrink-0'>
-                                          {loginDisplay.level.icon}
-                                        </span>
-                                        <span className='font-medium text-gray-700 dark:text-gray-300 text-xs leading-tight'>
-                                          {loginDisplay.level.name}
-                                        </span>
-                                      </div>
-                                      <div className='text-xs opacity-60'>
-                                        {loginCount === 0
-                                          ? '尚未登录'
-                                          : `${loginDisplay.displayCount}次登录`}
-                                      </div>
+                            <div className='space-y-1 leading-tight'>
+                              {(() => {
+                                const loginCount = userStat.loginCount || 0;
+                                const loginDisplay =
+                                  formatLoginDisplay(loginCount);
+                                return (
+                                  <span className='items-center gap-1 text-xs'>
+                                    <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                                      {userStat.username}
+                                    </span>
+                                    <span className='text-sm shrink-0'>
+                                      {'\u00A0'}
+                                      {'\u00A0'}
+                                      {loginDisplay.level.icon}
+                                    </span>
+                                    <span className='font-medium text-gray-700 dark:text-gray-300 leading-tight'>
+                                      {loginDisplay.level.name}
+                                    </span>
+                                    <span className='opacity-60'>
+                                      {'\u00A0'}
+                                      {'\u00A0'}
+                                      {loginCount === 0
+                                        ? '尚未登录'
+                                        : `${loginDisplay.displayCount}次登录`}
+                                    </span>
+                                    <div>
+                                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                        最后播放:{' '}
+                                        {userStat.lastPlayTime
+                                          ? formatDateTime(
+                                              userStat.lastPlayTime,
+                                            )
+                                          : '从未播放'}
+                                      </span>
+                                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                        {'\u00A0'}
+                                        {'\u00A0'}最后登入:{' '}
+                                        {userStat.lastLoginTime !==
+                                        userStat.createdAt
+                                          ? formatDateTime(
+                                              userStat.lastLoginTime,
+                                            )
+                                          : '注册时'}
+                                      </span>
+                                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                        {'\u00A0'}
+                                        {'\u00A0'}注册天数:{' '}
+                                        {userStat.registrationDays} 天
+                                      </span>
+                                      {userStat.mostWatchedSource && (
+                                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                                          常用来源: {userStat.mostWatchedSource}
+                                        </p>
+                                      )}
                                     </div>
-                                  );
-                                })()}
-                              </div>
-                              {userStat.mostWatchedSource && (
-                                <p className='text-xs text-gray-500 dark:text-gray-400'>
-                                  常用来源: {userStat.mostWatchedSource}
-                                </p>
-                              )}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
-                          <div className='flex items-center space-x-6'>
-                            <div className='text-right'>
-                              <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                          <div className='flex items-center space-x-4'>
+                            <div className='text-right leading-tight'>
+                              <div className='text-xs font-medium text-gray-900 dark:text-gray-100'>
                                 {formatTime(userStat.totalWatchTime)}
                               </div>
                               <div className='text-xs text-gray-500 dark:text-gray-400'>
                                 总观看时长
                               </div>
                             </div>
-                            <div className='text-right'>
-                              <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                            <div className='text-right leading-tight'>
+                              <div className='text-xs font-medium text-gray-900 dark:text-gray-100'>
                                 {userStat.totalPlays}
                               </div>
                               <div className='text-xs text-gray-500 dark:text-gray-400'>
                                 播放次数
                               </div>
                             </div>
-                            <div className='text-right'>
-                              <div className='text-sm font-medium text-gray-900 dark:text-gray-100'>
+                            <div className='text-right leading-tight'>
+                              <div className='text-xs font-medium text-gray-900 dark:text-gray-100'>
                                 {formatTime(userStat.avgWatchTime)}
                               </div>
                               <div className='text-xs text-gray-500 dark:text-gray-400'>
