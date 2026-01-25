@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -89,7 +90,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    let config = await loadConfig();
 
     // 从 OIDC session 中获取 provider ID（如果有）
     const providerId = oidcSession.providerId || 'default';
@@ -178,9 +179,6 @@ export async function POST(request: NextRequest) {
           ? config.SiteConfig.DefaultUserTags
           : undefined;
 
-      // 清除缓存（在注册前清除，避免读到旧缓存）
-      clearConfigCache();
-
       // 使用 V2 注册用户（带 oidcSub 绑定）
       await db.createUserV2(
         username,
@@ -190,9 +188,12 @@ export async function POST(request: NextRequest) {
         oidcSession.sub, // 传入 oidcSub，会自动创建映射
         undefined, // enabledApis
       );
-
-      // 重新获取配置（此时会调用 configSelfCheck 从数据库获取最新用户列表）
-      clearConfigCache();
+      config = await loadConfig();
+      const user = config.UserConfig.Users.find((u) => u.username === username);
+      if (user) {
+        user.tvboxToken = generateToken();
+        await db.saveAdminConfig(config);
+      }
 
       // 设置认证cookie
       const storageType =

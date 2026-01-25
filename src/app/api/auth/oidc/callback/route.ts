@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 优先使用新的多 Provider 配置
     let oidcConfig = null;

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig, refineConfig } from '@/lib/config';
+import { loadConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // 检查用户权限
-    let adminConfig = await getConfig();
+    let adminConfig = await loadConfig();
 
     // 仅站长可以修改配置文件
     if (username !== process.env.USERNAME) {

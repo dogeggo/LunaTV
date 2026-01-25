@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { EpisodeSkipConfig } from '@/lib/types';
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     if (authInfo.username !== process.env.USERNAME) {
       // 非站长，检查用户存在或被封禁
       const user = config.UserConfig.Users.find(
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
-    const adminConfig = await getConfig();
+    const adminConfig = await loadConfig();
     if (authInfo.username !== process.env.USERNAME) {
       // 非站长，检查用户存在或被封禁
       const user = adminConfig.UserConfig.Users.find(
@@ -117,7 +117,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '未登录' }, { status: 401 });
     }
 
-    const adminConfig = await getConfig();
+    const adminConfig = await loadConfig();
     if (authInfo.username !== process.env.USERNAME) {
       // 非站长，检查用户存在或被封禁
       const user = adminConfig.UserConfig.Users.find(

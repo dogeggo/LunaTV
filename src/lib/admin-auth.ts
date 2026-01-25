@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 
 import { AdminConfig } from '@/lib/admin.types';
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 export type AdminRole = 'owner' | 'admin';
 
@@ -49,7 +49,7 @@ export async function getAdminRoleFromRequest(
     return 'owner';
   }
 
-  const config = await getConfig();
+  const config = await loadConfig();
   return resolveRoleFromConfig(config, username);
 }
 

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const overallStartTime = Date.now();
 
     // 获取所有用户列表
-    const config = await getConfig();
+    const config = await loadConfig();
     const allUsers = [
       process.env.USERNAME!,
       ...config.UserConfig.Users.filter((u) => !u.banned).map(

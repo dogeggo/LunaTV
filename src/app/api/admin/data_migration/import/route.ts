@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import { gunzip } from 'zlib';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { configSelfCheck, setCachedConfig } from '@/lib/config';
+import { configSelfCheck } from '@/lib/config';
 import { SimpleCrypto } from '@/lib/crypto';
 import { db } from '@/lib/db';
 
@@ -120,7 +120,6 @@ export async function POST(req: NextRequest) {
       importData.data.adminConfig,
     );
     await db.saveAdminConfig(importData.data.adminConfig);
-    await setCachedConfig(importData.data.adminConfig);
 
     // 步骤3：导入用户的其他数据（播放记录、收藏、登录统计等）
     for (const username in userData) {

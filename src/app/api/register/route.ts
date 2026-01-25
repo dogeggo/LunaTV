@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
     // 先检查配置中是否允许注册（在验证输入之前）
     let config: any;
     try {
-      config = await getConfig();
+      config = await loadConfig();
       const allowRegister = config.UserConfig?.AllowRegister !== false; // 默认允许注册
 
       if (!allowRegister) {
@@ -142,9 +143,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // 清除缓存（在注册前清除，避免读到旧缓存）
-      clearConfigCache();
-
       // 获取默认用户组
       const defaultTags =
         config.SiteConfig.DefaultUserTags &&
@@ -168,8 +166,14 @@ export async function POST(req: NextRequest) {
         await db.registerUser(username, password);
       }
 
-      // 清除缓存，让 configSelfCheck 从数据库同步最新用户列表（包括 tags）
-      clearConfigCache();
+      config = await loadConfig();
+      const user = config.UserConfig.Users.find(
+        (u: { username: string }) => u.username === username,
+      );
+      if (user) {
+        user.tvboxToken = generateToken();
+        await db.saveAdminConfig(config);
+      }
 
       // 验证用户是否成功创建并包含tags（调试用）
       try {

@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const username = authInfo.username;
 
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
     const result: AdminConfigResult = {
       Role: 'owner',
       Config: config,
@@ -94,9 +94,6 @@ export async function POST(request: NextRequest) {
 
     // 保存新配置
     await db.saveAdminConfig(newConfig);
-
-    // 清除缓存，强制下次重新从数据库读取
-    clearConfigCache();
 
     // 🔥 刷新所有页面的缓存，使新配置立即生效（无需重启Docker）
     revalidatePath('/', 'layout');

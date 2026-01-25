@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig, refineConfig } from '@/lib/config';
+import { loadConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
@@ -110,7 +110,7 @@ async function cronJob() {
 }
 
 async function setUserTvBoxToken() {
-  const config = await getConfig();
+  const config = await loadConfig();
   const users = config.UserConfig.Users;
   let count = 0;
   for (const user of users) {
@@ -125,7 +125,7 @@ async function setUserTvBoxToken() {
 }
 
 async function refreshAllLiveChannels() {
-  const config = await getConfig();
+  const config = await loadConfig();
 
   // 并发刷新所有启用的直播源
   const refreshPromises = (config.LiveConfig || [])
@@ -151,7 +151,7 @@ async function refreshAllLiveChannels() {
 }
 
 async function refreshConfig() {
-  let config = await getConfig();
+  let config = await loadConfig();
   if (
     config &&
     config.ConfigSubscribtion &&
@@ -210,7 +210,7 @@ async function refreshConfig() {
 
 async function refreshRecordAndFavorites() {
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
 
     const userNames = config.UserConfig.Users.map((u) => u.username);
 
@@ -345,7 +345,7 @@ async function refreshRecordAndFavorites() {
 
 async function cleanupInactiveUsers() {
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 清理策略：基于登入时间而不是播放记录
     // 删除条件：注册时间 >= X天 且 (从未登入 或 最后登入时间 >= X天)
@@ -532,7 +532,7 @@ function calculateUserLevel(loginCount: number) {
 
 async function optimizeActiveUserLevels() {
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
 
     const userNames = config.UserConfig.Users.map((u) => u.username);
     let optimizedCount = 0;

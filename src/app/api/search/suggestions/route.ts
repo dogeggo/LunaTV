@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { AdminConfig } from '@/lib/admin.types';
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getAvailableApiSites, getConfig } from '@/lib/config';
+import { getAvailableApiSites, loadConfig } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
 
 export const runtime = 'nodejs';
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q')?.trim();
 

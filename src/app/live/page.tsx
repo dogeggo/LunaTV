@@ -875,8 +875,11 @@ function LivePageClient() {
     setUnsupportedType(null);
 
     // 重置错误计数器
-    keyLoadErrorCount = 0;
-    lastErrorTime = 0;
+    keyLoadErrorCountRef.current = 0;
+    lastErrorTimeRef.current = 0;
+    startLoadRetryRef.current.count = 0;
+    startLoadRetryRef.current.lastAttemptTime = 0;
+    startLoadRetryRef.current.windowStart = 0;
 
     setCurrentChannel(channel);
     setVideoUrl(channel.url);
@@ -1315,10 +1318,46 @@ function LivePageClient() {
   }
 
   // 错误重试状态管理
-  let keyLoadErrorCount = 0;
-  let lastErrorTime = 0;
+  const keyLoadErrorCountRef = useRef(0);
+  const lastErrorTimeRef = useRef(0);
   const MAX_KEY_ERRORS = 3;
   const ERROR_TIMEOUT = 10000; // 10秒内超过3次keyLoadError就认为频道不可用
+  const startLoadRetryRef = useRef({
+    count: 0,
+    lastAttemptTime: 0,
+    windowStart: 0,
+  });
+  const MAX_STARTLOAD_RETRIES = 3;
+  const STARTLOAD_RETRY_WINDOW = 10000;
+  const STARTLOAD_COOLDOWN = 2000;
+
+  const safeStartLoad = (hlsInstance: Hls, reason: string) => {
+    const now = Date.now();
+    const state = startLoadRetryRef.current;
+
+    if (now - state.windowStart > STARTLOAD_RETRY_WINDOW) {
+      state.count = 0;
+      state.windowStart = now;
+    }
+
+    if (now - state.lastAttemptTime < STARTLOAD_COOLDOWN) {
+      console.warn(`[HLS] startLoad skipped (cooldown): ${reason}`);
+      return;
+    }
+
+    if (state.count >= MAX_STARTLOAD_RETRIES) {
+      console.warn(`[HLS] startLoad suppressed (limit reached): ${reason}`);
+      return;
+    }
+
+    state.count += 1;
+    state.lastAttemptTime = now;
+    try {
+      hlsInstance.startLoad();
+    } catch (e) {
+      console.warn('Failed to start load:', e);
+    }
+  };
 
   function m3u8Loader(video: HTMLVideoElement, url: string) {
     if (!Hls) {
@@ -1429,19 +1468,19 @@ function LivePageClient() {
         const currentTime = Date.now();
 
         // 重置计数器（如果距离上次错误超过10秒）
-        if (currentTime - lastErrorTime > ERROR_TIMEOUT) {
-          keyLoadErrorCount = 0;
+        if (currentTime - lastErrorTimeRef.current > ERROR_TIMEOUT) {
+          keyLoadErrorCountRef.current = 0;
         }
 
-        keyLoadErrorCount++;
-        lastErrorTime = currentTime;
+        keyLoadErrorCountRef.current += 1;
+        lastErrorTimeRef.current = currentTime;
 
         console.warn(
-          `KeyLoadError count: ${keyLoadErrorCount}/${MAX_KEY_ERRORS}`,
+          `KeyLoadError count: ${keyLoadErrorCountRef.current}/${MAX_KEY_ERRORS}`,
         );
 
         // 如果短时间内keyLoadError次数过多，认为这个频道不可用
-        if (keyLoadErrorCount >= MAX_KEY_ERRORS) {
+        if (keyLoadErrorCountRef.current >= MAX_KEY_ERRORS) {
           console.error(
             'Too many keyLoadErrors, marking channel as unavailable',
           );
@@ -1452,14 +1491,14 @@ function LivePageClient() {
         }
 
         // 使用指数退避重试策略
-        if (keyLoadErrorCount <= 2) {
+        if (keyLoadErrorCountRef.current <= 2) {
           setTimeout(() => {
             try {
               hls.startLoad();
             } catch (e) {
               console.warn('Failed to restart load after key error:', e);
             }
-          }, 1000 * keyLoadErrorCount);
+          }, 1000 * keyLoadErrorCountRef.current);
         }
         return;
       }
@@ -1469,7 +1508,7 @@ function LivePageClient() {
         console.log('直播片段解析错误，尝试重新加载...');
         // 重新开始加载，利用v1.6.13的initPTS修复
         try {
-          hls.startLoad();
+          safeStartLoad(hls, 'frag-parsing-error');
         } catch (e) {
           console.warn('重新加载失败:', e);
         }
@@ -1487,10 +1526,10 @@ function LivePageClient() {
         try {
           // 对于直播，直接重新开始加载最新片段
           hls.trigger(Hls.Events.BUFFER_RESET, undefined);
-          hls.startLoad();
+          safeStartLoad(hls, 'buffer-append-timestamp-error');
         } catch (e) {
           console.warn('直播缓冲区重置失败:', e);
-          hls.startLoad();
+          safeStartLoad(hls, 'buffer-append-timestamp-error');
         }
         return;
       }
@@ -1521,7 +1560,7 @@ function LivePageClient() {
               }, 2000);
             } else {
               try {
-                hls.startLoad();
+                safeStartLoad(hls, 'network-error');
               } catch (e) {
                 console.error('Failed to restart after network error:', e);
               }

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAdminRoleFromRequest } from '@/lib/admin-auth';
-import { API_CONFIG, getConfig } from '@/lib/config';
+import { API_CONFIG, loadConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   try {
     // 🔑 使用 getAvailableApiSites() 获取源列表，自动应用代理配置
     // 注意：source-test 需要测试所有源（包括禁用的），所以直接用 getConfig
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 先从原始配置查找源（支持测试禁用的源）
     const sourceFromConfig = config.SourceConfig.find(

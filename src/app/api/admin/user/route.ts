@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取配置与存储
-    let adminConfig = await getConfig();
+    let adminConfig = await loadConfig();
 
     // 判定操作者角色
     let operatorRole: 'owner' | 'admin';
@@ -515,9 +515,6 @@ export async function POST(request: NextRequest) {
 
     // 将更新后的配置写入数据库
     await db.saveAdminConfig(adminConfig);
-
-    // 清除配置缓存，强制下次重新从数据库读取
-    clearConfigCache();
 
     return NextResponse.json(
       { ok: true },

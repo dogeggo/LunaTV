@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { parseEpgWithDebug, parseM3U } from '@/lib/live';
 
 export const runtime = 'nodejs';
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const liveInfo = config.LiveConfig?.find((live) => live.key === sourceKey);
 
     if (!liveInfo) {

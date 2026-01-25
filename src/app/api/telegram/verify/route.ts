@@ -1,7 +1,6 @@
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 
-import { clearConfigCache } from '@/lib/config';
 import { db } from '@/lib/db';
 import {
   getTelegramToken,
@@ -275,7 +274,6 @@ export async function GET(request: Request) {
         console.log(
           `[Verify ${requestId}] Clearing config cache to force reload with new user`,
         );
-        clearConfigCache();
 
         isNewUser = true;
       } else {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: '搜索关键词不能为空' }, { status: 400 });
   }
 
-  const config = await getConfig();
+  const config = await loadConfig();
   const netDiskConfig = config.NetDiskConfig;
 
   // 检查是否启用网盘搜索 - 必须在缓存检查之前

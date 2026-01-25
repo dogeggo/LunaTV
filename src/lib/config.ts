@@ -293,7 +293,7 @@ async function getInitConfig(
   return adminConfig;
 }
 
-export async function getConfig(): Promise<AdminConfig> {
+export async function loadConfig(): Promise<AdminConfig> {
   // 🔥 防止 Next.js 在 Docker 环境下缓存配置（解决站点名称更新问题）
   unstable_noStore();
 
@@ -315,15 +315,7 @@ export async function getConfig(): Promise<AdminConfig> {
   }
   adminConfig = await configSelfCheck(adminConfig);
 
-  // 🔥 仍然更新 cachedConfig 以保持向后兼容，但不再依赖它
-  cachedConfig = adminConfig;
-
   return adminConfig;
-}
-
-// 清除配置缓存，强制重新从数据库读取
-export function clearConfigCache(): void {
-  cachedConfig = null as any;
 }
 
 export async function configSelfCheck(
@@ -570,14 +562,13 @@ export async function resetConfig() {
     originConfig.ConfigFile,
     originConfig.ConfigSubscribtion,
   );
-  cachedConfig = adminConfig;
   await db.saveAdminConfig(adminConfig);
 
   return;
 }
 
 export async function getCacheTime(): Promise<number> {
-  const config = await getConfig();
+  const config = await loadConfig();
   return config.SiteConfig.SiteInterfaceCacheTime || 14400;
 }
 
@@ -646,7 +637,7 @@ function applyVideoProxy(sites: ApiSite[], config: AdminConfig): ApiSite[] {
 }
 
 export async function getShowAdultContent(userName?: string): Promise<boolean> {
-  const config = await getConfig();
+  const config = await loadConfig();
 
   // 确定成人内容显示权限，优先级：用户 > 用户组 > 全局
   let showAdultContent = config.SiteConfig.ShowAdultContent;
@@ -691,7 +682,7 @@ export async function getShowAdultContent(userName?: string): Promise<boolean> {
 export async function getAvailableApiSites(
   userName?: string,
 ): Promise<ApiSite[]> {
-  const config = await getConfig();
+  const config = await loadConfig();
 
   // 确定成人内容显示权限，优先级：用户 > 用户组 > 全局
   let showAdultContent = getShowAdultContent(userName);
@@ -759,10 +750,6 @@ export async function getAvailableApiSites(
   return applyVideoProxy(allApiSites, config);
 }
 
-export async function setCachedConfig(config: AdminConfig) {
-  cachedConfig = config;
-}
-
 // 特殊功能权限检查
 export async function hasSpecialFeaturePermission(
   username: string,
@@ -776,7 +763,7 @@ export async function hasSpecialFeaturePermission(
     }
 
     // 使用提供的配置或获取新配置
-    const config = providedConfig || (await getConfig());
+    const config = providedConfig || (await loadConfig());
     const userConfig = config.UserConfig.Users.find(
       (u) => u.username === username,
     );

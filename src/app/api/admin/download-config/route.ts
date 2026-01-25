@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { ensureAdmin } from '@/lib/admin-auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const { enabled } = body;
 
     // 获取当前配置
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 更新下载配置
     config.DownloadConfig = {
@@ -33,9 +33,6 @@ export async function POST(request: NextRequest) {
 
     // 保存到数据库
     await db.saveAdminConfig(config);
-
-    // 清除配置缓存
-    clearConfigCache();
 
     console.log('下载配置已更新:', config.DownloadConfig);
 

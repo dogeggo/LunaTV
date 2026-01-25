@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取当前配置
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 更新短剧配置
     config.ShortDramaConfig = {
@@ -52,9 +52,6 @@ export async function POST(request: NextRequest) {
 
     // 保存到数据库
     await db.saveAdminConfig(config);
-
-    // 清除配置缓存
-    clearConfigCache();
 
     return NextResponse.json({
       success: true,
@@ -85,7 +82,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
 
     return NextResponse.json({
       success: true,

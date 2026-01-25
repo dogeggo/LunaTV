@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
  */
 export async function GET() {
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
     const customAdFilterCode = config.SiteConfig?.CustomAdFilterCode || '';
     const customAdFilterVersion = config.SiteConfig?.CustomAdFilterVersion || 1;
 

@@ -1,4 +1,4 @@
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import {
   getCache,
   getCacheKey,
@@ -127,7 +127,7 @@ export interface TMDBFilterOptions {
  * 检查TMDB是否已配置并启用
  */
 export async function isTMDBEnabled(): Promise<boolean> {
-  const config = await getConfig();
+  const config = await loadConfig();
   return !!(
     config.SiteConfig.EnableTMDBActorSearch && config.SiteConfig.TMDBApiKey
   );
@@ -254,7 +254,7 @@ async function fetchTMDB<T>(
   endpoint: string,
   params: Record<string, string> = {},
 ): Promise<T> {
-  const config = await getConfig();
+  const config = await loadConfig();
 
   if (!config.SiteConfig.TMDBApiKey) {
     throw new Error('TMDB API Key 未配置');

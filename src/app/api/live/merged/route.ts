@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 export const runtime = 'nodejs';
 
 export async function GET(_request: NextRequest) {
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
 
     if (!config) {
       return NextResponse.json({ error: '配置未找到' }, { status: 404 });

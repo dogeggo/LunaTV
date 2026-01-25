@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const user = config.UserConfig.Users.find((u) => u.username === username);
     if (user && user.banned) {
       return NextResponse.json({ error: '用户被封禁' }, { status: 401 });

@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
 import { rankSearchResults } from '@/lib/search-ranking';
 import { yellowWords } from '@/lib/yellow';
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     // const shouldFilter = filterParam === 'on' || filterParam === 'enable';
     const shouldFilter = true;
 

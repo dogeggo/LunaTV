@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { refreshLiveChannels } from '@/lib/live';
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // 权限检查
     const authInfo = getAuthInfoFromCookie(request);
     const username = authInfo?.username;
-    const config = await getConfig();
+    const config = await loadConfig();
     if (username !== process.env.USERNAME) {
       // 管理员
       const user = config.UserConfig.Users.find((u) => u.username === username);

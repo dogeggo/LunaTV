@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAdminRoleFromRequest } from '@/lib/admin-auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const config = await getConfig();
+    const config = await loadConfig();
     const sources = (config.SourceConfig || []).map((s: any) => ({
       key: s.key,
       name: s.name,

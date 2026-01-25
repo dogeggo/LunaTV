@@ -4,7 +4,7 @@ import { cookies, headers } from 'next/headers';
 
 import './globals.css';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   await cookies();
 
   const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
-  const config = await getConfig();
+  const config = await loadConfig();
   let siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Dong Media';
   if (storageType !== 'localstorage') {
     siteName = config.SiteConfig.SiteName;
@@ -62,7 +62,7 @@ export default async function RootLayout({
     query: string;
   }[];
   if (storageType !== 'localstorage') {
-    const config = await getConfig();
+    const config = await loadConfig();
     siteName = config.SiteConfig.SiteName;
     announcement = config.SiteConfig.Announcement;
 

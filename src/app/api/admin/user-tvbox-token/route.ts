@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { generateToken } from '@/lib/utils';
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取当前配置
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 检查权限：只有 owner 和 admin 可以管理用户 Token
     const currentUser = config.UserConfig.Users.find(
@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
 
     // 保存配置
     await db.saveAdminConfig(config);
-    clearConfigCache();
 
     return NextResponse.json({
       success: true,
@@ -105,7 +104,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 获取当前配置
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 检查权限
     const currentUser = config.UserConfig.Users.find(
@@ -143,7 +142,6 @@ export async function DELETE(request: NextRequest) {
 
     // 保存配置
     await db.saveAdminConfig(config);
-    clearConfigCache();
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 // 计算注册天数
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const username = process.env.USERNAME;
 
     // 检查用户权限（管理员或普通用户）
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const username = process.env.USERNAME;
 
     // 检查用户权限
@@ -243,7 +243,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const username = process.env.USERNAME;
 
     // 检查用户权限
@@ -344,7 +344,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const username = process.env.USERNAME;
 
     // 检查用户权限

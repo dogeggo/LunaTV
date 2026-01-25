@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime, getConfig } from '@/lib/config';
+import { getCacheTime, loadConfig } from '@/lib/config';
 import { parseShortDramaEpisode } from '@/lib/shortdrama.client';
 import { processImageUrl } from '@/lib/utils';
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // 读取配置以获取备用API地址
     let alternativeApiUrl: string | undefined;
     try {
-      const config = await getConfig();
+      const config = await loadConfig();
       const shortDramaConfig = config.ShortDramaConfig;
       alternativeApiUrl = shortDramaConfig?.enableAlternative
         ? shortDramaConfig.alternativeApiUrl

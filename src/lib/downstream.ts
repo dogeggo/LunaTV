@@ -4,8 +4,8 @@ import stcasc, { ChineseType } from 'switch-chinese';
 import {
   API_CONFIG,
   ApiSite,
-  getConfig,
   getShowAdultContent,
+  loadConfig,
 } from '@/lib/config';
 import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
@@ -225,7 +225,7 @@ export async function searchFromApi(
       return results;
     }
 
-    const config = await getConfig();
+    const config = await loadConfig();
     const MAX_SEARCH_PAGES: number = config.SiteConfig.SearchDownstreamMaxPage;
     // 确定需要获取的额外页数
     const pagesToFetch = Math.min(pageCount - 1, MAX_SEARCH_PAGES - 1);

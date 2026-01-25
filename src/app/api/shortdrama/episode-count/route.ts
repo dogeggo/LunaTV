@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime, getConfig } from '@/lib/config';
+import { getCacheTime, loadConfig } from '@/lib/config';
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     let enableAlternative = false;
 
     try {
-      const config = await getConfig();
+      const config = await loadConfig();
       const shortDramaConfig = config.ShortDramaConfig;
       alternativeApiUrl = shortDramaConfig?.alternativeApiUrl;
       enableAlternative = shortDramaConfig?.enableAlternative || false;

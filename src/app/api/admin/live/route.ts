@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { clearConfigCache, getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { deleteCachedLiveChannels, refreshLiveChannels } from '@/lib/live';
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // 权限检查
     const authInfo = getAuthInfoFromCookie(request);
     const username = authInfo?.username;
-    const config = await getConfig();
+    const config = await loadConfig();
     if (username !== process.env.USERNAME) {
       // 管理员
       const user = config.UserConfig.Users.find((u) => u.username === username);
@@ -177,9 +177,6 @@ export async function POST(request: NextRequest) {
 
     // 保存配置
     await db.saveAdminConfig(config);
-
-    // 清除配置缓存，强制下次重新从数据库读取
-    clearConfigCache();
 
     return NextResponse.json(
       { success: true },

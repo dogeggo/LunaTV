@@ -138,6 +138,7 @@ import { PlayStatsResult } from '@/app/api/admin/play-stats/route';
 
 const PlayStatsPage: React.FC = () => {
   const router = useRouter();
+  const USER_STATS_PAGE_SIZE = 10;
   const [statsData, setStatsData] = useState<PlayStatsResult | null>(null);
   const [userStats, setUserStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -153,6 +154,7 @@ const PlayStatsPage: React.FC = () => {
     null,
   );
   const [showWatchingUpdates, setShowWatchingUpdates] = useState(false);
+  const [userStatsPage, setUserStatsPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'admin' | 'personal'>('admin'); // 新增Tab状态
   const [upcomingReleases, setUpcomingReleases] = useState<
     ReleaseCalendarItem[]
@@ -470,6 +472,12 @@ const PlayStatsPage: React.FC = () => {
       : 'localstorage';
 
   useEffect(() => {
+    if (statsData?.userStats) {
+      setUserStatsPage(1);
+    }
+  }, [statsData?.userStats.length]);
+
+  useEffect(() => {
     if (authInfo) {
       fetchStats();
     }
@@ -729,6 +737,25 @@ const PlayStatsPage: React.FC = () => {
 
   // 管理员统计页面渲染
   if (isAdmin && statsData && userStats) {
+    const totalUserStats = statsData.userStats.length;
+    const totalUserStatsPages = Math.max(
+      1,
+      Math.ceil(totalUserStats / USER_STATS_PAGE_SIZE),
+    );
+    const currentUserStatsPage = Math.min(userStatsPage, totalUserStatsPages);
+    const userStatsPageStartIndex =
+      totalUserStats === 0
+        ? 0
+        : (currentUserStatsPage - 1) * USER_STATS_PAGE_SIZE + 1;
+    const userStatsPageEndIndex = Math.min(
+      currentUserStatsPage * USER_STATS_PAGE_SIZE,
+      totalUserStats,
+    );
+    const paginatedUserStats = statsData.userStats.slice(
+      (currentUserStatsPage - 1) * USER_STATS_PAGE_SIZE,
+      currentUserStatsPage * USER_STATS_PAGE_SIZE,
+    );
+
     return (
       <PageLayout activePath='/play-stats'>
         <div className='max-w-7xl mx-auto px-4 py-8'>
@@ -1021,8 +1048,48 @@ const PlayStatsPage: React.FC = () => {
                 <h3 className='text-xl font-semibold text-gray-900 dark:text-white mb-6'>
                   用户播放统计
                 </h3>
+                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4'>
+                  <div className='text-sm text-gray-500 dark:text-gray-400'>
+                    共 {totalUserStats} 位用户
+                    {totalUserStats > 0 && (
+                      <>
+                        ，显示第 {userStatsPageStartIndex}-
+                        {userStatsPageEndIndex} 位
+                      </>
+                    )}
+                  </div>
+                  {totalUserStatsPages > 1 && (
+                    <div className='flex items-center gap-2'>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          setUserStatsPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentUserStatsPage === 1}
+                        className='px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                      >
+                        上一页
+                      </button>
+                      <span className='text-sm text-gray-500 dark:text-gray-400'>
+                        第 {currentUserStatsPage} / {totalUserStatsPages} 页
+                      </span>
+                      <button
+                        type='button'
+                        onClick={() =>
+                          setUserStatsPage((prev) =>
+                            Math.min(prev + 1, totalUserStatsPages),
+                          )
+                        }
+                        disabled={currentUserStatsPage === totalUserStatsPages}
+                        className='px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                      >
+                        下一页
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className='space-y-4'>
-                  {statsData.userStats.map((userStat) => (
+                  {paginatedUserStats.map((userStat) => (
                     <div
                       key={userStat.username}
                       className='border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800'

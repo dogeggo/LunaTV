@@ -1,4 +1,4 @@
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 const defaultUA = 'AptvPlayer/1.4.10';
@@ -49,7 +49,7 @@ export async function getCachedLiveChannels(
   key: string,
 ): Promise<LiveChannels | null> {
   if (!cachedLiveChannels[key]) {
-    const config = await getConfig();
+    const config = await loadConfig();
     const liveInfo = config.LiveConfig?.find((live) => live.key === key);
     if (!liveInfo) {
       return null;

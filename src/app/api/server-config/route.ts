@@ -2,12 +2,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  const config = await getConfig();
+  const config = await loadConfig();
 
   const result: any = {
     SiteName: config.SiteConfig.SiteName,

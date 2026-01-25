@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic'; // 强制动态渲染
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取配置
-    const config = await getConfig();
+    const config = await loadConfig();
     const securityConfig = config.TVBoxSecurityConfig || {
       enableAuth: false,
       token: '',

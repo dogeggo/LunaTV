@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig, hasSpecialFeaturePermission } from '@/lib/config';
+import { hasSpecialFeaturePermission, loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // 获取YouTube配置
-    const config = await getConfig();
+    const config = await loadConfig();
 
     // 检查用户是否有YouTube搜索功能权限（传入已获取的配置避免重复调用）
     const hasPermission = await hasSpecialFeaturePermission(

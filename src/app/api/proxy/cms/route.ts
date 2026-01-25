@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // 使用 Node.js Runtime 以获得更好的网络兼容性
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
     const shouldFilterAdult = true; // 默认启用过滤
 
     // 获取配置（用于检查成人源和代理设置）
-    const config = await getConfig();
+    const config = await loadConfig();
 
     if (shouldFilterAdult) {
       try {

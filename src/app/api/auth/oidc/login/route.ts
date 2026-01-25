@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig } from '@/lib/config';
+import { loadConfig } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get('provider') || 'default'; // 从 URL 获取 provider ID
 
-    const config = await getConfig();
+    const config = await loadConfig();
 
     console.log('[OIDC Login] Provider ID requested:', providerId);
 

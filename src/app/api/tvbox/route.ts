@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig, getShowAdultContent } from '@/lib/config';
+import { getShowAdultContent, loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { getCandidates, getSpiderJar } from '@/lib/spiderJar';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const config = await getConfig();
+    const config = await loadConfig();
     const user = config.UserConfig.Users.find((u) => u.tvboxToken === token);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
