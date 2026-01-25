@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
       }
     }
     // 按最近登录时间降序排序
-    userStats.sort((a, b) => b.lastLoginTime - a.lastLoginTime);
+    userStats.sort((a, b) => b.totalWatchTime - a.totalWatchTime);
 
     // 整理热门来源数据（取前5个）
     const topSources = Object.entries(sourceCount)

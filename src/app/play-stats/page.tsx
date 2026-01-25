@@ -159,6 +159,9 @@ const PlayStatsPage: React.FC = () => {
     DEFAULT_USER_STATS_PAGE_SIZE,
   );
   const [userStatsSearch, setUserStatsSearch] = useState('');
+  const [userStatsSortKey, setUserStatsSortKey] = useState<
+    'lastPlayTime' | 'lastLoginTime' | 'totalWatchTime' | 'totalPlays'
+  >('totalWatchTime');
   const [activeTab, setActiveTab] = useState<'admin' | 'personal'>('admin'); // 新增Tab状态
   const [upcomingReleases, setUpcomingReleases] = useState<
     ReleaseCalendarItem[]
@@ -479,7 +482,12 @@ const PlayStatsPage: React.FC = () => {
     if (statsData?.userStats) {
       setUserStatsPage(1);
     }
-  }, [statsData?.userStats.length, userStatsPageSize, userStatsSearch]);
+  }, [
+    statsData?.userStats.length,
+    userStatsPageSize,
+    userStatsSearch,
+    userStatsSortKey,
+  ]);
 
   useEffect(() => {
     if (authInfo) {
@@ -747,7 +755,21 @@ const PlayStatsPage: React.FC = () => {
           userStat.username.toLowerCase().includes(normalizedUserStatsSearch),
         )
       : statsData.userStats;
-    const totalUserStats = filteredUserStats.length;
+    const sortedUserStats = [...filteredUserStats].sort((a, b) => {
+      switch (userStatsSortKey) {
+        case 'lastPlayTime':
+          return (b.lastPlayTime || 0) - (a.lastPlayTime || 0);
+        case 'lastLoginTime':
+          return (b.lastLoginTime || 0) - (a.lastLoginTime || 0);
+        case 'totalWatchTime':
+          return (b.totalWatchTime || 0) - (a.totalWatchTime || 0);
+        case 'totalPlays':
+          return (b.totalPlays || 0) - (a.totalPlays || 0);
+        default:
+          return 0;
+      }
+    });
+    const totalUserStats = sortedUserStats.length;
     const totalUserStatsPages = Math.max(
       1,
       Math.ceil(totalUserStats / userStatsPageSize),
@@ -761,7 +783,7 @@ const PlayStatsPage: React.FC = () => {
       currentUserStatsPage * userStatsPageSize,
       totalUserStats,
     );
-    const paginatedUserStats = filteredUserStats.slice(
+    const paginatedUserStats = sortedUserStats.slice(
       (currentUserStatsPage - 1) * userStatsPageSize,
       currentUserStatsPage * userStatsPageSize,
     );
@@ -1078,6 +1100,28 @@ const PlayStatsPage: React.FC = () => {
                         className='w-full sm:w-48 px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
                         aria-label='搜索用户名'
                       />
+                      <label className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                        排序
+                        <select
+                          value={userStatsSortKey}
+                          onChange={(e) =>
+                            setUserStatsSortKey(
+                              e.target.value as
+                                | 'lastPlayTime'
+                                | 'lastLoginTime'
+                                | 'totalWatchTime'
+                                | 'totalPlays',
+                            )
+                          }
+                          className='px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+                          aria-label='排序字段'
+                        >
+                          <option value='lastPlayTime'>最后播放</option>
+                          <option value='lastLoginTime'>最近登录</option>
+                          <option value='totalWatchTime'>观看时长</option>
+                          <option value='totalPlays'>播放次数</option>
+                        </select>
+                      </label>
                       <label className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
                         每页
                         <select
