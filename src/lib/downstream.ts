@@ -79,11 +79,10 @@ async function searchWithCache(
     }
 
     // 处理结果数据
-    const results: SearchResult[] = [];
+    let results: SearchResult[] = [];
     data.list.forEach((item: ApiSearchItem) => {
       let episodes: string[] = [];
       let titles: string[] = [];
-
       // 使用正则表达式从 vod_play_url 提取 m3u8 链接
       if (item.vod_play_url) {
         // 先用 $$$ 分割
@@ -109,11 +108,9 @@ async function searchWithCache(
           }
         });
       }
-
       if (episodes.length === 0) {
         return;
       }
-
       results.push({
         id: item.vod_id.toString(),
         title: item.vod_name.trim().replace(/\s+/g, ' '),
@@ -132,7 +129,6 @@ async function searchWithCache(
         remarks: item.vod_remarks, // 传递备注信息（如"已完结"等）
       });
     });
-
     const pageCount = page === 1 ? data.pagecount || 1 : undefined;
     // 写入缓存（成功）
     setCachedSearchPage(apiSite.key, query, page, 'ok', results, pageCount);

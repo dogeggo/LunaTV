@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 
-import { getCacheTime } from '@/lib/config';
-import { getRandomUserAgent } from '@/lib/user-agent';
+import {
+  DOUBAN_CACHE_EXPIRE,
+  fetchDoubanData,
+  getDoubanComments,
+} from '@/lib/douban-api';
 
 // 请求限制器
 let lastRequestTime = 0;
@@ -68,36 +71,10 @@ async function fetchInterestsData(
   url: string,
   userAgent: string,
 ): Promise<{ status: number; data?: DoubanInterestsApiResponse }> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
-
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': userAgent,
-        Accept: 'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        Referer: 'https://movie.douban.com/',
-        Origin: 'https://movie.douban.com',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-      redirect: 'manual',
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { status: response.status };
-    }
-
-    const data = (await response.json()) as DoubanInterestsApiResponse;
-    return { status: response.status, data };
+    const data = (await fetchDoubanData(url)) as DoubanInterestsApiResponse;
+    return { status: 200, data };
   } catch (error) {
-    clearTimeout(timeoutId);
     throw error;
   }
 }
@@ -172,7 +149,6 @@ export async function GET(request: Request) {
   if (!id) {
     return NextResponse.json({ error: '缺少必要参数: id' }, { status: 400 });
   }
-
   // 验证参数
   if (limit < 1 || limit > 50) {
     return NextResponse.json(
@@ -180,51 +156,33 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
-
   if (start < 0) {
     return NextResponse.json({ error: 'start 不能小于 0' }, { status: 400 });
   }
 
-  try {
-    // 请求限流：确保请求间隔
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest),
-      );
-    }
-    lastRequestTime = Date.now();
-
-    // 添加随机延时
-    await randomDelay();
-
-    const userAgent = getRandomUserAgent();
-    const apiData = await getInterests(id, start, limit, sort, userAgent);
-
-    const comments = parseDoubanInterests(apiData);
-
-    const cacheTime = await getCacheTime();
+  if (sort !== 'new_score' && sort !== 'time') {
     return NextResponse.json(
-      {
-        code: 200,
-        message: '获取成功',
-        data: {
-          comments,
-          start,
-          limit,
-          count: comments.length,
-        },
-      },
-      {
-        headers: {
-          'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
-          'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-          'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
-          'Netlify-Vary': 'query',
-        },
-      },
+      { error: 'sort 参数必须是 new_score 或 time' },
+      { status: 400 },
     );
+  }
+
+  try {
+    const result = await getDoubanComments({
+      id,
+      start,
+      limit,
+      sort,
+    });
+    const cacheTime = DOUBAN_CACHE_EXPIRE.comments;
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+        'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Netlify-Vary': 'query',
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: '获取豆瓣短评失败', details: (error as Error).message },

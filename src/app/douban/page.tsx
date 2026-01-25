@@ -13,8 +13,8 @@ import {
   getDoubanCategories,
   getDoubanList,
   getDoubanRecommends,
-} from '@/lib/douban.client';
-import { DoubanItem, DoubanResult } from '@/lib/types';
+} from '@/lib/douban-api';
+import { DoubanMovieDetail, DoubanResult } from '@/lib/types';
 
 import PageLayout from '@/components/PageLayout';
 
@@ -51,7 +51,7 @@ function DoubanPageClient() {
   }, []);
 
   const searchParams = useSearchParams();
-  const [doubanData, setDoubanData] = useState<DoubanItem[]>([]);
+  const [doubanData, setDoubanData] = useState<DoubanMovieDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -627,7 +627,7 @@ function DoubanPageClient() {
               // 🔧 双重去重逻辑：防止跨批次和批次内重复数据
               setDoubanData((prev) => {
                 const existingIds = new Set(prev.map((item) => item.id));
-                const uniqueNewItems: DoubanItem[] = [];
+                const uniqueNewItems: DoubanMovieDetail[] = [];
 
                 for (const item of data.list) {
                   if (!existingIds.has(item.id)) {

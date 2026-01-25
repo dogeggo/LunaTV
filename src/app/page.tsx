@@ -33,11 +33,11 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanCategories } from '@/lib/douban.client';
+import { getDoubanCategories } from '@/lib/douban-api';
 import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
 import { cleanExpiredCache } from '@/lib/shortdrama-cache';
 import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
-import { DoubanItem } from '@/lib/types';
+import { DoubanMovieDetail } from '@/lib/types';
 
 // 🚀 性能优化:首屏必需组件使用静态导入,减少CSS预加载警告
 import CapsuleSwitch from '@/components/CapsuleSwitch';
@@ -125,10 +125,12 @@ function HomeClient() {
   }, []);
 
   const [activeTab, setActiveTab] = useState<'home' | 'favorites'>('home');
-  const [hotMovies, setHotMovies] = useState<DoubanItem[]>([]);
-  const [hotTvShows, setHotTvShows] = useState<DoubanItem[]>([]);
-  const [hotVarietyShows, setHotVarietyShows] = useState<DoubanItem[]>([]);
-  const [hotAnime, setHotAnime] = useState<DoubanItem[]>([]);
+  const [hotMovies, setHotMovies] = useState<DoubanMovieDetail[]>([]);
+  const [hotTvShows, setHotTvShows] = useState<DoubanMovieDetail[]>([]);
+  const [hotVarietyShows, setHotVarietyShows] = useState<DoubanMovieDetail[]>(
+    [],
+  );
+  const [hotAnime, setHotAnime] = useState<DoubanMovieDetail[]>([]);
   const [hotShortDramas, setHotShortDramas] = useState<ShortDramaItem[]>([]);
   const [bangumiCalendarData, setBangumiCalendarData] = useState<
     BangumiCalendarData[]

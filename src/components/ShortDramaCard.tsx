@@ -98,10 +98,6 @@ function ShortDramaCard({
     [favorited, source, id, drama.name, drama.cover, realEpisodeCount],
   );
 
-  const formatScore = (score: number) => {
-    return score > 0 ? score.toFixed(1) : '--';
-  };
-
   const formatUpdateTime = (updateTime: string) => {
     try {
       const date = new Date(updateTime);

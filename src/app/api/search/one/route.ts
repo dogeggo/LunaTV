@@ -45,12 +45,13 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
-    const results = await searchFromApi(
+    let results = await searchFromApi(
       targetSite,
       query,
       undefined,
       authInfo.username,
     );
+    results = results.filter((r) => r.title === query);
     const cacheTime = await getCacheTime();
     if (results.length === 0) {
       return NextResponse.json(

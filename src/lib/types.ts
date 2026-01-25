@@ -199,8 +199,50 @@ export interface SearchResult {
   };
 }
 
+export interface DoubanApiResponse {
+  subjects: Array<{
+    id: string;
+    title: string;
+    cover: string;
+    rate: string;
+  }>;
+}
+
+export interface DoubanCategoryApiResponse {
+  total: number;
+  items: Array<{
+    id: string;
+    title: string;
+    card_subtitle: string;
+    pic: {
+      large: string;
+      normal: string;
+    };
+    rating: {
+      value: number;
+    };
+  }>;
+}
+
+export interface DoubanRecommendApiResponse {
+  total: number;
+  items: Array<{
+    id: string;
+    title: string;
+    year: string;
+    type: string;
+    pic: {
+      large: string;
+      normal: string;
+    };
+    rating: {
+      value: number;
+    };
+  }>;
+}
+
 // 豆瓣数据结构
-export interface DoubanItem {
+export interface DoubanMovieDetail {
   id: string;
   title: string;
   poster: string;
@@ -221,12 +263,35 @@ export interface DoubanItem {
   // 🎬 Netflix风格字段
   backdrop?: string; // 高清背景图（用于HeroBanner）
   trailerUrl?: string; // 预告片视频URL
+  celebrities?: DoubanCelebrity[];
+  recommendations?: DoubanRecommendation[];
+  actors?: DoubanCelebrity[]; // 演员列表（从 celebrities 提取）
+}
+
+export interface DoubanCelebrity {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  avatars?: {
+    small: string;
+    medium: string;
+    large: string;
+  };
+}
+
+/** 推荐影片 */
+export interface DoubanRecommendation {
+  id: string;
+  title: string;
+  poster: string;
+  rate: string;
 }
 
 export interface DoubanResult {
   code: number;
   message: string;
-  list: DoubanItem[];
+  list: DoubanMovieDetail[];
 }
 
 // 豆瓣短评数据结构

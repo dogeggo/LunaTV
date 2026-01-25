@@ -2,13 +2,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import {
-  DoubanSubjectFetchError,
-  DoubanSubjectPageScraper,
-} from '@/lib/douban-challenge';
+import { getExtractPlatformUrls } from '@/lib/douban-api';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
-interface PlatformUrl {
+export interface PlatformUrl {
   platform: string;
   url: string;
 }
@@ -213,206 +210,6 @@ async function processSelectedResult(
     return urls;
   } catch (error) {
     console.error('❌ Caiji API搜索失败:', error);
-    return [];
-  }
-}
-
-// 用户代理池 - 防止被封IP
-// 请求限制器 - 防止被封IP
-async function extractPlatformUrls(
-  doubanId: string,
-  episode?: string | null,
-): Promise<PlatformUrl[]> {
-  if (!doubanId) return [];
-
-  try {
-    const html = await DoubanSubjectPageScraper.getHtml(doubanId, {
-      timeoutMs: 10000,
-      minRequestIntervalMs: 1000,
-      randomDelayMs: [300, 1000],
-    });
-
-    console.log(`📄 豆瓣页面HTML长度: ${html.length}`);
-    const urls: PlatformUrl[] = [];
-
-    // 提取豆瓣跳转链接中的各种视频平台URL
-
-    // 腾讯视频
-    const doubanLinkMatches = html.match(
-      /play_link:\s*"[^"]*v\.qq\.com[^"]*"/g,
-    );
-    if (doubanLinkMatches && doubanLinkMatches.length > 0) {
-      console.log(`🎬 找到 ${doubanLinkMatches.length} 个腾讯视频链接`);
-
-      // 如果指定了集数，尝试找到对应集数的链接
-      let selectedMatch = doubanLinkMatches[0]; // 默认使用第一个
-      if (episode && doubanLinkMatches.length > 1) {
-        const episodeNum = parseInt(episode);
-        if (episodeNum > 0 && episodeNum <= doubanLinkMatches.length) {
-          selectedMatch = doubanLinkMatches[episodeNum - 1];
-          console.log(`🎯 选择第${episode}集腾讯视频链接`);
-        }
-      }
-
-      const urlMatch = selectedMatch.match(/https%3A%2F%2Fv\.qq\.com[^"&]*/);
-      if (urlMatch) {
-        const decodedUrl = decodeURIComponent(urlMatch[0]).split('?')[0];
-        console.log(`🔗 腾讯视频链接: ${decodedUrl}`);
-        urls.push({ platform: 'tencent', url: decodedUrl });
-      }
-    }
-
-    // 爱奇艺
-    const iqiyiMatches = html.match(/play_link:\s*"[^"]*iqiyi\.com[^"]*"/g);
-    if (iqiyiMatches && iqiyiMatches.length > 0) {
-      console.log(`📺 找到 ${iqiyiMatches.length} 个爱奇艺链接`);
-
-      // 如果指定了集数，尝试找到对应集数的链接
-      let selectedMatch = iqiyiMatches[0]; // 默认使用第一个
-      if (episode && iqiyiMatches.length > 1) {
-        const episodeNum = parseInt(episode);
-        if (episodeNum > 0 && episodeNum <= iqiyiMatches.length) {
-          selectedMatch = iqiyiMatches[episodeNum - 1];
-          console.log(`🎯 选择第${episode}集爱奇艺链接`);
-        }
-      }
-
-      const urlMatch = selectedMatch.match(
-        /https?%3A%2F%2F[^"&]*iqiyi\.com[^"&]*/,
-      );
-      if (urlMatch) {
-        const decodedUrl = decodeURIComponent(urlMatch[0]).split('?')[0];
-        console.log(`🔗 爱奇艺链接: ${decodedUrl}`);
-        urls.push({ platform: 'iqiyi', url: decodedUrl });
-      }
-    }
-
-    // 优酷
-    const youkuMatches = html.match(/play_link:\s*"[^"]*youku\.com[^"]*"/g);
-    if (youkuMatches && youkuMatches.length > 0) {
-      console.log(`🎞️ 找到 ${youkuMatches.length} 个优酷链接`);
-
-      // 如果指定了集数，尝试找到对应集数的链接
-      let selectedMatch = youkuMatches[0]; // 默认使用第一个
-      if (episode && youkuMatches.length > 1) {
-        const episodeNum = parseInt(episode);
-        if (episodeNum > 0 && episodeNum <= youkuMatches.length) {
-          selectedMatch = youkuMatches[episodeNum - 1];
-          console.log(`🎯 选择第${episode}集优酷链接`);
-        }
-      }
-
-      const urlMatch = selectedMatch.match(
-        /https?%3A%2F%2F[^"&]*youku\.com[^"&]*/,
-      );
-      if (urlMatch) {
-        const decodedUrl = decodeURIComponent(urlMatch[0]).split('?')[0];
-        console.log(`🔗 优酷链接: ${decodedUrl}`);
-        urls.push({ platform: 'youku', url: decodedUrl });
-      }
-    }
-
-    // 直接提取腾讯视频链接
-    const qqMatches = html.match(/https:\/\/v\.qq\.com\/x\/cover\/[^"'\s]+/g);
-    if (qqMatches && qqMatches.length > 0) {
-      console.log(`🎭 找到直接腾讯链接: ${qqMatches[0]}`);
-      urls.push({
-        platform: 'tencent_direct',
-        url: qqMatches[0].split('?')[0],
-      });
-    }
-
-    // B站链接提取（直接链接）
-    const biliMatches = html.match(
-      /https:\/\/www\.bilibili\.com\/video\/[^"'\s]+/g,
-    );
-    if (biliMatches && biliMatches.length > 0) {
-      console.log(`📺 找到B站直接链接: ${biliMatches[0]}`);
-      urls.push({
-        platform: 'bilibili',
-        url: biliMatches[0].split('?')[0],
-      });
-    }
-
-    // B站链接提取（豆瓣跳转链接）
-    const biliDoubanMatches = html.match(
-      /play_link:\s*"[^"]*bilibili\.com[^"]*"/g,
-    );
-    if (biliDoubanMatches && biliDoubanMatches.length > 0) {
-      console.log(`📱 找到 ${biliDoubanMatches.length} 个B站豆瓣链接`);
-
-      // 如果指定了集数，尝试找到对应集数的链接
-      let selectedMatch = biliDoubanMatches[0]; // 默认使用第一个
-      if (episode && biliDoubanMatches.length > 1) {
-        const episodeNum = parseInt(episode);
-        if (episodeNum > 0 && episodeNum <= biliDoubanMatches.length) {
-          selectedMatch = biliDoubanMatches[episodeNum - 1];
-          console.log(`🎯 选择第${episode}集B站豆瓣链接`);
-        }
-      }
-
-      const urlMatch = selectedMatch.match(
-        /https?%3A%2F%2F[^"&]*bilibili\.com[^"&]*/,
-      );
-      if (urlMatch) {
-        const decodedUrl = decodeURIComponent(urlMatch[0]).split('?')[0];
-        console.log(`🔗 B站豆瓣链接: ${decodedUrl}`);
-        urls.push({ platform: 'bilibili_douban', url: decodedUrl });
-      }
-    }
-
-    // 转换移动版链接为PC版链接（弹幕库API需要PC版）
-    const convertedUrls = urls.map((urlObj) => {
-      let convertedUrl = urlObj.url;
-
-      // 优酷移动版转PC版
-      if (convertedUrl.includes('m.youku.com/alipay_video/id_')) {
-        convertedUrl = convertedUrl.replace(
-          /https:\/\/m\.youku\.com\/alipay_video\/id_([^.]+)\.html/,
-          'https://v.youku.com/v_show/id_$1.html',
-        );
-        console.log(`🔄 优酷移动版转PC版: ${convertedUrl}`);
-      }
-
-      // 爱奇艺移动版转PC版
-      if (convertedUrl.includes('m.iqiyi.com/')) {
-        convertedUrl = convertedUrl.replace('m.iqiyi.com', 'www.iqiyi.com');
-        console.log(`🔄 爱奇艺移动版转PC版: ${convertedUrl}`);
-      }
-
-      // 腾讯视频移动版转PC版
-      if (convertedUrl.includes('m.v.qq.com/')) {
-        convertedUrl = convertedUrl.replace('m.v.qq.com', 'v.qq.com');
-        console.log(`🔄 腾讯移动版转PC版: ${convertedUrl}`);
-      }
-
-      // B站移动版转PC版
-      if (convertedUrl.includes('m.bilibili.com/')) {
-        convertedUrl = convertedUrl.replace(
-          'm.bilibili.com',
-          'www.bilibili.com',
-        );
-        // 移除豆瓣来源参数
-        convertedUrl = convertedUrl.split('?')[0];
-        console.log(`🔄 B站移动版转PC版: ${convertedUrl}`);
-      }
-
-      return { ...urlObj, url: convertedUrl };
-    });
-
-    console.log(`✅ 总共提取到 ${convertedUrls.length} 个平台链接`);
-    return convertedUrls;
-  } catch (error) {
-    if (error instanceof DoubanSubjectFetchError) {
-      console.error(
-        `Douban subject request failed: ${error.status ?? 'unknown'}`,
-        error.message,
-      );
-    } else if (error instanceof DOMException && error.name === 'AbortError') {
-      console.error('Douban request timed out (10s):', doubanId);
-    } else {
-      console.error('Failed to extract platform URLs:', error);
-    }
     return [];
   }
 }
@@ -803,7 +600,7 @@ export async function GET(request: NextRequest) {
     // 优先从豆瓣页面提取链接
     if (doubanId) {
       console.log('🔍 优先从豆瓣页面提取链接...');
-      platformUrls = await extractPlatformUrls(doubanId, episode);
+      platformUrls = await getExtractPlatformUrls(doubanId, episode);
       console.log('📝 豆瓣提取结果:', platformUrls);
     }
 

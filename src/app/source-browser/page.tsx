@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ClientCache } from '@/lib/client-cache';
 import type {
-  DoubanItem,
+  DoubanMovieDetail,
   SearchResult as GlobalSearchResult,
 } from '@/lib/types';
 import { processImageUrl } from '@/lib/utils';
@@ -79,7 +79,9 @@ export default function SourceBrowserPage() {
     null,
   );
   const [previewItem, setPreviewItem] = useState<Item | null>(null);
-  const [previewDouban, setPreviewDouban] = useState<DoubanItem | null>(null);
+  const [previewDouban, setPreviewDouban] = useState<DoubanMovieDetail | null>(
+    null,
+  );
   const [previewDoubanLoading, setPreviewDoubanLoading] = useState(false);
   const [previewDoubanId, setPreviewDoubanId] = useState<number | null>(null);
   type BangumiTag = { name: string };
@@ -409,7 +411,9 @@ export default function SourceBrowserPage() {
       setPreviewDouban(null);
       const keyRaw = `douban-details-id=${doubanId}`;
       // 1) 先查缓存（与全站一致的 ClientCache）
-      const cached = (await ClientCache.get(keyRaw)) as DoubanItem | null;
+      const cached = (await ClientCache.get(
+        keyRaw,
+      )) as DoubanMovieDetail | null;
       if (cached) {
         setPreviewDouban(cached);
         return;
@@ -421,10 +425,11 @@ export default function SourceBrowserPage() {
       );
       if (fallback.ok) {
         const dbData = (await fallback.json()) as
-          | { code: number; message: string; data?: DoubanItem }
-          | DoubanItem;
+          | { code: number; message: string; data?: DoubanMovieDetail }
+          | DoubanMovieDetail;
         const normalized =
-          (dbData as { data?: DoubanItem }).data || (dbData as DoubanItem);
+          (dbData as { data?: DoubanMovieDetail }).data ||
+          (dbData as DoubanMovieDetail);
         setPreviewDouban(normalized);
         // 3) 回写缓存（4小时）
         try {

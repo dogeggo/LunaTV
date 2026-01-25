@@ -1,32 +1,16 @@
 import { NextResponse } from 'next/server';
 
-import { getCacheTime } from '@/lib/config';
-import { fetchDoubanData } from '@/lib/douban';
-import { DoubanItem, DoubanResult } from '@/lib/types';
-
-interface DoubanCategoryApiResponse {
-  total: number;
-  items: Array<{
-    id: string;
-    title: string;
-    card_subtitle: string;
-    pic: {
-      large: string;
-      normal: string;
-    };
-    rating: {
-      value: number;
-    };
-  }>;
-}
+import { DOUBAN_CACHE_EXPIRE, getDoubanCategories } from '@/lib/douban-api';
+import { DoubanResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const target = request.url;
 
   // 获取参数
-  const kind = searchParams.get('kind') || 'movie';
+  const kind = searchParams.get('kind');
   const category = searchParams.get('category');
   const type = searchParams.get('type');
   const pageLimit = parseInt(searchParams.get('limit') || '20');
@@ -40,7 +24,7 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!['tv', 'movie'].includes(kind)) {
+  if (kind !== 'tv' && kind !== 'movie') {
     return NextResponse.json(
       { error: 'kind 参数必须是 tv 或 movie' },
       { status: 400 },
@@ -60,36 +44,17 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
-
-  const target = `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
-
   try {
-    console.log(`[豆瓣分类] 请求URL: ${target}`);
+    const result: DoubanResult = await getDoubanCategories({
+      kind,
+      category,
+      type,
+      pageLimit,
+      pageStart,
+    });
 
-    // 调用豆瓣 API
-    const doubanData = await fetchDoubanData<DoubanCategoryApiResponse>(target);
-
-    console.log(
-      `[豆瓣分类] 成功获取数据，项目数: ${doubanData.items?.length || 0}`,
-    );
-
-    // 转换数据格式
-    const list: DoubanItem[] = doubanData.items.map((item) => ({
-      id: item.id,
-      title: item.title,
-      poster: item.pic?.normal || item.pic?.large || '',
-      rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
-      year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
-    }));
-
-    const response: DoubanResult = {
-      code: 200,
-      message: '获取成功',
-      list: list,
-    };
-
-    const cacheTime = await getCacheTime();
-    return NextResponse.json(response, {
+    const cacheTime = DOUBAN_CACHE_EXPIRE.categories;
+    return NextResponse.json(result, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
         'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,

@@ -1,18 +1,9 @@
 import { NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
-import { fetchDoubanData } from '@/lib/douban';
-import { DoubanItem, DoubanResult } from '@/lib/types';
-import { getRandomUserAgent } from '@/lib/user-agent';
-
-interface DoubanApiResponse {
-  subjects: Array<{
-    id: string;
-    title: string;
-    cover: string;
-    rate: string;
-  }>;
-}
+import { DOUBAN_CACHE_EXPIRE, getDoubanList } from '@/lib/douban-api';
+import { fetchDouBanHtml } from '@/lib/douban-challenge';
+import { DoubanMovieDetail, DoubanResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -58,28 +49,15 @@ export async function GET(request: Request) {
     return handleTop250(pageStart);
   }
 
-  const target = `https://movie.douban.com/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageSize}&page_start=${pageStart}`;
-
   try {
-    // 调用豆瓣 API
-    const doubanData = await fetchDoubanData<DoubanApiResponse>(target);
+    const response: DoubanResult = await getDoubanList({
+      tag,
+      type,
+      pageLimit: pageSize,
+      pageStart,
+    });
 
-    // 转换数据格式
-    const list: DoubanItem[] = doubanData.subjects.map((item) => ({
-      id: item.id,
-      title: item.title,
-      poster: item.cover,
-      rate: item.rate,
-      year: '',
-    }));
-
-    const response: DoubanResult = {
-      code: 200,
-      message: '获取成功',
-      list: list,
-    };
-
-    const cacheTime = await getCacheTime();
+    const cacheTime = DOUBAN_CACHE_EXPIRE.lists;
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
@@ -97,37 +75,18 @@ export async function GET(request: Request) {
 }
 
 function handleTop250(pageStart: number) {
-  const target = `https://movie.douban.com/top250?start=${pageStart}&filter=`;
+  const url = `https://movie.douban.com/top250?start=${pageStart}&filter=`;
 
-  // 直接使用 fetch 获取 HTML 页面
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-  const fetchOptions = {
-    signal: controller.signal,
-    headers: {
-      'User-Agent': getRandomUserAgent(),
-      Referer: 'https://movie.douban.com/',
-      Accept:
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    },
-  };
-
-  return fetch(target, fetchOptions)
-    .then(async (fetchResponse) => {
-      clearTimeout(timeoutId);
-
-      if (!fetchResponse.ok) {
-        throw new Error(`HTTP error! Status: ${fetchResponse.status}`);
-      }
-
-      // 获取 HTML 内容
-      const html = await fetchResponse.text();
-
+  return fetchDouBanHtml(url, {
+    timeoutMs: 20000,
+    minRequestIntervalMs: 2000,
+    randomDelayMs: [500, 1500],
+  })
+    .then(async (html) => {
       // 通过正则同时捕获影片 id、标题、封面以及评分
       const moviePattern =
         /<div class="item">[\s\S]*?<a[^>]+href="https?:\/\/movie\.douban\.com\/subject\/(\d+)\/"[\s\S]*?<img[^>]+alt="([^"]+)"[^>]*src="([^"]+)"[\s\S]*?<span class="rating_num"[^>]*>([^<]*)<\/span>[\s\S]*?<\/div>/g;
-      const movies: DoubanItem[] = [];
+      const movies: DoubanMovieDetail[] = [];
       let match;
 
       while ((match = moviePattern.exec(html)) !== null) {
@@ -165,7 +124,6 @@ function handleTop250(pageStart: number) {
       });
     })
     .catch((error) => {
-      clearTimeout(timeoutId);
       return NextResponse.json(
         {
           error: '获取豆瓣 Top250 数据失败',

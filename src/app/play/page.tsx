@@ -18,7 +18,7 @@ import {
   savePlayRecord,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanComments, getDoubanDetails } from '@/lib/douban.client';
+import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
@@ -500,12 +500,16 @@ function PlayPageClient() {
         try {
           const response = await getDoubanDetails(videoDoubanId.toString());
           // 🎯 只有在数据有效（title 存在）时才设置 movieDetails
-          if (response.code === 200 && response.data && response.data.title) {
-            setMovieDetails(response.data);
+          if (
+            response.code === 200 &&
+            response.list[0] &&
+            response.list[0].title
+          ) {
+            setMovieDetails(response.list[0]);
           } else if (
             response.code === 200 &&
-            response.data &&
-            !response.data.title
+            response.list[0] &&
+            !response.list[0].title
           ) {
             console.warn('⚠️ Douban 返回空数据（缺少标题），1分钟后将自动重试');
             setMovieDetails(null);

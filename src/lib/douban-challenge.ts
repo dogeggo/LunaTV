@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
 
-import { db } from '@/lib/db';
 import {
   getRandomUserAgentWithInfo,
   getSecChUaHeaders,
@@ -32,11 +31,8 @@ export class DoubanSubjectFetchError extends Error {
   }
 }
 
-const CACHE_PREFIX = 'douban:subject:';
-const DEFAULT_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
-const DEFAULT_TIMEOUT_MS = 20000;
+const DEFAULT_TIMEOUT_MS = 10000;
 const DEFAULT_MIN_REQUEST_INTERVAL_MS = 1000;
-const DEFAULT_RANDOM_DELAY_RANGE: [number, number] = [300, 1000];
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const MAX_REDIRECTS = 3;
 let lastRequestTime = 0;
@@ -53,15 +49,6 @@ type DoubanFetchContext = {
   currentUrl: string;
   cookieJar: Map<string, string>;
 };
-
-function normalizeDoubanUrl(input: string): string {
-  const trimmed = input.trim();
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
-  }
-  const sanitizedId = trimmed.replace(/\/+$/, '');
-  return `https://movie.douban.com/subject/${sanitizedId}/`;
-}
 
 function removeHeaderCaseInsensitive(
   headers: Record<string, string>,
@@ -124,13 +111,31 @@ function buildDoubanRequestHeaders(
   return mergedHeaders;
 }
 
+// 智能延时：根据URL类型调整延时
+function getSmartDelay(url: string): { min: number; max: number } {
+  // 移动端API通常更宽松，可以减少延时
+  if (url.includes('m.douban.com')) {
+    return { min: 100, max: 400 }; // 移动端API：100-400ms
+  }
+  // 桌面端API需要更谨慎
+  if (url.includes('movie.douban.com')) {
+    return { min: 300, max: 800 }; // 桌面端API：300-800ms
+  }
+  return { min: 200, max: 500 }; // 默认：200-500ms
+}
+
+function smartRandomDelay(url: string): Promise<void> {
+  const { min, max } = getSmartDelay(url);
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+  return new Promise((resolve) => setTimeout(resolve, delay));
+}
+
 async function applyDoubanRequestDelay(
+  url: string,
   options: DoubanSubjectFetchOptions,
 ): Promise<void> {
   const minInterval =
     options.minRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
-  const [minDelay, maxDelay] =
-    options.randomDelayMs ?? DEFAULT_RANDOM_DELAY_RANGE;
 
   if (minInterval > 0) {
     const now = Date.now();
@@ -140,88 +145,42 @@ async function applyDoubanRequestDelay(
     }
     lastRequestTime = Date.now();
   }
-
-  await randomDelay(minDelay, maxDelay);
+  await smartRandomDelay(url);
 }
 
-export class DoubanSubjectPageScraper {
-  private static inflight = new Map<string, Promise<string>>();
+export async function fetchDouBanHtml(
+  url: string,
+  options: DoubanSubjectFetchOptions,
+): Promise<string> {
+  await applyDoubanRequestDelay(url, options);
 
-  static async getHtml(
-    id: string,
-    options: DoubanSubjectFetchOptions = {},
-  ): Promise<string> {
-    const cacheKey = CACHE_PREFIX + id.trim();
+  const headers = buildDoubanRequestHeaders(url, options.headers);
 
-    const cachedHtml = await db.getCache(cacheKey);
-    if (cachedHtml && typeof cachedHtml === 'string') {
-      return cachedHtml;
-    }
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const { response, currentUrl, cookieJar } = await fetchDoubanWithRedirects(
+    url,
+    headers,
+    timeoutMs,
+  );
 
-    const inflight = this.inflight.get(cacheKey);
-    if (inflight) {
-      return inflight;
-    }
+  const html = await response.text();
+  const hasChallenge = parseDoubanChallenge(html) !== null;
 
-    const promise = this.fetchAndCache(id, options).finally(() => {
-      this.inflight.delete(cacheKey);
-    });
-    this.inflight.set(cacheKey, promise);
-    return promise;
-  }
-
-  private static async fetchAndCache(
-    id: string,
-    options: DoubanSubjectFetchOptions,
-  ): Promise<string> {
-    const html = await this.fetchHtml(id, options);
-
-    const ttlSeconds = options.cacheTtlMs
-      ? Math.floor(options.cacheTtlMs / 1000)
-      : DEFAULT_CACHE_TTL_SECONDS;
-
-    if (ttlSeconds > 0) {
-      const cacheKey = CACHE_PREFIX + id.trim();
-      await db.setCache(cacheKey, html, ttlSeconds);
-    }
-    return html;
-  }
-
-  private static async fetchHtml(
-    id: string,
-    options: DoubanSubjectFetchOptions,
-  ): Promise<string> {
-    await applyDoubanRequestDelay(options);
-
-    const target = normalizeDoubanUrl(id);
-    const headers = buildDoubanRequestHeaders(target, options.headers);
-
-    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const { response, currentUrl, cookieJar } = await fetchDoubanWithRedirects(
-      target,
-      headers,
-      timeoutMs,
+  if (!response.ok && !hasChallenge) {
+    throw new DoubanSubjectFetchError(
+      `Douban subject request failed: ${response.status}`,
+      response.status,
     );
-
-    const html = await response.text();
-    const hasChallenge = parseDoubanChallenge(html) !== null;
-
-    if (!response.ok && !hasChallenge) {
-      throw new DoubanSubjectFetchError(
-        `Douban subject request failed: ${response.status}`,
-        response.status,
-      );
-    }
-
-    const resolved = await resolveDoubanChallenge({
-      html,
-      url: currentUrl,
-      headers,
-      responseHeaders: response.headers,
-      cookieJar,
-    });
-    return resolved.html;
   }
+
+  const resolved = await resolveDoubanChallenge({
+    html,
+    url: currentUrl,
+    headers,
+    responseHeaders: response.headers,
+    cookieJar,
+  });
+  return resolved.html;
 }
 
 export function isDoubanUrl(value: string): boolean {
@@ -237,14 +196,13 @@ export async function fetchDoubanWithAntiScraping(
   url: string,
   options: DoubanFetchRequestOptions = {},
 ): Promise<Response> {
-  await applyDoubanRequestDelay(options);
+  await applyDoubanRequestDelay(url, options);
 
-  const target = normalizeDoubanUrl(url);
-  const headers = buildDoubanRequestHeaders(target, options.headers);
+  const headers = buildDoubanRequestHeaders(url, options.headers);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   const { response, currentUrl, cookieJar } = await fetchDoubanWithRedirects(
-    target,
+    url,
     headers,
     timeoutMs,
     options.signal,
@@ -285,7 +243,7 @@ export async function fetchDoubanWithAntiScraping(
   }
 
   const finalResult = await fetchDoubanWithRedirects(
-    target,
+    url,
     finalHeaders,
     timeoutMs,
     options.signal,

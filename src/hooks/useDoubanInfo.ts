@@ -3,56 +3,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { getDoubanComments, getDoubanDetails } from '@/lib/douban.client';
-import type { DoubanComment } from '@/lib/types';
+import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
+import type { DoubanComment, DoubanMovieDetail } from '@/lib/types';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 /** 演员/导演信息 */
-export interface DoubanCelebrity {
-  id: string;
-  name: string;
-  avatar: string;
-  role: string;
-  avatars?: {
-    small: string;
-    medium: string;
-    large: string;
-  };
-}
-
-/** 推荐影片 */
-export interface DoubanRecommendation {
-  id: string;
-  title: string;
-  poster: string;
-  rate: string;
-}
-
-/** 电影详情 */
-export interface DoubanMovieDetail {
-  id: string;
-  title: string;
-  poster: string;
-  rate: string;
-  year: string;
-  directors?: string[];
-  screenwriters?: string[];
-  cast?: string[];
-  genres?: string[];
-  countries?: string[];
-  languages?: string[];
-  episodes?: number;
-  episode_length?: number;
-  movie_duration?: number;
-  first_aired?: string;
-  plot_summary?: string;
-  celebrities?: DoubanCelebrity[];
-  recommendations?: DoubanRecommendation[];
-  actors?: DoubanCelebrity[]; // 演员列表（从 celebrities 提取）
-}
 
 /** Hook 返回类型 */
 export interface UseDoubanInfoResult {
@@ -124,8 +82,8 @@ export function useDoubanInfo(
     try {
       const result = await getDoubanDetails(String(doubanId));
 
-      if (result.code === 200 && result.data) {
-        setDetail(result.data as DoubanMovieDetail);
+      if (result.code === 200 && result.list) {
+        setDetail(result.list[0] as DoubanMovieDetail);
       } else {
         throw new Error(result.message || '获取详情失败');
       }

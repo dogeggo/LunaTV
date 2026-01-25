@@ -20,7 +20,7 @@ const Grid = dynamic(
   },
 );
 
-import { DoubanItem } from '@/lib/types';
+import { DoubanMovieDetail } from '@/lib/types';
 import { processImageUrl } from '@/lib/utils';
 import { useImagePreload } from '@/hooks/useImagePreload';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
@@ -35,7 +35,7 @@ export interface VirtualDoubanGridRef {
 
 interface VirtualDoubanGridProps {
   // 豆瓣数据
-  doubanData: DoubanItem[];
+  doubanData: DoubanMovieDetail[];
 
   // 分页相关
   hasMore: boolean;
