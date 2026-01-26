@@ -5,12 +5,28 @@ import {
   getSecChUaHeaders,
 } from '@/lib/user-agent';
 
+if (typeof window === 'undefined') {
+  const globalState = globalThis as typeof globalThis & {
+    __repeatGuardInstalled__?: boolean;
+  };
+  if (!globalState.__repeatGuardInstalled__) {
+    const originalRepeat = String.prototype.repeat;
+    String.prototype.repeat = function repeat(count: number): string {
+      if (!Number.isFinite(count) || count < 0) {
+        console.error(
+          '[repeat-guard] invalid count',
+          new RangeError(`Invalid count value: ${count}`).stack,
+        );
+        return originalRepeat.call(this, 0);
+      }
+      return originalRepeat.call(this, count);
+    };
+    globalState.__repeatGuardInstalled__ = true;
+  }
+}
+
 export type DoubanSubjectFetchOptions = {
-  cacheTtlMs?: number;
-  maxEntries?: number; // Deprecated, kept for compatibility
   timeoutMs?: number;
-  minRequestIntervalMs?: number;
-  randomDelayMs?: [number, number];
   headers?: HeadersInit;
 };
 
@@ -32,7 +48,6 @@ export class DoubanSubjectFetchError extends Error {
 }
 
 const DEFAULT_TIMEOUT_MS = 10000;
-const DEFAULT_MIN_REQUEST_INTERVAL_MS = 1000;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const MAX_REDIRECTS = 3;
 let lastRequestTime = 0;
@@ -113,11 +128,9 @@ function buildDoubanRequestHeaders(
 
 // 智能延时：根据URL类型调整延时
 function getSmartDelay(url: string): { min: number; max: number } {
-  // 移动端API通常更宽松，可以减少延时
   if (url.includes('m.douban.com')) {
     return { min: 100, max: 400 }; // 移动端API：100-400ms
   }
-  // 桌面端API需要更谨慎
   if (url.includes('movie.douban.com')) {
     return { min: 300, max: 800 }; // 桌面端API：300-800ms
   }
@@ -130,21 +143,7 @@ function smartRandomDelay(url: string): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-async function applyDoubanRequestDelay(
-  url: string,
-  options: DoubanSubjectFetchOptions,
-): Promise<void> {
-  const minInterval =
-    options.minRequestIntervalMs ?? DEFAULT_MIN_REQUEST_INTERVAL_MS;
-
-  if (minInterval > 0) {
-    const now = Date.now();
-    const delta = now - lastRequestTime;
-    if (delta < minInterval) {
-      await new Promise((resolve) => setTimeout(resolve, minInterval - delta));
-    }
-    lastRequestTime = Date.now();
-  }
+async function applyDoubanRequestDelay(url: string): Promise<void> {
   await smartRandomDelay(url);
 }
 
@@ -152,7 +151,7 @@ export async function fetchDouBanHtml(
   url: string,
   options: DoubanSubjectFetchOptions,
 ): Promise<string> {
-  await applyDoubanRequestDelay(url, options);
+  await applyDoubanRequestDelay(url);
 
   const headers = buildDoubanRequestHeaders(url, options.headers);
 
@@ -196,7 +195,7 @@ export async function fetchDoubanWithAntiScraping(
   url: string,
   options: DoubanFetchRequestOptions = {},
 ): Promise<Response> {
-  await applyDoubanRequestDelay(url, options);
+  await applyDoubanRequestDelay(url);
 
   const headers = buildDoubanRequestHeaders(url, options.headers);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -251,14 +250,6 @@ export async function fetchDoubanWithAntiScraping(
   );
 
   return finalResult.response;
-}
-
-function randomDelay(min = 0, max = 0): Promise<void> {
-  if (min <= 0 && max <= 0) return Promise.resolve();
-  const safeMin = Math.max(0, min);
-  const safeMax = Math.max(safeMin, max);
-  const delay = Math.floor(Math.random() * (safeMax - safeMin + 1)) + safeMin;
-  return new Promise((resolve) => setTimeout(resolve, delay));
 }
 
 function parseDoubanChallenge(html: string): DoubanChallenge | null {

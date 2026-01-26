@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 
+import { DOUBAN_CACHE_EXPIRE } from '@/lib/cache';
 import { db } from '@/lib/db';
 import {
-  DOUBAN_CACHE_EXPIRE,
   DoubanError,
   fetchTrailerWithRetry,
   getDoubanDetails,

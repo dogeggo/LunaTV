@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime, loadConfig } from '@/lib/config';
-import { parseShortDramaEpisode } from '@/lib/shortdrama.client';
-import { processImageUrl } from '@/lib/utils';
+import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
+import { loadConfig } from '@/lib/config';
+import { getShortDramaDetail } from '@/lib/shortdrama-api';
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
@@ -47,76 +47,25 @@ export async function GET(request: NextRequest) {
       alternativeApiUrl = undefined;
     }
 
-    // 先尝试指定集数，如果提供了剧名且配置了备用API则自动fallback
-    let result = await parseShortDramaEpisode(
-      videoId,
-      episodeNum,
-      true,
-      name || undefined,
-      alternativeApiUrl,
-    );
-
-    // 如果失败，尝试其他集数
-    if (result.code !== 0 || !result.data || !result.data.totalEpisodes) {
-      result = await parseShortDramaEpisode(
+    let detail: Awaited<ReturnType<typeof getShortDramaDetail>>;
+    try {
+      detail = await getShortDramaDetail({
+        id,
         videoId,
-        episodeNum === 1 ? 2 : 1,
-        true,
-        name || undefined,
-        alternativeApiUrl,
-      );
-    }
-
-    // 如果还是失败，尝试第0集
-    if (result.code !== 0 || !result.data || !result.data.totalEpisodes) {
-      result = await parseShortDramaEpisode(
-        videoId,
-        0,
-        true,
-        name || undefined,
-        alternativeApiUrl,
-      );
-    }
-
-    if (result.code !== 0 || !result.data) {
-      return NextResponse.json(
-        { error: result.msg || '解析失败' },
-        { status: 400 },
-      );
-    }
-
-    const totalEpisodes = Math.max(result.data.totalEpisodes || 1, 1);
-
-    // 转换为兼容格式
-    // 注意：始终使用请求的原始ID（主API的ID），不使用result.data.videoId（可能是备用API的ID）
-    const response: any = {
-      id: id, // 使用原始请求ID，保持一致性
-      title: result.data!.videoName,
-      poster: result.data!.cover ? processImageUrl(result.data!.cover) : '',
-      episodes: Array.from(
-        { length: totalEpisodes },
-        (_, i) => `shortdrama:${id}:${i}`, // 使用原始请求ID
-      ),
-      episodes_titles: Array.from(
-        { length: totalEpisodes },
-        (_, i) => `第${i + 1}集`,
-      ),
-      source: 'shortdrama',
-      source_name: '短剧',
-      year: new Date().getFullYear().toString(),
-      desc: result.data!.description,
-      type_name: '短剧',
-      drama_name: result.data!.videoName, // 添加剧名，用于备用API fallback
-    };
-
-    // 如果备用API返回了元数据，添加到响应中
-    if (result.metadata) {
-      response.metadata = result.metadata;
+        episode: episodeNum,
+        name: name || undefined,
+      });
+    } catch (detailError) {
+      const message =
+        detailError instanceof Error && detailError.message
+          ? detailError.message
+          : '解析失败';
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     // 设置与豆瓣一致的缓存策略
-    const cacheTime = await getCacheTime();
-    const finalResponse = NextResponse.json(response);
+    const cacheTime = SHORTDRAMA_CACHE_EXPIRE.details;
+    const finalResponse = NextResponse.json(detail);
     finalResponse.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

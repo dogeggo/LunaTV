@@ -6,12 +6,12 @@ import { ChevronUp, Filter, Search } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { cleanExpiredCache } from '@/lib/cache';
 import {
   getShortDramaCategories,
   getShortDramaList,
   searchShortDramas,
-} from '@/lib/shortdrama.client';
-import { cleanExpiredCache } from '@/lib/shortdrama-cache';
+} from '@/lib/shortdrama-api';
 import { ShortDramaCategory, ShortDramaItem } from '@/lib/types';
 
 import PageLayout from '@/components/PageLayout';
@@ -58,7 +58,7 @@ export default function ShortDramaPage() {
   // 获取分类列表
   useEffect(() => {
     // 清理过期缓存
-    cleanExpiredCache().catch(console.error);
+    cleanExpiredCache('shortdrama-').catch(console.error);
 
     const fetchCategories = async () => {
       const cats = await getShortDramaCategories();

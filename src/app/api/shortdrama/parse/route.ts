@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, loadConfig } from '@/lib/config';
-import { parseShortDramaEpisode } from '@/lib/shortdrama.client';
+import { parseShortDramaEpisode } from '@/lib/shortdrama-api';
 import { processImageUrl } from '@/lib/utils';
 
 // 标记为动态路由

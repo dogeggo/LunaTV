@@ -129,7 +129,7 @@ async function downloadToCache(url: string, filePath: string, headers: any) {
     const response = isDoubanUrl(url)
       ? await fetchDoubanWithAntiScraping(url, {
           signal: controller.signal,
-          timeoutMs: 0,
+          timeoutMs: 10000,
         })
       : await fetch(url, {
           headers,

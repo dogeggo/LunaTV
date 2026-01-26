@@ -1,17 +1,19 @@
-/* eslint-disable no-console */
+﻿/* eslint-disable no-console */
 
 import {
   getCache,
-  getCacheKey,
+  getShortdramaCacheKey,
   setCache,
   SHORTDRAMA_CACHE_EXPIRE,
-} from './shortdrama-cache';
+} from './cache';
 import {
+  SearchResult,
   ShortDramaCategory,
   ShortDramaItem,
   ShortDramaParseResult,
 } from './types';
 import { DEFAULT_USER_AGENT } from './user-agent';
+import { processImageUrl } from './utils';
 
 const SHORTDRAMA_API_BASE = 'https://api.r2afosne.dpdns.org';
 
@@ -23,18 +25,129 @@ const isMobile = () => {
   );
 };
 
-// 获取API基础URL - 移动端使用内部API代理，桌面端直接调用外部API
+// 获取API基础URL - 浏览器端使用内部API代理，服务端直接调用外部API
 const getApiBase = (endpoint: string) => {
-  if (isMobile()) {
+  if (typeof window !== 'undefined') {
     return `/api/shortdrama${endpoint}`;
   }
-  // 桌面端使用外部API的完整路径
+  // 服务端使用外部API的完整路径
   return `${SHORTDRAMA_API_BASE}/vod${endpoint}`;
 };
 
+export interface ShortDramaDetailOptions {
+  id: string;
+  videoId: number;
+  episode: number;
+  name?: string;
+}
+
+export async function getShortDramaDetail(
+  options: ShortDramaDetailOptions,
+): Promise<SearchResult> {
+  const { id, videoId, episode, name } = options;
+  const cacheKey = getShortdramaCacheKey('shortdrama-detail-', {
+    shortdramaId: id,
+  });
+  // 临时禁用缓存进行测试 - 移动端强制刷新
+  if (!isMobile()) {
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
+  let response: SearchResult;
+  if (typeof window !== 'undefined') {
+    const titleParam = name ? `&name=${encodeURIComponent(name)}` : '';
+    let response = await fetch(
+      `/api/shortdrama/detail?id=${videoId}&episode=${episode}${titleParam}`,
+    );
+    if (!response.ok) {
+      throw new Error('获取短剧详情失败');
+    }
+    response = await response.json();
+  } else {
+    // 读取配置以获取备用API地址
+    let alternativeApiUrl: string | undefined;
+    try {
+      const { loadConfig } = await import('@/lib/config');
+      const config = await loadConfig();
+      const shortDramaConfig = config.ShortDramaConfig;
+      alternativeApiUrl = shortDramaConfig?.enableAlternative
+        ? shortDramaConfig.alternativeApiUrl
+        : undefined;
+    } catch (configError) {
+      console.error('读取短剧配置失败:', configError);
+      // 配置读取失败时，不使用备用API
+      alternativeApiUrl = undefined;
+    }
+    // 先尝试指定集数，如果提供了剧名且配置了备用API则自动fallback
+    let result = await parseShortDramaEpisode(
+      videoId,
+      episode,
+      true,
+      name || undefined,
+      alternativeApiUrl,
+    );
+
+    // 如果失败，尝试其他集数
+    if (result.code !== 0 || !result.data || !result.data.totalEpisodes) {
+      result = await parseShortDramaEpisode(
+        videoId,
+        episode === 1 ? 2 : 1,
+        true,
+        name || undefined,
+        alternativeApiUrl,
+      );
+    }
+
+    // 如果还是失败，尝试第0集
+    if (result.code !== 0 || !result.data || !result.data.totalEpisodes) {
+      result = await parseShortDramaEpisode(
+        videoId,
+        0,
+        true,
+        name || undefined,
+        alternativeApiUrl,
+      );
+    }
+    if (result.code !== 0 || !result.data) {
+      throw new Error(result.msg || '解析失败');
+    }
+    const totalEpisodes = Math.max(result.data.totalEpisodes || 1, 1);
+    // 转换为兼容格式
+    // 注意：始终使用请求的原始ID（主API的ID），不使用result.data.videoId（可能是备用API的ID）
+    response = {
+      id: id, // 使用原始请求ID，保持一致性
+      title: result.data.videoName,
+      poster: result.data.cover ? processImageUrl(result.data.cover) : '',
+      episodes: Array.from(
+        { length: totalEpisodes },
+        (_, i) => `shortdrama:${id}:${i}`, // 使用原始请求ID
+      ),
+      episodes_titles: Array.from(
+        { length: totalEpisodes },
+        (_, i) => `第${i + 1}集`,
+      ),
+      source: 'shortdrama',
+      source_name: '短剧',
+      year: new Date().getFullYear().toString(),
+      desc: result.data.description,
+      type_name: '短剧',
+      drama_name: result.data.videoName, // 添加剧名，用于备用API fallback
+    };
+
+    // 如果备用API返回了元数据，添加到响应中
+    if (result.metadata) {
+      response.metadata = result.metadata;
+    }
+  }
+  await setCache(cacheKey, response, SHORTDRAMA_CACHE_EXPIRE.details);
+  return response;
+}
+
 // 获取短剧分类列表
 export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
-  const cacheKey = getCacheKey('categories', {});
+  const cacheKey = getShortdramaCacheKey('categories', {});
 
   try {
     // 临时禁用缓存进行测试 - 移动端强制刷新
@@ -96,7 +209,7 @@ export async function getRecommendedShortDramas(
   category?: number,
   size = 10,
 ): Promise<ShortDramaItem[]> {
-  const cacheKey = getCacheKey('recommends', { category, size });
+  const cacheKey = getShortdramaCacheKey('recommends', { category, size });
 
   try {
     // 临时禁用缓存进行测试 - 移动端强制刷新
@@ -169,7 +282,7 @@ export async function getShortDramaList(
   page = 1,
   size = 20,
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
-  const cacheKey = getCacheKey('lists', { category, page, size });
+  const cacheKey = getShortdramaCacheKey('lists', { category, page, size });
 
   try {
     // 临时禁用缓存进行测试 - 移动端强制刷新
@@ -612,11 +725,12 @@ export async function parseShortDramaEpisode(
     }
 
     const timestamp = Date.now();
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/parse?${params.toString()}&_t=${timestamp}`
       : `${SHORTDRAMA_API_BASE}/vod/parse/single?${params.toString()}`;
 
-    const fetchOptions: RequestInit = isMobile()
+    const fetchOptions: RequestInit = useInternalApi
       ? {
           cache: 'no-store',
           headers: {
@@ -720,11 +834,12 @@ export async function parseShortDramaBatch(
     }
 
     const timestamp = Date.now();
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/parse?${params.toString()}&_t=${timestamp}`
       : `${SHORTDRAMA_API_BASE}/vod/parse/batch?${params.toString()}`;
 
-    const fetchOptions: RequestInit = isMobile()
+    const fetchOptions: RequestInit = useInternalApi
       ? {
           cache: 'no-store',
           headers: {
@@ -769,11 +884,12 @@ export async function parseShortDramaAll(
     }
 
     const timestamp = Date.now();
-    const apiUrl = isMobile()
+    const useInternalApi = typeof window !== 'undefined';
+    const apiUrl = useInternalApi
       ? `/api/shortdrama/parse?${params.toString()}&_t=${timestamp}`
       : `${SHORTDRAMA_API_BASE}/vod/parse/all?${params.toString()}`;
 
-    const fetchOptions: RequestInit = isMobile()
+    const fetchOptions: RequestInit = useInternalApi
       ? {
           cache: 'no-store',
           headers: {

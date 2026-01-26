@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Hls from 'hls.js';
 import { RefreshCw, X } from 'lucide-react';
@@ -7,7 +7,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
-import { ClientCache } from '@/lib/client-cache';
+import { cleanExpiredCache, getCache, setCache } from '@/lib/cache';
 import {
   deleteFavorite,
   deletePlayRecord,
@@ -19,6 +19,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
+import { getShortDramaDetail } from '@/lib/shortdrama-api';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
@@ -613,7 +614,6 @@ function PlayPageClient() {
       }
     }
 
-    const abortController = new AbortController();
     const loadShortdramaDetails = async () => {
       // 避免重复请求
       if (loadingShortdramaDetailsRef.current) return;
@@ -622,53 +622,23 @@ function PlayPageClient() {
       loadingShortdramaDetailsRef.current = true;
 
       try {
-        // 尝试从缓存获取
-        const cacheKey = `shortdrama-detail-${shortdramaId}`;
-        const cachedData = await ClientCache.get(cacheKey);
-
-        if (cachedData && !abortController.signal.aborted) {
-          setShortdramaDetails(cachedData);
-          setLoadingShortdramaDetails(false);
-          loadingShortdramaDetailsRef.current = false;
-          return;
-        }
-
-        // 传递 name 参数以支持备用API fallback
-        const dramaTitle =
-          searchParams.get('title') || videoTitleRef.current || '';
-        const titleParam = dramaTitle
-          ? `&name=${encodeURIComponent(dramaTitle)}`
-          : '';
-        const response = await fetch(
-          `/api/shortdrama/detail?id=${shortdramaId}&episode=1${titleParam}`,
-          { signal: abortController.signal },
+        const shortdramaSource = await fetchSourceDetail(
+          'shortdrama',
+          shortdramaId,
         );
-        if (response.ok) {
-          const data = await response.json();
-          // 再次检查是否被中断，避免设置状态
-          if (!abortController.signal.aborted) {
-            setShortdramaDetails(data);
-            // 缓存数据，30分钟过期
-            await ClientCache.set(cacheKey, data, 30 * 60);
-          }
-        }
+        setShortdramaDetails(shortdramaSource[0]);
       } catch (error: any) {
         if (error.name !== 'AbortError') {
           console.error('Failed to load shortdrama details:', error);
         }
       } finally {
-        if (!abortController.signal.aborted) {
-          setLoadingShortdramaDetails(false);
-          loadingShortdramaDetailsRef.current = false;
-        }
+        setLoadingShortdramaDetails(false);
+        loadingShortdramaDetailsRef.current = false;
       }
     };
-
     loadShortdramaDetails();
-
     // 清理函数：取消请求
     return () => {
-      abortController.abort();
       loadingShortdramaDetailsRef.current = false;
     };
     // 依赖说明：
@@ -744,95 +714,6 @@ function PlayPageClient() {
     Map<string, { quality: string; loadSpeed: string; pingTime: number }>
   >(new Map());
 
-  // 弹幕缓存：避免重复请求相同的弹幕数据，支持页面刷新持久化（统一存储）
-  const DANMU_CACHE_DURATION = 30 * 60; // 30分钟缓存（秒）
-  const DANMU_CACHE_KEY_PREFIX = 'danmu-cache';
-
-  // 获取单个弹幕缓存
-  const getDanmuCacheItem = async (
-    key: string,
-  ): Promise<{ data: any[]; timestamp: number } | null> => {
-    try {
-      const cacheKey = `${DANMU_CACHE_KEY_PREFIX}-${key}`;
-      // 优先从统一存储获取
-      const cached = await ClientCache.get(cacheKey);
-      if (cached) return cached;
-
-      // 兜底：从localStorage获取（兼容性）
-      if (typeof localStorage !== 'undefined') {
-        const oldCacheKey = 'lunatv_danmu_cache';
-        const localCached = localStorage.getItem(oldCacheKey);
-        if (localCached) {
-          const parsed = JSON.parse(localCached);
-          const cacheMap = new Map(Object.entries(parsed));
-          const item = cacheMap.get(key) as
-            | { data: any[]; timestamp: number }
-            | undefined;
-          if (
-            item &&
-            typeof item.timestamp === 'number' &&
-            Date.now() - item.timestamp < DANMU_CACHE_DURATION * 1000
-          ) {
-            return item;
-          }
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.warn('读取弹幕缓存失败:', error);
-      return null;
-    }
-  };
-
-  // 保存单个弹幕缓存
-  const setDanmuCacheItem = async (key: string, data: any[]): Promise<void> => {
-    try {
-      const cacheKey = `${DANMU_CACHE_KEY_PREFIX}-${key}`;
-      const cacheData = { data, timestamp: Date.now() };
-
-      // 主要存储：统一存储
-      await ClientCache.set(cacheKey, cacheData, DANMU_CACHE_DURATION);
-
-      // 兜底存储：localStorage（兼容性，但只存储最近几个）
-      if (typeof localStorage !== 'undefined') {
-        try {
-          const oldCacheKey = 'lunatv_danmu_cache';
-          let localCache: Map<string, { data: any[]; timestamp: number }> =
-            new Map();
-
-          const existing = localStorage.getItem(oldCacheKey);
-          if (existing) {
-            const parsed = JSON.parse(existing);
-            localCache = new Map(Object.entries(parsed)) as Map<
-              string,
-              { data: any[]; timestamp: number }
-            >;
-          }
-
-          // 清理过期项并限制数量（最多保留10个）
-          const now = Date.now();
-          const validEntries = Array.from(localCache.entries())
-            .filter(
-              ([, item]) =>
-                typeof item.timestamp === 'number' &&
-                now - item.timestamp < DANMU_CACHE_DURATION * 1000,
-            )
-            .slice(-9); // 保留9个，加上新的共10个
-
-          validEntries.push([key, cacheData]);
-
-          const obj = Object.fromEntries(validEntries);
-          localStorage.setItem(oldCacheKey, JSON.stringify(obj));
-        } catch (_e) {
-          // localStorage可能满了，忽略错误
-        }
-      }
-    } catch (error) {
-      console.warn('保存弹幕缓存失败:', error);
-    }
-  };
-
   // 折叠状态（仅在 lg 及以上屏幕有效）
   const [isEpisodeSelectorCollapsed, setIsEpisodeSelectorCollapsed] =
     useState(false);
@@ -886,81 +767,35 @@ function PlayPageClient() {
   };
 
   // bangumi缓存配置
-  const BANGUMI_CACHE_EXPIRE = 4 * 60 * 60 * 1000; // 4小时，和douban详情一致
-
-  // bangumi缓存工具函数（统一存储）
-  const getBangumiCache = async (id: number) => {
-    try {
-      const cacheKey = `bangumi-details-${id}`;
-      // 优先从统一存储获取
-      const cached = await ClientCache.get(cacheKey);
-      if (cached) return cached;
-
-      // 兜底：从localStorage获取（兼容性）
-      if (typeof localStorage !== 'undefined') {
-        const localCached = localStorage.getItem(cacheKey);
-        if (localCached) {
-          const { data, expire } = JSON.parse(localCached);
-          if (Date.now() <= expire) {
-            return data;
-          }
-          localStorage.removeItem(cacheKey);
-        }
-      }
-
-      return null;
-    } catch (e) {
-      console.warn('获取Bangumi缓存失败:', e);
-      return null;
-    }
-  };
-
-  const setBangumiCache = async (id: number, data: any) => {
-    try {
-      const cacheKey = `bangumi-details-${id}`;
-      const expireSeconds = Math.floor(BANGUMI_CACHE_EXPIRE / 1000); // 转换为秒
-
-      // 主要存储：统一存储
-      await ClientCache.set(cacheKey, data, expireSeconds);
-
-      // 兜底存储：localStorage（兼容性）
-      if (typeof localStorage !== 'undefined') {
-        try {
-          const cacheData = {
-            data,
-            expire: Date.now() + BANGUMI_CACHE_EXPIRE,
-            created: Date.now(),
-          };
-          localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-        } catch (_e) {
-          // localStorage可能满了，忽略错误
-        }
-      }
-    } catch (e) {
-      console.warn('设置Bangumi缓存失败:', e);
-    }
-  };
+  const BANGUMI_CACHE_EXPIRE = 4 * 60 * 60; // 4小时，和douban详情一致
 
   // 获取bangumi详情（带缓存）
   const fetchBangumiDetails = async (bangumiId: number) => {
-    // 检查缓存
-    const cached = await getBangumiCache(bangumiId);
+    const cacheKey = `bangumi-details-${bangumiId}`;
+    // 优先从统一存储获取
+    let cached = await getCache(cacheKey);
     if (cached) {
       console.log(`Bangumi详情缓存命中: ${bangumiId}`);
       return cached;
     }
-
     try {
       const response = await fetch(
         `/api/proxy/bangumi?path=v0/subjects/${bangumiId}`,
       );
       if (response.ok) {
         const bangumiData = await response.json();
-
-        // 保存到缓存
-        await setBangumiCache(bangumiId, bangumiData);
+        const cacheKey = `bangumi-details-${bangumiId}`;
+        const cacheData = {
+          bangumiData,
+          expire: Date.now() + BANGUMI_CACHE_EXPIRE,
+          created: Date.now(),
+        };
+        await setCache(
+          cacheKey,
+          JSON.stringify(cacheData),
+          BANGUMI_CACHE_EXPIRE,
+        );
         console.log(`Bangumi详情已缓存: ${bangumiId}`);
-
         return bangumiData;
       }
     } catch (error) {
@@ -1245,6 +1080,15 @@ function PlayPageClient() {
     setNetdiskTotal(0);
 
     try {
+      const cacheKey = `netdisk-search-${query.trim()}`;
+      // 优先从统一存储获取
+      let cached = await getCache(cacheKey);
+      if (cached) {
+        console.log(`网盘搜索缓存命中: ${query.trim()}`);
+        setNetdiskResults(cached.data.merged_by_type || {});
+        setNetdiskTotal(cached.data.total || 0);
+        return;
+      }
       const response = await fetch(
         `/api/netdisk/search?q=${encodeURIComponent(query.trim())}`,
       );
@@ -1256,6 +1100,7 @@ function PlayPageClient() {
         console.log(
           `网盘搜索完成: "${query}" - ${data.data.total || 0} 个结果`,
         );
+        await setCache(cacheKey, data, 2 * 60 * 60);
       } else {
         setNetdiskError(data.error || '网盘搜索失败');
       }
@@ -1283,7 +1128,7 @@ function PlayPageClient() {
     try {
       // 检查缓存
       const cacheKey = `douban-celebrity-${celebrityName}`;
-      const cached = await ClientCache.get(cacheKey);
+      const cached = await getCache(cacheKey);
 
       if (cached) {
         console.log(`演员作品缓存命中: ${celebrityName}`);
@@ -1309,10 +1154,7 @@ function PlayPageClient() {
           year: item.url?.match(/\/subject\/(\d+)\//)?.[1] || '',
           source: 'douban',
         }));
-
-        // 保存到缓存（2小时）
-        await ClientCache.set(cacheKey, works, 2 * 60 * 60);
-
+        await setCache(cacheKey, works, 2 * 60 * 60);
         setCelebrityWorks(works);
         console.log(
           `找到 ${works.length} 部 ${celebrityName} 的作品（豆瓣，已缓存）`,
@@ -1336,8 +1178,6 @@ function PlayPageClient() {
               ...work,
               source: 'tmdb',
             }));
-            // 保存到缓存（2小时）
-            await ClientCache.set(cacheKey, worksWithSource, 2 * 60 * 60);
             setCelebrityWorks(worksWithSource);
             console.log(
               `找到 ${tmdbResult.list.length} 部 ${celebrityName} 的作品（TMDB，已缓存）`,
@@ -1820,7 +1660,7 @@ function PlayPageClient() {
           // 清理弹幕缓存
           try {
             // 清理统一存储中的弹幕缓存
-            await ClientCache.clearExpired('danmu-cache');
+            await cleanExpiredCache('danmu-cache');
 
             // 兜底清理localStorage中的弹幕缓存（兼容性）
             const oldCacheKey = 'lunatv_danmu_cache';
@@ -2583,11 +2423,11 @@ function PlayPageClient() {
         return [];
       }
       // 生成缓存键（使用state值确保准确性）
-      const cacheKey = `${currentVideoTitle}_${currentVideoYear}_${currentVideoDoubanId}_${currentEpisodeNum}`;
       const now = Date.now();
-
-      // 检查缓存
-      const cached = await getDanmuCacheItem(cacheKey);
+      const DANMU_CACHE_DURATION = 30 * 60; // 30分钟缓存（秒）
+      const cacheKey = `danmu-cache-${currentVideoTitle}_${currentVideoYear}_${currentVideoDoubanId}_${currentEpisodeNum}`;
+      // 优先从统一存储获取
+      const cached = await getCache(cacheKey);
       if (cached) {
         if (now - cached.timestamp < DANMU_CACHE_DURATION * 1000) {
           console.log('📊 缓存弹幕数量:', cached.data.length);
@@ -2609,10 +2449,7 @@ function PlayPageClient() {
       console.log('外部弹幕加载成功:', data.total || 0, '条');
 
       const finalDanmu = data.danmu || [];
-
-      // 保存到统一存储
-      await setDanmuCacheItem(cacheKey, finalDanmu);
-
+      await setCache(cacheKey, finalDanmu, DANMU_CACHE_DURATION);
       return finalDanmu;
     } catch (error) {
       console.error('加载外部弹幕失败:', error);
@@ -2718,44 +2555,48 @@ function PlayPageClient() {
     }
   }, [detail, currentEpisodeIndex]);
 
+  const fetchSourceDetail = async (
+    source: string,
+    id: string,
+  ): Promise<SearchResult[]> => {
+    try {
+      let detailData: SearchResult;
+      // 判断是否为短剧源
+      if (source === 'shortdrama') {
+        const dramaTitle =
+          searchParams.get('title') || videoTitleRef.current || '';
+        const videoId = Number.parseInt(id, 10);
+        if (Number.isNaN(videoId)) {
+          throw new Error('短剧ID格式错误');
+        }
+        detailData = await getShortDramaDetail({
+          id,
+          videoId,
+          episode: 1,
+          name: dramaTitle || undefined,
+        });
+      } else {
+        const response = await fetch(
+          `/api/detail?source=${encodeURIComponent(source)}&id=${encodeURIComponent(id)}`,
+        );
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || '获取视频详情失败');
+        }
+        detailData = await response.json();
+      }
+      setAvailableSources([detailData]);
+      return [detailData];
+    } catch (err) {
+      console.error('获取视频详情失败:', err);
+      return [];
+    } finally {
+      setSourceSearchLoading(false);
+    }
+  };
+
   // 进入页面时直接获取全部源信息
   useEffect(() => {
-    const fetchSourceDetail = async (
-      source: string,
-      id: string,
-    ): Promise<SearchResult[]> => {
-      try {
-        let detailResponse;
-
-        // 判断是否为短剧源
-        if (source === 'shortdrama') {
-          // 传递 title 参数以支持备用API fallback
-          // 优先使用 URL 参数的 title，因为 videoTitleRef 可能还未初始化
-          const dramaTitle =
-            searchParams.get('title') || videoTitleRef.current || '';
-          const titleParam = dramaTitle
-            ? `&name=${encodeURIComponent(dramaTitle)}`
-            : '';
-          detailResponse = await fetch(
-            `/api/shortdrama/detail?id=${id}&episode=1${titleParam}`,
-          );
-        } else {
-          detailResponse = await fetch(`/api/detail?source=${source}&id=${id}`);
-        }
-
-        if (!detailResponse.ok) {
-          throw new Error('获取视频详情失败');
-        }
-        const detailData = (await detailResponse.json()) as SearchResult;
-        setAvailableSources([detailData]);
-        return [detailData];
-      } catch (err) {
-        console.error('获取视频详情失败:', err);
-        return [];
-      } finally {
-        setSourceSearchLoading(false);
-      }
-    };
     const fetchSourcesData = async (query: string): Promise<SearchResult[]> => {
       // 使用智能搜索变体获取全部源信息
       try {

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
+import { DOUBAN_CACHE_EXPIRE } from '@/lib/cache';
 import { getCacheTime } from '@/lib/config';
-import { DOUBAN_CACHE_EXPIRE, getDoubanList } from '@/lib/douban-api';
+import { getDoubanList } from '@/lib/douban-api';
 import { fetchDouBanHtml } from '@/lib/douban-challenge';
 import { DoubanMovieDetail, DoubanResult } from '@/lib/types';
 
@@ -78,9 +79,7 @@ function handleTop250(pageStart: number) {
   const url = `https://movie.douban.com/top250?start=${pageStart}&filter=`;
 
   return fetchDouBanHtml(url, {
-    timeoutMs: 20000,
-    minRequestIntervalMs: 2000,
-    randomDelayMs: [500, 1500],
+    timeoutMs: 10000,
   })
     .then(async (html) => {
       // 通过正则同时捕获影片 id、标题、封面以及评分

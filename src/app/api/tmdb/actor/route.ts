@@ -6,7 +6,7 @@ import {
   isTMDBEnabled,
   searchTMDBActorWorks,
   TMDBFilterOptions,
-} from '@/lib/tmdb.client';
+} from '@/lib/tmdb-api';
 
 const TMDB_CACHE_TIME = 6 * 60 * 60; // 6小时
 

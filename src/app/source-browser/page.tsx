@@ -4,7 +4,7 @@ import { ExternalLink, Layers, Server, Tv } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ClientCache } from '@/lib/client-cache';
+import { getCache, setCache } from '@/lib/cache';
 import type {
   DoubanMovieDetail,
   SearchResult as GlobalSearchResult,
@@ -411,9 +411,7 @@ export default function SourceBrowserPage() {
       setPreviewDouban(null);
       const keyRaw = `douban-details-id=${doubanId}`;
       // 1) 先查缓存（与全站一致的 ClientCache）
-      const cached = (await ClientCache.get(
-        keyRaw,
-      )) as DoubanMovieDetail | null;
+      const cached = (await getCache(keyRaw)) as DoubanMovieDetail | null;
       if (cached) {
         setPreviewDouban(cached);
         return;
@@ -433,7 +431,7 @@ export default function SourceBrowserPage() {
         setPreviewDouban(normalized);
         // 3) 回写缓存（4小时）
         try {
-          await ClientCache.set(keyRaw, normalized, 14400);
+          await setCache(keyRaw, normalized, 14400);
         } catch (err) {
           void err; // ignore cache write failure
         }

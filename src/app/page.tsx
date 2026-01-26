@@ -26,6 +26,7 @@ import {
   BangumiCalendarData,
   GetBangumiCalendarData,
 } from '@/lib/bangumi.client';
+import { cleanExpiredCache } from '@/lib/cache';
 // 客户端收藏 API
 import {
   clearAllFavorites,
@@ -34,8 +35,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanCategories } from '@/lib/douban-api';
-import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
-import { cleanExpiredCache } from '@/lib/shortdrama-cache';
+import { getRecommendedShortDramas } from '@/lib/shortdrama-api';
 import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
 import { DoubanMovieDetail } from '@/lib/types';
 
@@ -252,7 +252,7 @@ function HomeClient() {
     };
 
     scheduleIdle(() => {
-      cleanExpiredCache().catch(console.error);
+      cleanExpiredCache('shortdrama-').catch(console.error);
     }, 2000);
 
     const fetchAll = async () => {

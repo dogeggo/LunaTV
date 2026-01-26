@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { DOUBAN_CACHE_EXPIRE, getDoubanCategories } from '@/lib/douban-api';
+import { DOUBAN_CACHE_EXPIRE } from '@/lib/cache';
+import { getDoubanCategories } from '@/lib/douban-api';
 import { DoubanResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
