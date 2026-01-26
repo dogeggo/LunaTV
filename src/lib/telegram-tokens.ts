@@ -12,13 +12,13 @@ export async function setTelegramToken(
   token: string,
   data: TelegramTokenData,
 ): Promise<void> {
-  const key = `telegram_token:${token}`;
+  const cacheKey = `telegram_token:${token}`;
   const now = Date.now();
   const ttlMs = data.expiresAt - now;
   const ttl = Math.floor(ttlMs / 1000); // 转换为秒
 
   console.log('[TelegramToken] setTelegramToken called');
-  console.log('[TelegramToken] Key:', key);
+  console.log('[TelegramToken] Key:', cacheKey);
   console.log('[TelegramToken] Current time:', now);
   console.log('[TelegramToken] Expires at:', data.expiresAt);
   console.log('[TelegramToken] TTL (ms):', ttlMs);
@@ -53,7 +53,7 @@ export async function setTelegramToken(
 
   try {
     // 使用通用缓存接口，自动兼容所有存储类型
-    await setCache(key, data, finalTtl);
+    await setCache(cacheKey, data, finalTtl);
     console.log(
       '[TelegramToken] Token stored successfully with TTL:',
       finalTtl,

@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+import { DOUBAN_CACHE_EXPIRE, getCache, setCache } from '@/lib/cache';
 import { getExtractPlatformUrls } from '@/lib/douban-api';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
@@ -595,6 +596,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const cacheKey = `danmu-cache-${title}_${year}_${doubanId}_${episode}`;
+
+    const cached = await getCache(cacheKey);
+
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
     let platformUrls: PlatformUrl[] = [];
 
     // 优先从豆瓣页面提取链接
@@ -619,7 +628,6 @@ export async function GET(request: NextRequest) {
 
     if (platformUrls.length === 0) {
       console.log('❌ 未找到任何视频平台链接，返回空弹幕结果');
-      console.log('💡 建议: 检查标题是否正确，或者该内容可能暂不支持弹幕');
 
       return NextResponse.json({
         danmu: [],
@@ -707,11 +715,15 @@ export async function GET(request: NextRequest) {
       `🎯 弹幕去重优化: ${allDanmu.length} -> ${uniqueDanmu.length} 条`,
     );
 
-    return NextResponse.json({
+    let result = {
       danmu: uniqueDanmu,
       platforms: platformInfo,
       total: uniqueDanmu.length,
-    });
+    };
+
+    await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.danmu);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('外部弹幕获取失败:', error);
     return NextResponse.json(

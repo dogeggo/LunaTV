@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime } from '@/lib/config';
+import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
 import { processImageUrl } from '@/lib/utils';
 
 // 强制动态路由，禁用所有缓存
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     // 测试1小时HTTP缓存策略
     const response = NextResponse.json(result);
     // 1小时 = 3600秒
-    const cacheTime = await getCacheTime();
+    const cacheTime = SHORTDRAMA_CACHE_EXPIRE.recommends;
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

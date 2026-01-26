@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 
-import { DOUBAN_CACHE_EXPIRE } from '@/lib/cache';
-import { getCacheTime } from '@/lib/config';
+import {
+  DOUBAN_CACHE_EXPIRE,
+  getCache,
+  getDouBanCacheKey,
+  setCache,
+} from '@/lib/cache';
 import { getDoubanList } from '@/lib/douban-api';
 import { fetchDouBanHtml } from '@/lib/douban-challenge';
 import { DoubanMovieDetail, DoubanResult } from '@/lib/types';
@@ -75,8 +79,21 @@ export async function GET(request: Request) {
   }
 }
 
-function handleTop250(pageStart: number) {
+async function handleTop250(pageStart: number) {
   const url = `https://movie.douban.com/top250?start=${pageStart}&filter=`;
+  const cacheKey = getDouBanCacheKey('top250', {});
+  const cacheTime = DOUBAN_CACHE_EXPIRE.top250;
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+        'CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Vercel-CDN-Cache-Control': `public, s-maxage=${cacheTime}`,
+        'Netlify-Vary': 'query',
+      },
+    });
+  }
 
   return fetchDouBanHtml(url, {
     timeoutMs: 10000,
@@ -111,8 +128,7 @@ function handleTop250(pageStart: number) {
         message: '获取成功',
         list: movies,
       };
-
-      const cacheTime = await getCacheTime();
+      await setCache(cacheKey, apiResponse, cacheTime);
       return NextResponse.json(apiResponse, {
         headers: {
           'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

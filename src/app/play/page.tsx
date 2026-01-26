@@ -7,7 +7,14 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
-import { cleanExpiredCache, getCache, setCache } from '@/lib/cache';
+import {
+  cleanExpiredCache,
+  DOUBAN_CACHE_EXPIRE,
+  getCache,
+  NETDISK_CACHE_EXPIRE,
+  setCache,
+  TMDB_CACHE_EXPIRE,
+} from '@/lib/cache';
 import {
   deleteFavorite,
   deletePlayRecord,
@@ -766,9 +773,6 @@ function PlayPageClient() {
     return id > 0 && length >= 3 && length <= 6;
   };
 
-  // bangumi缓存配置
-  const BANGUMI_CACHE_EXPIRE = 4 * 60 * 60; // 4小时，和douban详情一致
-
   // 获取bangumi详情（带缓存）
   const fetchBangumiDetails = async (bangumiId: number) => {
     const cacheKey = `bangumi-details-${bangumiId}`;
@@ -787,13 +791,13 @@ function PlayPageClient() {
         const cacheKey = `bangumi-details-${bangumiId}`;
         const cacheData = {
           bangumiData,
-          expire: Date.now() + BANGUMI_CACHE_EXPIRE,
+          expire: Date.now() + DOUBAN_CACHE_EXPIRE.details,
           created: Date.now(),
         };
         await setCache(
           cacheKey,
           JSON.stringify(cacheData),
-          BANGUMI_CACHE_EXPIRE,
+          DOUBAN_CACHE_EXPIRE.details,
         );
         console.log(`Bangumi详情已缓存: ${bangumiId}`);
         return bangumiData;
@@ -1100,7 +1104,7 @@ function PlayPageClient() {
         console.log(
           `网盘搜索完成: "${query}" - ${data.data.total || 0} 个结果`,
         );
-        await setCache(cacheKey, data, 2 * 60 * 60);
+        await setCache(cacheKey, data, NETDISK_CACHE_EXPIRE.search);
       } else {
         setNetdiskError(data.error || '网盘搜索失败');
       }
@@ -1154,7 +1158,7 @@ function PlayPageClient() {
           year: item.url?.match(/\/subject\/(\d+)\//)?.[1] || '',
           source: 'douban',
         }));
-        await setCache(cacheKey, works, 2 * 60 * 60);
+        await setCache(cacheKey, works, TMDB_CACHE_EXPIRE.actor_search);
         setCelebrityWorks(works);
         console.log(
           `找到 ${works.length} 部 ${celebrityName} 的作品（豆瓣，已缓存）`,
@@ -2424,12 +2428,11 @@ function PlayPageClient() {
       }
       // 生成缓存键（使用state值确保准确性）
       const now = Date.now();
-      const DANMU_CACHE_DURATION = 30 * 60; // 30分钟缓存（秒）
       const cacheKey = `danmu-cache-${currentVideoTitle}_${currentVideoYear}_${currentVideoDoubanId}_${currentEpisodeNum}`;
       // 优先从统一存储获取
       const cached = await getCache(cacheKey);
       if (cached) {
-        if (now - cached.timestamp < DANMU_CACHE_DURATION * 1000) {
+        if (now - cached.timestamp < DOUBAN_CACHE_EXPIRE.danmu * 1000) {
           console.log('📊 缓存弹幕数量:', cached.data.length);
           return cached.data;
         }
@@ -2449,7 +2452,7 @@ function PlayPageClient() {
       console.log('外部弹幕加载成功:', data.total || 0, '条');
 
       const finalDanmu = data.danmu || [];
-      await setCache(cacheKey, finalDanmu, DANMU_CACHE_DURATION);
+      await setCache(cacheKey, finalDanmu, DOUBAN_CACHE_EXPIRE.danmu);
       return finalDanmu;
     } catch (error) {
       console.error('加载外部弹幕失败:', error);

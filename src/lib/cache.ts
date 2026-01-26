@@ -8,6 +8,8 @@ export const DOUBAN_CACHE_EXPIRE = {
   comments: 24 * 60 * 60, // 短评1小时（更新频繁）
   platform_link: 24 * 60 * 60, // 平台链接
   trailer_url: 7 * 24 * 60 * 60, // 7 days
+  danmu: 24 * 60 * 60,
+  top250: 24 * 60 * 60,
 };
 
 // 短剧数据缓存配置（秒）
@@ -42,32 +44,34 @@ export const YOUTUBE_CACHE_EXPIRE = {
   search_fallback: 5 * 60, // 失败兜底5分钟
 };
 
-// 初始化缓存系统（参考豆瓣实现）
-async function initShortdramaCache(): Promise<void> {
-  // 立即清理一次过期缓存
-  await cleanExpiredCache('shortdrama-');
-
+async function initCache(): Promise<void> {
+  let prefixs = [
+    'douban-',
+    'tmdb-',
+    'shortdrama-',
+    'netdisk-',
+    'bangumi-',
+    'danmu-',
+  ];
+  for (const prefix of prefixs) {
+    // 立即清理一次过期缓存
+    await cleanExpiredCache(prefix);
+  }
   // 每10分钟清理一次过期缓存
-  setInterval(() => cleanExpiredCache('shortdrama-'), 10 * 60 * 1000);
-
-  console.log('短剧缓存系统已初始化');
-}
-
-// 初始化缓存系统
-async function initTMDBCache(): Promise<void> {
-  // 立即清理一次过期缓存
-  await cleanExpiredCache('tmdb-');
-
-  // 每10分钟清理一次过期缓存
-  setInterval(() => cleanExpiredCache('tmdb-'), 10 * 60 * 1000);
-
-  console.log('TMDB缓存系统已初始化');
+  setInterval(
+    () => {
+      for (const prefix of prefixs) {
+        cleanExpiredCache(prefix);
+      }
+    },
+    10 * 60 * 1000,
+  );
+  console.log('缓存系统已初始化');
 }
 
 // 在模块加载时初始化缓存系统
 if (typeof window !== 'undefined') {
-  initShortdramaCache().catch(console.error);
-  initTMDBCache().catch(console.error);
+  initCache().catch(console.error);
 }
 
 // 缓存工具函数

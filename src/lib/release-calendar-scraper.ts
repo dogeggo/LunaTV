@@ -271,7 +271,6 @@ export async function scrapeMovieReleases(
         Accept:
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
         'Cache-Control': 'max-age=0',
         DNT: '1',
         ...secChHeaders, // Chrome/Edge 的 Sec-CH-UA 头部
@@ -340,7 +339,6 @@ export async function scrapeTVReleases(
         Accept:
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
         'Cache-Control': 'max-age=0',
         DNT: '1',
         ...secChHeaders, // Chrome/Edge 的 Sec-CH-UA 头部
@@ -645,6 +643,47 @@ function parseHomepageHTML(
 /**
  * 抓取电影首页（包含2026年1月数据）
  */
+const HOMEPAGE_DOMAINS = [
+  'https://g.manmankan.com',
+  'https://m.manmankan.com',
+  'https://www.manmankan.com',
+];
+
+async function fetchHomepageHtmlWithFallback(
+  path: string,
+  headers: Record<string, string>,
+): Promise<{ html: string; url: string }> {
+  let lastError: unknown;
+
+  for (const domain of HOMEPAGE_DOMAINS) {
+    const url = `${domain}${path}`;
+    try {
+      const response = await fetch(url, {
+        headers: {
+          ...headers,
+          Referer: `${domain}/`,
+        },
+        signal: AbortSignal.timeout(20000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const html = await response.text();
+      return { html, url };
+    } catch (error) {
+      lastError = error;
+      console.warn(`Homepage fetch failed for ${url}:`, error);
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+  throw new Error('Homepage fetch failed');
+}
+
 export async function scrapeMovieHomepage(
   retryCount = 0,
 ): Promise<ReleaseCalendarItem[]> {
@@ -655,36 +694,25 @@ export async function scrapeMovieHomepage(
     await randomDelay(500, 1500);
 
     // 使用 www.manmankan.com 而不是 g.manmankan.com
-    const url = `https://www.manmankan.com/dy2013/dianying/`;
+    const path = '/dy2013/dianying/';
 
     const { ua, browser, platform } = getRandomUserAgentWithInfo();
     const secChHeaders = getSecChUaHeaders(browser, platform);
 
-    const response = await fetch(url, {
-      headers: {
-        Accept:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Cache-Control': 'max-age=0',
-        DNT: '1',
-        ...secChHeaders,
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': ua,
-        Referer: 'https://www.manmankan.com/',
-      },
-      signal: AbortSignal.timeout(20000),
+    const { html } = await fetchHomepageHtmlWithFallback(path, {
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Cache-Control': 'max-age=0',
+      DNT: '1',
+      ...secChHeaders,
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      'User-Agent': ua,
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const html = await response.text();
     const items = parseHomepageHTML(html, 'movie');
 
     console.log(`✅ 电影首页数据抓取成功: ${items.length} 部`);
@@ -720,36 +748,25 @@ export async function scrapeTVHomepage(
   try {
     await randomDelay(500, 1500);
 
-    const url = `https://www.manmankan.com/dy2013/dianshiju/`;
+    const path = '/dy2013/dianshiju/';
 
     const { ua, browser, platform } = getRandomUserAgentWithInfo();
     const secChHeaders = getSecChUaHeaders(browser, platform);
 
-    const response = await fetch(url, {
-      headers: {
-        Accept:
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Cache-Control': 'max-age=0',
-        DNT: '1',
-        ...secChHeaders,
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': ua,
-        Referer: 'https://www.manmankan.com/',
-      },
-      signal: AbortSignal.timeout(20000),
+    const { html } = await fetchHomepageHtmlWithFallback(path, {
+      Accept:
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Cache-Control': 'max-age=0',
+      DNT: '1',
+      ...secChHeaders,
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      'User-Agent': ua,
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const html = await response.text();
     const items = parseHomepageHTML(html, 'tv');
 
     console.log(`✅ 电视剧首页数据抓取成功: ${items.length} 部`);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime, loadConfig } from '@/lib/config';
+import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
+import { loadConfig } from '@/lib/config';
 import { parseShortDramaEpisode } from '@/lib/shortdrama-api';
 import { processImageUrl } from '@/lib/utils';
 
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
     };
 
     // 设置与豆瓣一致的缓存策略
-    const cacheTime = await getCacheTime();
+    const cacheTime = SHORTDRAMA_CACHE_EXPIRE.parse;
     const finalResponse = NextResponse.json(response);
     finalResponse.headers.set(
       'Cache-Control',
