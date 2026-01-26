@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
+import { getCache, setCache, YOUTUBE_CACHE_EXPIRE } from '@/lib/cache';
 import { hasSpecialFeaturePermission, loadConfig } from '@/lib/config';
-import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -190,8 +190,6 @@ export async function GET(request: NextRequest) {
       50,
     );
 
-    // YouTube搜索缓存：60分钟（因为YouTube内容更新频率相对较低）
-    const YOUTUBE_CACHE_TIME = 60 * 60; // 60分钟（秒）
     const enabledRegionsStr =
       (youtubeConfig.enabledRegions || []).sort().join(',') || 'none';
     const enabledCategoriesStr =
@@ -203,7 +201,7 @@ export async function GET(request: NextRequest) {
 
     // 服务端直接调用数据库（不用ClientCache，避免HTTP循环调用）
     try {
-      const cached = await db.getCache(cacheKey);
+      const cached = await getCache(cacheKey);
       if (cached) {
         console.log(`✅ YouTube搜索缓存命中(数据库): "${query}"`);
         return NextResponse.json({
@@ -270,9 +268,9 @@ export async function GET(request: NextRequest) {
 
       // 服务端直接保存到数据库（不用ClientCache，避免HTTP循环调用）
       try {
-        await db.setCache(cacheKey, responseData, YOUTUBE_CACHE_TIME);
+        await setCache(cacheKey, responseData, YOUTUBE_CACHE_EXPIRE.search);
         console.log(
-          `💾 YouTube搜索演示结果已缓存(数据库): "${query}" - ${responseData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_TIME}s`,
+          `💾 YouTube搜索演示结果已缓存(数据库): "${query}" - ${responseData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_EXPIRE.search}s`,
         );
       } catch (cacheError) {
         console.warn('YouTube搜索缓存保存失败:', cacheError);
@@ -366,9 +364,9 @@ export async function GET(request: NextRequest) {
 
     // 服务端直接保存到数据库（不用ClientCache，避免HTTP循环调用）
     try {
-      await db.setCache(cacheKey, responseData, YOUTUBE_CACHE_TIME);
+      await setCache(cacheKey, responseData, YOUTUBE_CACHE_EXPIRE.search);
       console.log(
-        `💾 YouTube搜索API结果已缓存(数据库): "${query}" - ${responseData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_TIME}s`,
+        `💾 YouTube搜索API结果已缓存(数据库): "${query}" - ${responseData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_EXPIRE.search}s`,
       );
     } catch (cacheError) {
       console.warn('YouTube搜索缓存保存失败:', cacheError);
@@ -402,9 +400,13 @@ export async function GET(request: NextRequest) {
     try {
       // 在catch块中重新构建简化的cacheKey
       const fallbackCacheKey = `youtube-search-fallback-${query}`;
-      await db.setCache(fallbackCacheKey, fallbackData, 5 * 60); // 5分钟
+      await setCache(
+        fallbackCacheKey,
+        fallbackData,
+        YOUTUBE_CACHE_EXPIRE.search_fallback,
+      );
       console.log(
-        `💾 YouTube搜索备用结果已缓存(数据库): "${query}" - ${fallbackData.videos.length} 个结果, TTL: 5分钟`,
+        `💾 YouTube搜索备用结果已缓存(数据库): "${query}" - ${fallbackData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_EXPIRE.search_fallback}s`,
       );
     } catch (cacheError) {
       console.warn('YouTube搜索备用缓存保存失败:', cacheError);

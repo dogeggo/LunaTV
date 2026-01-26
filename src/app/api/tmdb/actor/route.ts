@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCacheTime } from '@/lib/config';
-import { db } from '@/lib/db';
+import { TMDB_CACHE_EXPIRE } from '@/lib/cache';
 import {
   isTMDBEnabled,
   searchTMDBActorWorks,
   TMDBFilterOptions,
 } from '@/lib/tmdb-api';
-
-const TMDB_CACHE_TIME = 6 * 60 * 60; // 6小时
 
 export const runtime = 'nodejs';
 
@@ -120,26 +117,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 生成缓存key
-    const cacheParams = { actorName: actorName.trim(), type, ...filterOptions };
-    const cacheKey = `tmdb-actor_works-${JSON.stringify(cacheParams)}`;
-
-    console.log(`🔍 [TMDB API] 检查缓存: ${cacheKey}`);
-
-    // 检查缓存
-    try {
-      const cachedResult = await db.getCache(cacheKey);
-      if (cachedResult) {
-        console.log(
-          `✅ [TMDB API] 缓存命中: ${actorName} - ${cachedResult.list?.length || 0} 项`,
-        );
-        return NextResponse.json(cachedResult);
-      }
-      console.log(`❌ [TMDB API] 缓存未命中，开始搜索...`);
-    } catch (cacheError) {
-      console.warn('TMDB缓存检查失败:', cacheError);
-    }
-
     console.log(`[TMDB演员搜索API] 搜索演员: ${actorName}, 类型: ${type}`);
     console.log(`[TMDB演员搜索API] 筛选参数:`, filterOptions);
 
@@ -154,18 +131,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`[TMDB演员搜索API] 搜索结果: ${result.list?.length || 0} 项`);
 
-    // 缓存结果
-    try {
-      await db.setCache(cacheKey, result, TMDB_CACHE_TIME);
-      console.log(
-        `💾 TMDB演员搜索结果已缓存(数据库): "${actorName}" - ${result.list?.length || 0} 个结果, TTL: ${TMDB_CACHE_TIME}s`,
-      );
-    } catch (cacheError) {
-      console.warn('TMDB演员搜索缓存保存失败:', cacheError);
-    }
-
     // 设置合理的缓存时间
-    const cacheTime = await getCacheTime();
+    const cacheTime = TMDB_CACHE_EXPIRE.actor_search;
     return NextResponse.json(result, {
       headers: {
         'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

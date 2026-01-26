@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
+import { getCache, NETDISK_CACHE_EXPIRE, setCache } from '@/lib/cache';
 import { loadConfig } from '@/lib/config';
-import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -34,8 +34,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 网盘搜索缓存：30分钟
-  const NETDISK_CACHE_TIME = 30 * 60; // 30分钟（秒）
   const enabledCloudTypesStr = (netDiskConfig.enabledCloudTypes || [])
     .sort()
     .join(',');
@@ -46,7 +44,7 @@ export async function GET(request: NextRequest) {
 
   // 服务端直接调用数据库（不用ClientCache，避免HTTP循环调用）
   try {
-    const cached = await db.getCache(cacheKey);
+    const cached = await getCache(cacheKey);
     if (cached) {
       console.log(
         `✅ 网盘搜索缓存命中(数据库): "${query}" (${enabledCloudTypesStr})`,
@@ -120,9 +118,9 @@ export async function GET(request: NextRequest) {
 
     // 服务端直接保存到数据库（不用ClientCache，避免HTTP循环调用）
     try {
-      await db.setCache(cacheKey, responseData, NETDISK_CACHE_TIME);
+      await setCache(cacheKey, responseData, NETDISK_CACHE_EXPIRE.search);
       console.log(
-        `💾 网盘搜索结果已缓存(数据库): "${query}" - ${responseData.data.total} 个结果, TTL: ${NETDISK_CACHE_TIME}s`,
+        `💾 网盘搜索结果已缓存(数据库): "${query}" - ${responseData.data.total} 个结果, TTL: ${NETDISK_CACHE_EXPIRE.search}s`,
       );
     } catch (cacheError) {
       console.warn('网盘搜索缓存保存失败:', cacheError);

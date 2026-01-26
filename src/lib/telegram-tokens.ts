@@ -1,3 +1,4 @@
+import { getCache, setCache } from './cache';
 import { db } from './db';
 
 export interface TelegramTokenData {
@@ -52,7 +53,7 @@ export async function setTelegramToken(
 
   try {
     // 使用通用缓存接口，自动兼容所有存储类型
-    await db.setCache(key, data, finalTtl);
+    await setCache(key, data, finalTtl);
     console.log(
       '[TelegramToken] Token stored successfully with TTL:',
       finalTtl,
@@ -79,8 +80,8 @@ export async function getTelegramToken(
   );
 
   try {
-    console.log('[TelegramToken] Calling db.getCache...');
-    const data = await db.getCache(key);
+    console.log('[TelegramToken] Calling getCache...');
+    const data = await getCache(key);
     console.log('[TelegramToken] Raw data from cache:', JSON.stringify(data));
     console.log('[TelegramToken] Data type:', typeof data);
 
@@ -128,7 +129,7 @@ export async function verifyAndConsumeTelegramToken(
   console.log('[TelegramToken] Key:', key);
 
   try {
-    const data = await db.getCache(key);
+    const data = await getCache(key);
     console.log('[TelegramToken] Raw data from cache:', data);
 
     if (!data) {

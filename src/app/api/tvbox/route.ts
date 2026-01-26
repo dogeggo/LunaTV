@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getCache, setCache } from '@/lib/cache';
 import { getShowAdultContent, loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { getCandidates, getSpiderJar } from '@/lib/spiderJar';
@@ -29,7 +30,7 @@ async function checkRateLimit(
 
   try {
     // 获取当前计数
-    const currentCount = (await db.getCache(key)) || 0;
+    const currentCount = (await getCache(key)) || 0;
 
     if (currentCount >= limit) {
       return false;
@@ -38,7 +39,7 @@ async function checkRateLimit(
     // 增加计数并设置过期时间
     const newCount = currentCount + 1;
     const expireSeconds = Math.ceil(windowMs / 1000); // 转换为秒
-    await db.setCache(key, newCount, expireSeconds);
+    await setCache(key, newCount, expireSeconds);
 
     return true;
   } catch (error) {

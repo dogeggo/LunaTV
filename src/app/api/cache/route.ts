@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getCache, setCache } from '@/lib/cache';
 import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
@@ -10,8 +11,8 @@ export async function GET(request: NextRequest) {
     if (!key) {
       return NextResponse.json({ error: 'Key is required' }, { status: 400 });
     }
-    // 现在可以安全地调用 db.getCache，Upstash 的 getCache 已经修复
-    const data = await db.getCache(key);
+    // 现在可以安全地调用 getCache，Upstash 的 getCache 已经修复
+    const data = await getCache(key);
     return NextResponse.json({ data });
   } catch (error) {
     console.error(
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Key is required' }, { status: 400 });
     }
 
-    await db.setCache(key, data, expireSeconds);
+    await setCache(key, data, expireSeconds);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Set cache error:', error);

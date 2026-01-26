@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { DOUBAN_CACHE_EXPIRE } from '@/lib/cache';
+import { DOUBAN_CACHE_EXPIRE, getCache, setCache } from '@/lib/cache';
 import { db } from '@/lib/db';
 import {
   DoubanError,
@@ -9,7 +9,7 @@ import {
 } from '@/lib/douban-api';
 
 export const runtime = 'nodejs';
-const FAILURE_CACHE_SECONDS = 30 * 60;
+const failureCacheSeconds = DOUBAN_CACHE_EXPIRE.details_failure;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -28,9 +28,9 @@ export async function GET(request: Request) {
 
   const failureCacheKey = `douban-details-fail-id=${id}`;
   const failureCacheHeaders = {
-    'Cache-Control': `public, max-age=${FAILURE_CACHE_SECONDS}, s-maxage=${FAILURE_CACHE_SECONDS}, stale-while-revalidate=${FAILURE_CACHE_SECONDS}`,
-    'CDN-Cache-Control': `public, s-maxage=${FAILURE_CACHE_SECONDS}`,
-    'Vercel-CDN-Cache-Control': `public, s-maxage=${FAILURE_CACHE_SECONDS}`,
+    'Cache-Control': `public, max-age=${failureCacheSeconds}, s-maxage=${failureCacheSeconds}, stale-while-revalidate=${failureCacheSeconds}`,
+    'CDN-Cache-Control': `public, s-maxage=${failureCacheSeconds}`,
+    'Vercel-CDN-Cache-Control': `public, s-maxage=${failureCacheSeconds}`,
     'Netlify-Vary': 'query',
     'X-Data-Source': 'error-cache',
   };
@@ -45,13 +45,13 @@ export async function GET(request: Request) {
     },
   ) => {
     try {
-      await db.setCache(
+      await setCache(
         failureCacheKey,
         {
           status,
           body,
         },
-        FAILURE_CACHE_SECONDS,
+        failureCacheSeconds,
       );
     } catch (cacheError) {
       console.warn('[Douban] 失败缓存写入失败:', cacheError);
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
   };
 
   try {
-    const cachedFailure = await db.getCache(failureCacheKey);
+    const cachedFailure = await getCache(failureCacheKey);
     if (cachedFailure?.status && cachedFailure?.body) {
       return NextResponse.json(cachedFailure.body, {
         status: cachedFailure.status,

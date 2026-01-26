@@ -1,6 +1,7 @@
 // 豆瓣数据缓存配置（秒）
 export const DOUBAN_CACHE_EXPIRE = {
   details: 24 * 60 * 60, // 详情4小时（变化较少）
+  details_failure: 30 * 60, // 详情失败缓存30分钟
   lists: 4 * 60 * 60, // 列表2小时（更新频繁）
   categories: 4 * 60 * 60, // 分类2小时
   recommends: 4 * 60 * 60, // 推荐2小时
@@ -29,6 +30,16 @@ export const TMDB_CACHE_EXPIRE = {
   tv_details: 24 * 60 * 60, // 电视剧详情24小时（基本不变）
   trending: 2 * 60 * 60, // 热门内容2小时（更新频繁）
   discover: 4 * 60 * 60, // 发现内容4小时
+};
+
+// 其他接口缓存配置（秒）
+export const NETDISK_CACHE_EXPIRE = {
+  search: 30 * 60, // 搜索30分钟
+};
+
+export const YOUTUBE_CACHE_EXPIRE = {
+  search: 60 * 60, // 搜索60分钟
+  search_fallback: 5 * 60, // 失败兜底5分钟
 };
 
 // 初始化缓存系统（参考豆瓣实现）
