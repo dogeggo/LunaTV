@@ -138,8 +138,10 @@ function ShortDramaCard({
               imageLoaded
                 ? 'opacity-100 blur-0 scale-100 group-hover:scale-105'
                 : 'opacity-0 blur-md scale-105'
-            }`}
+            } pointer-events-none select-none`}
             loading={priority ? 'eager' : 'lazy'}
+            decoding='async'
+            draggable={false}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               const img = e.target as HTMLImageElement;
@@ -151,7 +153,7 @@ function ShortDramaCard({
           />
 
           {/* 悬浮播放按钮 - 玻璃态效果 */}
-          <div className='absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/80 via-black/20 to-transparent backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover:opacity-100'>
+          <div className='absolute inset-0 flex items-center justify-center bg-linear-to-t from-black/80 via-black/20 to-transparent backdrop-blur-[2px] opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none'>
             <div className='flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-black shadow-lg transition-transform group-hover:scale-110'>
               <Play className='h-5 w-5 ml-0.5' fill='currentColor' />
             </div>

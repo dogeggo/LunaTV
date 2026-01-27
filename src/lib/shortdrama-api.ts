@@ -48,12 +48,9 @@ export async function getShortDramaDetail(
   const cacheKey = getShortdramaCacheKey('shortdrama-detail-', {
     shortdramaId: id,
   });
-  // 临时禁用缓存进行测试 - 移动端强制刷新
-  if (!isMobile()) {
-    const cached = await getCache(cacheKey);
-    if (cached) {
-      return cached;
-    }
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return cached;
   }
   let response: SearchResult;
   if (typeof window !== 'undefined') {
@@ -150,12 +147,9 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
   const cacheKey = getShortdramaCacheKey('categories', {});
 
   try {
-    // 临时禁用缓存进行测试 - 移动端强制刷新
-    if (!isMobile()) {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return cached;
-      }
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
     }
 
     const useInternalApi = typeof window !== 'undefined';
@@ -212,14 +206,10 @@ export async function getRecommendedShortDramas(
   const cacheKey = getShortdramaCacheKey('recommends', { category, size });
 
   try {
-    // 临时禁用缓存进行测试 - 移动端强制刷新
-    if (!isMobile()) {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return cached;
-      }
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
     }
-
     const useInternalApi = typeof window !== 'undefined';
     const apiUrl = useInternalApi
       ? `/api/shortdrama/recommend?${category ? `category=${category}&` : ''}size=${size}`
@@ -285,14 +275,10 @@ export async function getShortDramaList(
   const cacheKey = getShortdramaCacheKey('lists', { category, page, size });
 
   try {
-    // 临时禁用缓存进行测试 - 移动端强制刷新
-    if (!isMobile()) {
-      const cached = await getCache(cacheKey);
-      if (cached) {
-        return cached;
-      }
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return cached;
     }
-
     const useInternalApi = typeof window !== 'undefined';
     const apiUrl = useInternalApi
       ? `/api/shortdrama/list?categoryId=${category}&page=${page}&size=${size}`

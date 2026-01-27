@@ -8,7 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { GetBangumiCalendarData } from '@/lib/bangumi.client';
+import { GetBangumiCalendarData } from '@/lib/bangumi-api';
 import {
   getDoubanCategories,
   getDoubanList,

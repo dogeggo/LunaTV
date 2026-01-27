@@ -22,11 +22,7 @@ import {
   useState,
 } from 'react';
 
-import {
-  BangumiCalendarData,
-  GetBangumiCalendarData,
-} from '@/lib/bangumi.client';
-import { cleanExpiredCache } from '@/lib/cache';
+import { BangumiCalendarData, GetBangumiCalendarData } from '@/lib/bangumi-api';
 // 客户端收藏 API
 import {
   clearAllFavorites,
@@ -209,27 +205,6 @@ function HomeClient() {
       return id;
     };
 
-    const scheduleIdle = (task: () => void, timeout = 1500) => {
-      if (typeof window === 'undefined') return;
-      if ('requestIdleCallback' in window) {
-        const id = (window as any).requestIdleCallback(
-          () => {
-            if (isMountedRef.current) {
-              task();
-            }
-          },
-          { timeout },
-        );
-        idleCallbacksRef.current.push(id);
-      } else {
-        scheduleTimeout(() => {
-          if (isMountedRef.current) {
-            task();
-          }
-        }, 200);
-      }
-    };
-
     const withTimeout = async <T,>(
       promise: Promise<T>,
       label: string,
@@ -250,10 +225,6 @@ function HomeClient() {
         }
       }
     };
-
-    scheduleIdle(() => {
-      cleanExpiredCache('shortdrama-').catch(console.error);
-    }, 2000);
 
     const fetchAll = async () => {
       try {

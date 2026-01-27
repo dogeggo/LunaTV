@@ -176,7 +176,7 @@ const BannerVideo = ({
   return (
     <video
       ref={videoRef}
-      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 pointer-events-none ${
         isActive && finalSrc ? 'opacity-100' : 'opacity-0'
       }`}
       autoPlay={isActive}
@@ -260,20 +260,24 @@ const BannerImage = ({
   }, [blobUrl]);
 
   if (!isReady) {
-    return <div className='absolute inset-0 bg-black/10 animate-pulse' />;
+    return (
+      <div className='absolute inset-0 bg-black/10 animate-pulse pointer-events-none' />
+    );
   }
 
   return (
-    <Image
-      src={blobUrl || src}
-      alt={alt}
-      fill
-      className='object-cover object-center'
-      priority={isPriority}
-      quality={100}
-      sizes='100vw'
-      unoptimized={true}
-    />
+    <div className='absolute inset-0 pointer-events-none'>
+      <Image
+        src={blobUrl || src}
+        alt={alt}
+        fill
+        className='object-cover object-center'
+        priority={isPriority}
+        quality={100}
+        sizes='100vw'
+        unoptimized={true}
+      />
+    </div>
   );
 };
 
@@ -817,7 +821,7 @@ export default function HeroBanner({
       {...swipeHandlers}
     >
       {/* 背景图片/视频层 */}
-      <div className='absolute inset-0'>
+      <div className='absolute inset-0 pointer-events-none'>
         {/* 只渲染当前、前一张、后一张（性能优化） */}
         {items.map((item, index) => {
           // 只要曾经渲染过，就保持渲染，避免卸载导致重新请求
