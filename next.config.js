@@ -21,7 +21,7 @@ const nextConfig = {
 
   // Uncoment to add domain whitelist
   images: {
-    qualities: [75, 100],
+    qualities: [75, 85, 100],
     unoptimized: true,
     remotePatterns: [
       {

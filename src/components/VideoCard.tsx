@@ -95,7 +95,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
   ) {
     const router = useRouter();
     const [favorited, setFavorited] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
     const [showMobileActions, setShowMobileActions] = useState(false);
     const [searchFavorited, setSearchFavorited] = useState<boolean | null>(
@@ -804,7 +803,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             />
 
             {/* 骨架屏 */}
-            {!isLoading && <ImagePlaceholder aspectRatio='aspect-[2/3]' />}
+            {!imageLoaded && <ImagePlaceholder aspectRatio='aspect-[2/3]' />}
             {/* 图片 */}
             <Image
               src={processImageUrl(actualPoster)}
@@ -821,7 +820,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               priority={priority}
               quality={75}
               onLoad={() => {
-                setIsLoading(true);
                 setImageLoaded(true);
               }}
               onError={(e) => {

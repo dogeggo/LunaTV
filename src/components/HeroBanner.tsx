@@ -273,7 +273,7 @@ const BannerImage = ({
         fill
         className='object-cover object-center'
         priority={isPriority}
-        quality={100}
+        quality={85}
         sizes='100vw'
         unoptimized={true}
       />
@@ -436,12 +436,12 @@ export default function HeroBanner({
   const downloadingImageIdsRef = useRef<Set<string>>(new Set());
 
   // 处理图片 URL，使用代理绕过防盗链
-  const getProxiedImageUrl = (url: string) => {
+  const getProxiedImageUrl = useCallback((url: string) => {
     return processImageUrl(url);
-  };
+  }, []);
 
   // 确保 backdrop 是高清版本
-  const getHDBackdrop = (url?: string) => {
+  const getHDBackdrop = useCallback((url?: string) => {
     if (!url) return url;
     return url
       .replace('/view/photo/s/', '/view/photo/l/')
@@ -449,7 +449,7 @@ export default function HeroBanner({
       .replace('/view/photo/sqxs/', '/view/photo/l/')
       .replace('/s_ratio_poster/', '/l_ratio_poster/')
       .replace('/m_ratio_poster/', '/l_ratio_poster/');
-  };
+  }, []);
 
   // 下载单个图片的辅助函数
   const downloadImage = useCallback(
@@ -591,6 +591,108 @@ export default function HeroBanner({
     },
     [cachedVideoIds, getStableVideoUrl], // 依赖 cachedVideoIds 和 getStableVideoUrl，但内部也会再次检查
   );
+
+  // 🎯 自动清理历史缓存：只保留当前轮播相关的图片/视频
+  useEffect(() => {
+    if (items.length === 0) return;
+    if (typeof window === 'undefined' || !('caches' in window)) return;
+
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    const cleanupCache = async () => {
+      const allowedImageIds = new Set<string>();
+      const allowedVideoIds = new Set<string>();
+
+      items.forEach((item) => {
+        const imageUrl = getHDBackdrop(item.backdrop || item.poster);
+        if (imageUrl) {
+          const proxiedUrl = getProxiedImageUrl(imageUrl);
+          const imageId = extractVideoId(proxiedUrl);
+          if (imageId) allowedImageIds.add(imageId);
+        }
+
+        if (enableVideo) {
+          const stableUrl = getStableVideoUrl(item);
+          if (stableUrl || item.douban_id) {
+            const proxiedUrl = getProxiedVideoUrl(stableUrl || '', item);
+            const videoId = extractVideoId(proxiedUrl);
+            if (videoId) allowedVideoIds.add(videoId);
+          }
+        }
+      });
+
+      if (signal.aborted) return;
+
+      // 同步本地缓存状态，避免 isCached 误判
+      setCachedImageIds((prev) => {
+        const next = new Set<string | number>();
+        prev.forEach((id) => {
+          if (allowedImageIds.has(String(id))) {
+            next.add(id);
+          }
+        });
+        return next;
+      });
+
+      if (enableVideo) {
+        setCachedVideoIds((prev) => {
+          const next = new Set<string | number>();
+          prev.forEach((id) => {
+            if (allowedVideoIds.has(String(id))) {
+              next.add(id);
+            }
+          });
+          return next;
+        });
+      } else {
+        setCachedVideoIds(new Set());
+      }
+
+      const pruneCache = async (
+        cacheName: string,
+        allowedIds: Set<string>,
+        label: string,
+      ) => {
+        try {
+          const cache = await caches.open(cacheName);
+          const requests = await cache.keys();
+          await Promise.all(
+            requests.map((request) => {
+              if (signal.aborted) return Promise.resolve();
+              const id = extractVideoId(request.url);
+              if (!allowedIds.has(id)) {
+                return cache.delete(request);
+              }
+              return Promise.resolve();
+            }),
+          );
+        } catch (error) {
+          console.warn(`[HeroBanner] ${label} cache cleanup failed:`, error);
+        }
+      };
+
+      await pruneCache('luna-image-cache', allowedImageIds, 'Image');
+
+      if (enableVideo) {
+        await pruneCache('luna-video-cache', allowedVideoIds, 'Video');
+      } else {
+        await pruneCache('luna-video-cache', new Set(), 'Video');
+      }
+    };
+
+    cleanupCache();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [
+    items,
+    enableVideo,
+    getHDBackdrop,
+    getProxiedImageUrl,
+    getStableVideoUrl,
+  ]);
 
   // 顺序下载所有视频和图片（后台队列）
   useEffect(() => {

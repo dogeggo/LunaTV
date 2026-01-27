@@ -415,7 +415,7 @@ export async function getDoubanDetails(id: string): Promise<DoubanResult> {
   // 检查缓存 - 如果缓存中没有plot_summary则重新获取
   const cacheKey = getDouBanCacheKey('details', { id });
   const cached = await getCache(cacheKey);
-  if (cached && cached.data?.plot_summary) {
+  if (cached) {
     console.log(`豆瓣详情缓存命中(有简介): ${id}`);
     return cached;
   }
