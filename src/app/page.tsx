@@ -39,6 +39,7 @@ import {
 import { ReleaseCalendarItem, SearchResult, ShortDramaItem } from '@/lib/types';
 import { DoubanMovieDetail } from '@/lib/types';
 
+import ArtPlayerPreloader from '@/components/ArtPlayerPreloader';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ContinueWatching from '@/components/ContinueWatching';
@@ -70,6 +71,7 @@ interface HomeState {
     bangumi: boolean;
     upcoming: boolean;
   };
+  shortDramasError: boolean;
   username: string;
   showAnnouncement: boolean;
 }
@@ -84,6 +86,7 @@ type HomeAction =
   | { type: 'SET_BANGUMI_CALENDAR_DATA'; payload: BangumiCalendarData[] }
   | { type: 'SET_UPCOMING_RELEASES'; payload: ReleaseCalendarItem[] }
   | { type: 'SET_LOADING'; payload: Partial<HomeState['loading']> }
+  | { type: 'SET_SHORT_DRAMAS_ERROR'; payload: boolean }
   | { type: 'SET_USERNAME'; payload: string }
   | { type: 'SET_SHOW_ANNOUNCEMENT'; payload: boolean }
   | {
@@ -127,6 +130,8 @@ const homeReducer = (state: HomeState, action: HomeAction): HomeState => {
       return { ...state, upcomingReleases: action.payload };
     case 'SET_LOADING':
       return { ...state, loading: { ...state.loading, ...action.payload } };
+    case 'SET_SHORT_DRAMAS_ERROR':
+      return { ...state, shortDramasError: action.payload };
     case 'SET_USERNAME':
       return { ...state, username: action.payload };
     case 'SET_SHOW_ANNOUNCEMENT':
@@ -150,9 +155,14 @@ const homeReducer = (state: HomeState, action: HomeAction): HomeState => {
 };
 
 function HomeClient() {
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
   // 🚀 TanStack Query - 全局缓存管理
   const queryClient = useQueryClient();
-
+  const { announcement } = useSite();
+  const [isMounted, setIsMounted] = useState(false);
   // 🎯 优化：使用 useReducer 合并 11 个 useState，减少重渲染
   const [state, dispatch] = useReducer(homeReducer, {
     activeTab: 'home',
@@ -172,11 +182,10 @@ function HomeClient() {
       bangumi: true,
       upcoming: true,
     },
+    shortDramasError: false,
     username: '',
     showAnnouncement: false,
   });
-
-  const { announcement } = useSite();
 
   // 解构状态以便使用
   const {
@@ -189,6 +198,7 @@ function HomeClient() {
     bangumiCalendarData,
     upcomingReleases,
     loading,
+    shortDramasError,
     username,
     showAnnouncement,
   } = state;
@@ -574,6 +584,10 @@ function HomeClient() {
 
       const shortDramasPromise = getRecommendedShortDramas(undefined, 8)
         .then((dramas) => {
+          dispatch({
+            type: 'SET_SHORT_DRAMAS_ERROR',
+            payload: dramas.length === 0,
+          });
           dispatch({ type: 'SET_HOT_SHORT_DRAMAS', payload: dramas });
 
           // 延迟加载详情
@@ -610,6 +624,7 @@ function HomeClient() {
         })
         .catch((error) => {
           console.warn('获取热门短剧失败:', error);
+          dispatch({ type: 'SET_SHORT_DRAMAS_ERROR', payload: true });
         })
         .finally(() =>
           dispatch({ type: 'SET_LOADING', payload: { shortDramas: false } }),
@@ -656,7 +671,7 @@ function HomeClient() {
           ) {
             try {
               workerRef.current = new Worker(
-                new URL('../lib/releaseCalendar.worker.ts', import.meta.url),
+                new URL('../lib/release-calendar-worker.ts', import.meta.url),
               );
 
               workerRef.current.onmessage = (e: MessageEvent) => {
@@ -767,12 +782,29 @@ function HomeClient() {
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
 
+  if (!isMounted) {
+    return (
+      <PageLayout>
+        <div className='flex items-center justify-center min-h-[50vh]'>
+          <div className='flex flex-col items-center gap-4'>
+            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
+              正在进入首页...
+            </p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout>
+      {/* 预加载播放器模块 */}
+      <ArtPlayerPreloader />
       {/* Telegram 新用户欢迎弹窗 */}
       {/* <TelegramWelcomeModal /> */}
 
-      <div className='overflow-visible -mt-6 md:mt-0 pb-32 md:pb-safe-bottom'>
+      <div className='overflow-visible -mt-6 -md:mt-0 pb-0 md:pb-safe-bottom'>
         {/* 顶部 Tab 切换 - AI 按钮已移至右上角导航栏 */}
         <div className='mb-8 flex items-center justify-center'>
           <CapsuleSwitch
@@ -1465,37 +1497,39 @@ function HomeClient() {
               </section>
 
               {/* 热门短剧 */}
-              <section className='mb-8'>
-                <div className='mb-4 flex items-center justify-between'>
-                  <SectionTitle
-                    title='热门短剧'
-                    icon={Play}
-                    iconColor='text-orange-500'
-                  />
-                  <Link
-                    href='/shortdrama'
-                    className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
-                  >
-                    查看更多
-                    <ChevronRight className='w-4 h-4 ml-1' />
-                  </Link>
-                </div>
-                <ScrollableRow enableVirtualization={true}>
-                  {loading.shortDramas
-                    ? // 加载状态显示灰色占位数据
-                      Array.from({ length: 8 }).map((_, index) => (
-                        <SkeletonCard key={index} />
-                      ))
-                    : // 显示真实数据
-                      hotShortDramas.map((drama, index) => (
-                        <ShortDramaCard
-                          key={index}
-                          drama={drama}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        />
-                      ))}
-                </ScrollableRow>
-              </section>
+              {!shortDramasError && (
+                <section className='mb-8'>
+                  <div className='mb-4 flex items-center justify-between'>
+                    <SectionTitle
+                      title='热门短剧'
+                      icon={Play}
+                      iconColor='text-orange-500'
+                    />
+                    <Link
+                      href='/shortdrama'
+                      className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+                    >
+                      查看更多
+                      <ChevronRight className='w-4 h-4 ml-1' />
+                    </Link>
+                  </div>
+                  <ScrollableRow enableVirtualization={true}>
+                    {loading.shortDramas
+                      ? // 加载状态显示灰色占位数据
+                        Array.from({ length: 8 }).map((_, index) => (
+                          <SkeletonCard key={index} />
+                        ))
+                      : // 显示真实数据
+                        hotShortDramas.map((drama, index) => (
+                          <ShortDramaCard
+                            key={index}
+                            drama={drama}
+                            className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                          />
+                        ))}
+                  </ScrollableRow>
+                </section>
+              )}
             </>
           )}
         </div>

@@ -1,38 +1,15 @@
 import { NextResponse } from 'next/server';
 
+import { getShortDramaCategories } from '@/lib/shortdrama-api';
+
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-// 服务端专用函数，直接调用外部API
-async function getShortDramaCategoriesInternal() {
-  const response = await fetch(
-    'https://api.r2afosne.dpdns.org/vod/categories',
-    {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        Accept: 'application/json',
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const categories = data.categories || [];
-  return categories.map((item: any) => ({
-    type_id: item.type_id,
-    type_name: item.type_name,
-  }));
-}
-
 export async function GET() {
   try {
-    const categories = await getShortDramaCategoriesInternal();
+    const categories = await getShortDramaCategories();
 
     // 设置与网页端一致的缓存策略（categories: 4小时）
     const response = NextResponse.json(categories);

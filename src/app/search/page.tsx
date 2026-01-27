@@ -1160,7 +1160,6 @@ function SearchPageClient() {
                 <button
                   type='button'
                   onClick={() => {
-                    const wasAlreadyYoutube = searchType === 'youtube';
                     setSearchType('youtube');
                     // 清除之前的YouTube搜索状态，确保重新开始
                     setYoutubeError(null);

@@ -270,6 +270,44 @@ div[data-media-provider] video {
   animation: shimmer 2s infinite;
 }
 
+/* 骨架屏动画 */
+@keyframes skeleton-shine {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+:root {
+  --skeleton-color: #f0f0f0;
+  --skeleton-highlight: #e0e0e0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --skeleton-color: #2d2d2d;
+    --skeleton-highlight: #3d3d3d;
+  }
+}
+
+.dark {
+  --skeleton-color: #2d2d2d;
+  --skeleton-highlight: #3d3d3d;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-color) 25%,
+    var(--skeleton-highlight) 50%,
+    var(--skeleton-color) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shine 1.5s infinite;
+}
+
 /* 平滑动画效果 */
 @keyframes fade-in {
   from {

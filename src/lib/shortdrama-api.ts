@@ -210,10 +210,13 @@ export async function getRecommendedShortDramas(
     if (cached) {
       return cached;
     }
+    const params = new URLSearchParams();
+    if (category) params.append('category', category.toString());
+    params.append('size', size.toString());
     const useInternalApi = typeof window !== 'undefined';
     const apiUrl = useInternalApi
-      ? `/api/shortdrama/recommend?${category ? `category=${category}&` : ''}size=${size}`
-      : `${SHORTDRAMA_API_BASE}/vod/recommend?${category ? `category=${category}&` : ''}size=${size}`;
+      ? `/api/shortdrama/recommend?${params.toString()}`
+      : `${SHORTDRAMA_API_BASE}/vod/recommend?${params.toString()}`;
 
     const fetchOptions: RequestInit = useInternalApi
       ? {
@@ -242,7 +245,10 @@ export async function getRecommendedShortDramas(
       result = items.map((item: any) => ({
         id: item.vod_id || item.id,
         name: item.vod_name || item.name,
-        cover: item.vod_pic || item.cover,
+        cover:
+          item.vod_pic || item.cover
+            ? processImageUrl(item.vod_pic || item.cover)
+            : '',
         update_time:
           item.vod_time || item.update_time || new Date().toISOString(),
         score: item.vod_score || item.score || 0,
@@ -311,7 +317,7 @@ export async function getShortDramaList(
       const list = items.map((item: any) => ({
         id: item.id,
         name: item.name,
-        cover: item.cover,
+        cover: item.cover ? processImageUrl(item.cover) : '',
         update_time: item.update_time || new Date().toISOString(),
         score: item.score || 0,
         episode_count: 1, // 分页API没有集数信息，ShortDramaCard会自动获取

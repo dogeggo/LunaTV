@@ -304,11 +304,11 @@ export default function NetDiskSearchResults({
 
   return (
     <div className='relative'>
-      {/* 快速筛选和导航栏 - 使用负top值消除空隙 */}
+      {/* 快速筛选和导航栏 - sticky 顶部对齐，避免滚动时遮挡按钮 */}
       <div
         className='bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-gray-700 sticky z-10 mb-6'
         style={{
-          top: isLargeScreen ? '-25px' : '-17px', // sm: 24px padding + 1px border = 25px; mobile: 16px + 1px = 17px
+          top: isLargeScreen ? '20px' : '0px',
           marginLeft: isLargeScreen ? '-1.5rem' : '-1rem',
           marginRight: isLargeScreen ? '-1.5rem' : '-1rem',
           paddingLeft: isLargeScreen ? '1.5rem' : '1rem',
@@ -324,7 +324,7 @@ export default function NetDiskSearchResults({
               <h3 className='text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100'>
                 快速筛选
               </h3>
-              <div className='group relative hidden sm:block'>
+              {/* <div className='group relative hidden sm:block'>
                 <svg
                   className='h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help'
                   fill='currentColor'
@@ -345,9 +345,9 @@ export default function NetDiskSearchResults({
                   </div>
                   <div className='absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900'></div>
                 </div>
-              </div>
+              </div> */}
             </div>
-            <div className='flex items-center justify-between sm:justify-end space-x-2'>
+            {/* <div className='flex items-center justify-between sm:justify-end space-x-2'>
               <span className='text-xs text-gray-500 dark:text-gray-400 hidden md:inline'>
                 {filterMode === 'all'
                   ? '点击标签跳转到对应类型 →'
@@ -374,7 +374,7 @@ export default function NetDiskSearchResults({
                   <span className='absolute -top-1 -right-1 h-2 w-2 bg-orange-400 rounded-full animate-pulse'></span>
                 )}
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* 网盘类型标签 */}
@@ -413,7 +413,7 @@ export default function NetDiskSearchResults({
           </div>
 
           {/* 筛选状态提示 */}
-          <div className='mt-3'>
+          {/* <div className='mt-3'>
             {filterMode === 'all' ? (
               <div className='flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg'>
                 <svg
@@ -473,7 +473,7 @@ export default function NetDiskSearchResults({
                 )}
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
       {/* 搜索结果统计 */}
@@ -517,7 +517,9 @@ export default function NetDiskSearchResults({
             <div
               key={type}
               id={`cloud-type-${type}`}
-              className='bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 scroll-mt-24'
+              className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${
+                isLargeScreen ? 'scroll-mt-40' : 'scroll-mt-50'
+              }`}
             >
               {/* 网盘类型头部 */}
               <div
