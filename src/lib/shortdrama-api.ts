@@ -59,7 +59,7 @@ export async function getShortDramaDetail(
       `/api/shortdrama/detail?id=${videoId}&episode=${episode}${titleParam}`,
     );
     if (!response.ok) {
-      throw new Error('获取短剧详情失败');
+      throw new Error(`获取短剧详情失败 url = ${response.url}`);
     }
     response = await response.json();
   } else {
@@ -233,7 +233,6 @@ export async function getRecommendedShortDramas(
     }
 
     const data = await response.json();
-
     let result: ShortDramaItem[];
     if (useInternalApi) {
       result = data; // 内部API已经处理过格式
@@ -759,7 +758,6 @@ export async function parseShortDramaEpisode(
 
     // API成功时，检查是否有有效的视频链接
     const parsedUrl = data.episode?.parsedUrl || data.parsedUrl || '';
-
     // 如果主API返回成功但没有有效链接，尝试备用API
     if (!parsedUrl && dramaName && alternativeApiUrl) {
       console.log('主API未返回有效链接，尝试使用备用API...');

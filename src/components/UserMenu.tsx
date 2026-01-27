@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   Bell,
@@ -17,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
@@ -46,6 +47,7 @@ const SETTINGS_RESET_FLAG_KEY = 'settingsResetDone';
 
 export const UserMenu: React.FC = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -64,9 +66,6 @@ export const UserMenu: React.FC = () => {
   const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(
     null,
   );
-  const [playRecords, setPlayRecords] = useState<
-    (PlayRecord & { key: string })[]
-  >([]);
   const [favorites, setFavorites] = useState<(Favorite & { key: string })[]>(
     [],
   );
@@ -161,6 +160,57 @@ export const UserMenu: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+
+  const playRecordsQueryEnabled =
+    isOpen && !!authInfo?.username && storageType !== 'localstorage';
+
+  const { data: allPlayRecords = {} } = useQuery({
+    queryKey: ['playRecords'],
+    queryFn: () => getAllPlayRecords({ skipBackgroundSync: true }),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    enabled: playRecordsQueryEnabled,
+  });
+
+  const playRecords = useMemo<(PlayRecord & { key: string })[]>(() => {
+    if (!playRecordsQueryEnabled) return [];
+
+    const recordsArray = Object.entries(allPlayRecords).map(
+      ([key, record]) => ({
+        ...record,
+        key,
+      }),
+    );
+
+    const validPlayRecords = recordsArray.filter((record) => {
+      const progress =
+        record.total_time === 0
+          ? 0
+          : (record.play_time / record.total_time) * 100;
+
+      // 播放时间必须超过2分钟
+      if (record.play_time < 120) return false;
+
+      if (!enableContinueWatchingFilter) return true;
+
+      return (
+        progress >= continueWatchingMinProgress &&
+        progress <= continueWatchingMaxProgress
+      );
+    });
+
+    const sortedRecords = validPlayRecords.sort(
+      (a, b) => b.save_time - a.save_time,
+    );
+
+    return sortedRecords.slice(0, 12);
+  }, [
+    allPlayRecords,
+    playRecordsQueryEnabled,
+    enableContinueWatchingFilter,
+    continueWatchingMinProgress,
+    continueWatchingMaxProgress,
+  ]);
 
   // 确保组件已挂载
   useEffect(() => {
@@ -327,73 +377,18 @@ export const UserMenu: React.FC = () => {
     }
   }, [authInfo, storageType]);
 
-  // 加载播放记录（优化版）
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      authInfo?.username &&
-      storageType !== 'localstorage'
-    ) {
-      const loadPlayRecords = async () => {
-        try {
-          const records = await getAllPlayRecords();
-          const recordsArray = Object.entries(records).map(([key, record]) => ({
-            ...record,
-            key,
-          }));
+    if (!playRecordsQueryEnabled) return;
 
-          // 筛选真正需要继续观看的记录
-          const validPlayRecords = recordsArray.filter((record) => {
-            const progress = getProgress(record);
+    const unsubscribe = subscribeToDataUpdates(
+      'playRecordsUpdated',
+      (newRecords: Record<string, PlayRecord>) => {
+        queryClient.setQueryData(['playRecords'], newRecords);
+      },
+    );
 
-            // 播放时间必须超过2分钟
-            if (record.play_time < 120) return false;
-
-            // 如果禁用了进度筛选，则显示所有播放时间超过2分钟的记录
-            if (!enableContinueWatchingFilter) return true;
-
-            // 根据用户自定义的进度范围筛选
-            return (
-              progress >= continueWatchingMinProgress &&
-              progress <= continueWatchingMaxProgress
-            );
-          });
-
-          // 按最后播放时间降序排列
-          const sortedRecords = validPlayRecords.sort(
-            (a, b) => b.save_time - a.save_time,
-          );
-          setPlayRecords(sortedRecords.slice(0, 12)); // 只取最近的12个
-        } catch (error) {
-          console.error('加载播放记录失败:', error);
-        }
-      };
-
-      loadPlayRecords();
-
-      // 监听播放记录更新事件（修复删除记录后页面不立即更新的问题）
-      const handlePlayRecordsUpdate = () => {
-        console.log('UserMenu: 播放记录更新，重新加载继续观看列表');
-        loadPlayRecords();
-      };
-
-      // 监听播放记录更新事件
-      window.addEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
-
-      return () => {
-        window.removeEventListener(
-          'playRecordsUpdated',
-          handlePlayRecordsUpdate,
-        );
-      };
-    }
-  }, [
-    authInfo,
-    storageType,
-    enableContinueWatchingFilter,
-    continueWatchingMinProgress,
-    continueWatchingMaxProgress,
-  ]);
+    return unsubscribe;
+  }, [playRecordsQueryEnabled, queryClient]);
 
   // 加载收藏数据
   useEffect(() => {

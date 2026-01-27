@@ -214,6 +214,7 @@ export async function checkWatchingUpdates(
           record,
           videoId,
           sourceName,
+          recordsObj,
         );
 
         // 使用从 checkSingleRecordUpdate 返回的 protectedTotalEpisodes（已经包含了保护机制）
@@ -346,6 +347,7 @@ async function checkSingleRecordUpdate(
   record: PlayRecord,
   videoId: string,
   storageSourceName?: string,
+  freshRecords?: Record<string, PlayRecord>,
 ): Promise<{
   hasUpdate: boolean;
   hasContinueWatching: boolean;
@@ -442,6 +444,7 @@ async function checkSingleRecordUpdate(
       record,
       videoId,
       recordKey,
+      freshRecords,
     );
 
     console.log(`${record.title} 集数对比:`, {
@@ -551,6 +554,7 @@ async function getOriginalEpisodes(
   record: PlayRecord,
   videoId: string,
   recordKey: string,
+  freshRecords?: Record<string, PlayRecord>,
 ): Promise<number> {
   // 添加详细调试信息
   console.log(`🔍 getOriginalEpisodes 调试信息 - ${record.title}:`, {
@@ -559,6 +563,13 @@ async function getOriginalEpisodes(
     类型检查: typeof record.original_episodes,
     完整记录: record,
   });
+
+  if (freshRecords) {
+    const freshRecord = freshRecords[recordKey];
+    if (freshRecord?.original_episodes && freshRecord.original_episodes > 0) {
+      return freshRecord.original_episodes;
+    }
+  }
 
   // 🔑 关键修复：不信任内存中的 original_episodes（可能来自缓存）
   // 始终从数据库重新读取最新的 original_episodes

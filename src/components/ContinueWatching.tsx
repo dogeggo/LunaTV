@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Clock, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import type { PlayRecord } from '@/lib/db.client';
 import {
@@ -27,10 +28,7 @@ interface ContinueWatchingProps {
 }
 
 export default function ContinueWatching({ className }: ContinueWatchingProps) {
-  const [playRecords, setPlayRecords] = useState<
-    (PlayRecord & { key: string })[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(
     null,
   );
@@ -50,55 +48,38 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     }
   }, []);
 
-  // 处理播放记录数据更新的函数
-  const updatePlayRecords = (allRecords: Record<string, PlayRecord>) => {
-    // 将记录转换为数组并根据 save_time 由近到远排序
-    const recordsArray = Object.entries(allRecords).map(([key, record]) => ({
-      ...record,
-      key,
-    }));
+  const { data: allPlayRecords = {}, isLoading } = useQuery({
+    queryKey: ['playRecords'],
+    queryFn: () => getAllPlayRecords({ skipBackgroundSync: true }),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
-    // 按 save_time 降序排序（最新的在前面）
-    const sortedRecords = recordsArray.sort(
-      (a, b) => b.save_time - a.save_time,
+  const playRecords = useMemo<(PlayRecord & { key: string })[]>(() => {
+    const recordsArray = Object.entries(allPlayRecords).map(
+      ([key, record]) => ({
+        ...record,
+        key,
+      }),
     );
 
-    setPlayRecords(sortedRecords);
-  };
+    return recordsArray.sort((a, b) => b.save_time - a.save_time);
+  }, [allPlayRecords]);
 
   useEffect(() => {
-    const fetchPlayRecords = async () => {
-      try {
-        setLoading(true);
-
-        // 从缓存或API获取所有播放记录
-        const allRecords = await getAllPlayRecords();
-        updatePlayRecords(allRecords);
-      } catch (error) {
-        console.error('获取播放记录失败:', error);
-        setPlayRecords([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPlayRecords();
-
-    // 监听播放记录更新事件
     const unsubscribe = subscribeToDataUpdates(
       'playRecordsUpdated',
       (newRecords: Record<string, PlayRecord>) => {
-        updatePlayRecords(newRecords);
+        queryClient.setQueryData(['playRecords'], newRecords);
       },
     );
 
     return unsubscribe;
-  }, []);
+  }, [queryClient]);
 
-  // 获取watching updates数据（仅当有播放记录时）
+  // 获取 watching updates 数据（仅当有播放记录时）
   useEffect(() => {
-    // 只有在有播放记录时才检查更新
-    if (loading || playRecords.length === 0) {
+    if (isLoading || playRecords.length === 0) {
       return;
     }
 
@@ -114,8 +95,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
         console.log('ContinueWatching: 使用缓存数据');
       }
 
-      // 🚀 优化：只在缓存为空时才主动检查更新
-      // 不再每次组件加载都检查，减少不必要的 API 请求
+      // 仅在缓存为空时才主动检查更新，减少不必要的 API 请求
       if (!updates) {
         console.log('ContinueWatching: 缓存为空，主动检查更新...');
         try {
@@ -131,49 +111,34 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
       }
     };
 
-    // 初始加载
     updateWatchingUpdates();
 
-    // 🔧 优化：订阅播放记录更新事件，实时同步数据
-    const unsubscribePlayRecords = subscribeToDataUpdates(
-      'playRecordsUpdated',
-      (newRecords: Record<string, PlayRecord>) => {
-        console.log('ContinueWatching: 收到播放记录更新事件，立即同步数据');
-        updatePlayRecords(newRecords);
-      },
-    );
-
-    // 订阅watching updates事件
+    // 订阅 watching updates 事件
     const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
-      console.log('ContinueWatching: 收到watching updates更新事件');
+      console.log('ContinueWatching: 收到 watching updates 更新事件');
       const updates = getDetailedWatchingUpdates();
       setWatchingUpdates(updates);
     });
 
     return () => {
-      unsubscribePlayRecords();
       unsubscribeWatchingUpdates();
     };
-  }, [loading, playRecords.length]); // 依赖播放记录加载状态
+  }, [isLoading, playRecords.length]);
 
-  // 如果没有播放记录，则不渲染组件
-  if (!loading && playRecords.length === 0) {
+  if (!isLoading && playRecords.length === 0) {
     return null;
   }
 
-  // 计算播放进度百分比
   const getProgress = (record: PlayRecord) => {
     if (record.total_time === 0) return 0;
     return (record.play_time / record.total_time) * 100;
   };
 
-  // 从 key 中解析 source 和 id
   const parseKey = (key: string) => {
     const [source, id] = key.split('+');
     return { source, id };
   };
 
-  // 检查播放记录是否有新集数更新
   const getNewEpisodesCount = (
     record: PlayRecord & { key: string },
   ): number => {
@@ -181,7 +146,6 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
 
     const { source, id } = parseKey(record.key);
 
-    // 在watchingUpdates中查找匹配的剧集
     const matchedSeries = watchingUpdates.updatedSeries.find(
       (series) =>
         series.sourceKey === source &&
@@ -192,7 +156,6 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     return matchedSeries ? matchedSeries.newEpisodes || 0 : 0;
   };
 
-  // 获取最新的总集数（用于显示，不修改原始数据）
   const getLatestTotalEpisodes = (
     record: PlayRecord & { key: string },
   ): number => {
@@ -201,21 +164,18 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
 
     const { source, id } = parseKey(record.key);
 
-    // 在watchingUpdates中查找匹配的剧集
     const matchedSeries = watchingUpdates.updatedSeries.find(
       (series) => series.sourceKey === source && series.videoId === id,
     );
 
-    // 如果找到匹配的剧集且有最新集数信息，返回最新集数；否则返回原始集数
     return matchedSeries && matchedSeries.totalEpisodes
       ? matchedSeries.totalEpisodes
       : record.total_episodes;
   };
 
-  // 处理清空所有记录
   const handleClearAll = async () => {
     await clearAllPlayRecords();
-    setPlayRecords([]);
+    queryClient.setQueryData(['playRecords'], {});
   };
 
   return (
@@ -226,7 +186,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
           icon={Clock}
           iconColor='text-green-500'
         />
-        {!loading && playRecords.length > 0 && (
+        {!isLoading && playRecords.length > 0 && (
           <button
             className='flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:text-white hover:bg-red-600 dark:text-red-400 dark:hover:text-white dark:hover:bg-red-500 border border-red-300 dark:border-red-700 hover:border-red-600 dark:hover:border-red-500 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md'
             onClick={() => {
@@ -256,7 +216,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
         onCancel={() => setShowConfirmDialog(false)}
       />
       <ScrollableRow>
-        {loading
+        {isLoading
           ? // 加载状态显示灰色占位数据
             Array.from({ length: 6 }).map((_, index) => (
               <div
@@ -294,8 +254,14 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                       query={record.search_title}
                       from='playrecord'
                       onDelete={() =>
-                        setPlayRecords((prev) =>
-                          prev.filter((r) => r.key !== record.key),
+                        queryClient.setQueryData<Record<string, PlayRecord>>(
+                          ['playRecords'],
+                          (prev) => {
+                            if (!prev) return prev;
+                            const updated = { ...prev };
+                            delete updated[record.key];
+                            return updated;
+                          },
                         )
                       }
                       type={latestTotalEpisodes > 1 ? 'tv' : ''}

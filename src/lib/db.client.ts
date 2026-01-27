@@ -829,9 +829,21 @@ async function checkShouldUpdateOriginalEpisodes(
  * 在服务端渲染阶段 (window === undefined) 时返回空对象，避免报错。
  * @param forceRefresh 是否强制从服务器获取最新数据（跳过缓存）
  */
+type GetAllPlayRecordsOptions = {
+  forceRefresh?: boolean;
+  skipBackgroundSync?: boolean;
+};
+
 export async function getAllPlayRecords(
-  forceRefresh = false,
+  options: boolean | GetAllPlayRecordsOptions = false,
 ): Promise<Record<string, PlayRecord>> {
+  const { forceRefresh, skipBackgroundSync } =
+    typeof options === 'boolean'
+      ? { forceRefresh: options, skipBackgroundSync: false }
+      : {
+          forceRefresh: options.forceRefresh ?? false,
+          skipBackgroundSync: options.skipBackgroundSync ?? false,
+        };
   // 服务器端渲染阶段直接返回空，交由客户端 useEffect 再行请求
   if (typeof window === 'undefined') {
     return {};
@@ -872,6 +884,7 @@ export async function getAllPlayRecords(
       // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
       // 如果距离上次同步时间太短，跳过同步
       if (
+        !skipBackgroundSync &&
         !pendingPlayRecordsSync &&
         now - lastPlayRecordsSyncTime > SYNC_THROTTLE_TIME
       ) {

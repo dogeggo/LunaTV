@@ -8,6 +8,7 @@ import { loadConfig } from '@/lib/config';
 
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
+import QueryProvider from '../components/QueryProvider';
 import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
@@ -109,14 +110,16 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DownloadProvider>
-            <SiteProvider siteName={siteName} announcement={announcement}>
-              <SessionTracker />
-              {children}
-              <GlobalErrorIndicator />
-            </SiteProvider>
-            <DownloadPanel />
-          </DownloadProvider>
+          <QueryProvider>
+            <DownloadProvider>
+              <SiteProvider siteName={siteName} announcement={announcement}>
+                <SessionTracker />
+                {children}
+                <GlobalErrorIndicator />
+              </SiteProvider>
+              <DownloadPanel />
+            </DownloadProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>
