@@ -32,11 +32,8 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanCategories, getDoubanDetails } from '@/lib/douban-api';
-import {
-  getRecommendedShortDramas,
-  getShortDramaDetail,
-} from '@/lib/shortdrama-api';
-import { ReleaseCalendarItem, SearchResult, ShortDramaItem } from '@/lib/types';
+import { getRecommendedShortDramas } from '@/lib/shortdrama-api';
+import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
 import { DoubanMovieDetail } from '@/lib/types';
 
 import ArtPlayerPreloader from '@/components/ArtPlayerPreloader';
@@ -591,36 +588,36 @@ function HomeClient() {
           dispatch({ type: 'SET_HOT_SHORT_DRAMAS', payload: dramas });
 
           // 延迟加载详情
-          setTimeout(() => {
-            Promise.all(
-              dramas.slice(0, 2).map(async (drama) => {
-                try {
-                  const detailData: SearchResult = await getShortDramaDetail({
-                    id: drama.id.toString(),
-                    videoId: drama.id,
-                    episode: 1,
-                  });
-                  if (detailData.desc) {
-                    return { id: drama.id, description: detailData.desc };
-                  }
-                } catch (error) {
-                  console.warn(`获取短剧 ${drama.id} 详情失败:`, error);
-                }
-                return null;
-              }),
-            ).then((results) => {
-              dispatch({
-                type: 'UPDATE_HOT_SHORT_DRAMAS',
-                payload: (prev) =>
-                  prev.map((d) => {
-                    const detail = results.find((r) => r?.id === d.id);
-                    return detail
-                      ? { ...d, description: detail.description }
-                      : d;
-                  }),
-              });
-            });
-          }, 3000);
+          // setTimeout(() => {
+          //   Promise.all(
+          //     dramas.slice(0, 2).map(async (drama) => {
+          //       try {
+          //         const detailData: SearchResult = await getShortDramaDetail({
+          //           id: drama.id.toString(),
+          //           videoId: drama.id,
+          //           episode: 1,
+          //         });
+          //         if (detailData.desc) {
+          //           return { id: drama.id, description: detailData.desc };
+          //         }
+          //       } catch (error) {
+          //         console.warn(`获取短剧 ${drama.id} 详情失败:`, error);
+          //       }
+          //       return null;
+          //     }),
+          //   ).then((results) => {
+          //     dispatch({
+          //       type: 'UPDATE_HOT_SHORT_DRAMAS',
+          //       payload: (prev) =>
+          //         prev.map((d) => {
+          //           const detail = results.find((r) => r?.id === d.id);
+          //           return detail
+          //             ? { ...d, description: detail.description }
+          //             : d;
+          //         }),
+          //     });
+          //   });
+          // }, 3000);
         })
         .catch((error) => {
           console.warn('获取热门短剧失败:', error);
@@ -804,7 +801,7 @@ function HomeClient() {
       {/* Telegram 新用户欢迎弹窗 */}
       {/* <TelegramWelcomeModal /> */}
 
-      <div className='overflow-visible -mt-6 -md:mt-0 pb-0 md:pb-safe-bottom'>
+      <div className='overflow-visible -mt-12 sm:-mt-6 sm:pd-45 sm:pb-0 md:pb-safe-bottom'>
         {/* 顶部 Tab 切换 - AI 按钮已移至右上角导航栏 */}
         <div className='mb-8 flex items-center justify-center'>
           <CapsuleSwitch
@@ -825,7 +822,7 @@ function HomeClient() {
         <div className='w-full mx-auto'>
           {activeTab === 'favorites' ? (
             // 收藏夹视图
-            <section className='mb-8'>
+            <section className='mb-0 sm:mb-8'>
               <div className='mb-6 flex items-center justify-between'>
                 <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
                   我的收藏
@@ -1112,7 +1109,7 @@ function HomeClient() {
                 hotTvShows.length > 0 ||
                 hotVarietyShows.length > 0 ||
                 hotShortDramas.length > 0) && (
-                <section className='mb-8'>
+                <section className='mb-10 sm:mb-8'>
                   <HeroBanner
                     items={[
                       // 豆瓣电影
@@ -1188,7 +1185,7 @@ function HomeClient() {
                 return null;
               })()}
               {!loading.upcoming && upcomingReleases.length > 0 && (
-                <section className='mb-8'>
+                <section className='mb-2 sm:mb-8'>
                   <div className='mb-4 flex items-center justify-between'>
                     <SectionTitle
                       title='即将上映'
@@ -1310,7 +1307,7 @@ function HomeClient() {
               )}
 
               {/* 热门电影 */}
-              <section className='mb-8'>
+              <section className='mb-2 sm:mb-8'>
                 <div className='mb-4 flex items-center justify-between'>
                   <SectionTitle
                     title='热门电影'
@@ -1355,7 +1352,7 @@ function HomeClient() {
               </section>
 
               {/* 热门剧集 */}
-              <section className='mb-8'>
+              <section className='mb-2 sm:mb-8'>
                 <div className='mb-4 flex items-center justify-between'>
                   <SectionTitle
                     title='热门剧集'
@@ -1400,7 +1397,7 @@ function HomeClient() {
               </section>
 
               {/* 每日新番放送 */}
-              <section className='mb-8'>
+              <section className='mb-2 sm:mb-8'>
                 <div className='mb-4 flex items-center justify-between'>
                   <SectionTitle
                     title='新番放送'
@@ -1452,7 +1449,7 @@ function HomeClient() {
               </section>
 
               {/* 热门综艺 */}
-              <section className='mb-8'>
+              <section className='mb-2 sm:mb-8'>
                 <div className='mb-4 flex items-center justify-between'>
                   <SectionTitle
                     title='热门综艺'
@@ -1498,7 +1495,7 @@ function HomeClient() {
 
               {/* 热门短剧 */}
               {!shortDramasError && (
-                <section className='mb-8'>
+                <section className='mb-2 sm:mb-8'>
                   <div className='mb-4 flex items-center justify-between'>
                     <SectionTitle
                       title='热门短剧'

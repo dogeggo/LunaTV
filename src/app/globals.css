@@ -61,6 +61,17 @@
     display: none; /* Chrome, Safari and Opera */
   }
 
+  .video-card-visibility {
+    content-visibility: auto;
+    contain-intrinsic-size: 100px 175px;
+  }
+
+  @media (min-width: 640px) {
+    .video-card-visibility {
+      contain-intrinsic-size: 200px 300px;
+    }
+  }
+
   /* 源浏览器动画 */
   @keyframes fadeInUp {
     from {

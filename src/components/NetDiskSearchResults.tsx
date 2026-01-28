@@ -6,7 +6,9 @@ import {
   EyeSlashIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface NetDiskLink {
   url: string;
@@ -117,17 +119,19 @@ export default function NetDiskSearchResults({
   const [expandedTitles, setExpandedTitles] = useState<{
     [key: string]: boolean;
   }>({});
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  // const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  const isLargeScreen = useMediaQuery('(min-width: 640px)');
 
   // 检测屏幕尺寸用于响应式 sticky top
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 640px)');
-    setIsLargeScreen(mediaQuery.matches);
+  // useEffect(() => {
+  //   const mediaQuery = window.matchMedia('(min-width: 640px)');
+  //   setIsLargeScreen(mediaQuery.matches);
 
-    const handler = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
+  //   const handler = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
+  //   mediaQuery.addEventListener('change', handler);
+  //   return () => mediaQuery.removeEventListener('change', handler);
+  // }, []);
 
   const togglePasswordVisibility = (key: string) => {
     setVisiblePasswords((prev) => ({ ...prev, [key]: !prev[key] }));

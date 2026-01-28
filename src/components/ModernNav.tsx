@@ -152,56 +152,58 @@ export default function ModernNav() {
             </FastLink>
 
             {/* Navigation Items */}
-            <div className='flex items-center justify-center gap-1 lg:gap-2 overflow-x-auto scrollbar-hide flex-1 px-4'>
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
+            <div className='overflow-x-auto scrollbar-hide flex-1 min-w-0 px-4'>
+              <div className='flex items-center gap-1 lg:gap-2 w-max mx-auto'>
+                {menuItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
 
-                return (
-                  <FastLink
-                    key={item.label}
-                    href={item.href}
-                    useTransitionNav
-                    className='group relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 whitespace-nowrap shrink-0'
-                  >
-                    {/* Active indicator */}
-                    {active && (
-                      <div
-                        className={`absolute inset-0 bg-linear-to-r ${item.gradient} opacity-10 rounded-full animate-pulse`}
-                      />
-                    )}
-
-                    {/* Icon */}
-                    <div className='relative'>
-                      <Icon
-                        className={`w-5 h-5 transition-all duration-300 ${
-                          active
-                            ? item.color
-                            : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'
-                        } ${active ? 'scale-110' : 'group-hover:scale-110'}`}
-                      />
-                    </div>
-
-                    {/* Label */}
-                    <span
-                      className={`text-sm font-medium transition-all duration-300 ${
-                        active
-                          ? `${item.color} font-semibold`
-                          : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
-                      }`}
+                  return (
+                    <FastLink
+                      key={item.label}
+                      href={item.href}
+                      useTransitionNav
+                      className='group relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 whitespace-nowrap shrink-0'
                     >
-                      {item.label}
-                    </span>
+                      {/* Active indicator */}
+                      {active && (
+                        <div
+                          className={`absolute inset-0 bg-linear-to-r ${item.gradient} opacity-10 rounded-full animate-pulse`}
+                        />
+                      )}
 
-                    {/* Bottom active border */}
-                    {active && (
-                      <div
-                        className={`absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r ${item.gradient} rounded-full`}
-                      />
-                    )}
-                  </FastLink>
-                );
-              })}
+                      {/* Icon */}
+                      <div className='relative'>
+                        <Icon
+                          className={`w-5 h-5 transition-all duration-300 ${
+                            active
+                              ? item.color
+                              : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'
+                          } ${active ? 'scale-110' : 'group-hover:scale-110'}`}
+                        />
+                      </div>
+
+                      {/* Label */}
+                      <span
+                        className={`text-sm font-medium transition-all duration-300 ${
+                          active
+                            ? `${item.color} font-semibold`
+                            : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+
+                      {/* Bottom active border */}
+                      {active && (
+                        <div
+                          className={`absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r ${item.gradient} rounded-full`}
+                        />
+                      )}
+                    </FastLink>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Right Side Actions */}

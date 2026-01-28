@@ -748,7 +748,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     return (
       <>
         <div
-          className='@container group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-30 hover:shadow-2xl'
+          className='video-card-visibility @container group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-30 hover:shadow-2xl'
           onClick={handleClick}
           {...longPressProps}
           style={
@@ -761,8 +761,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               touchAction: 'manipulation',
               // 禁用右键菜单和长按菜单
               pointerEvents: 'auto',
-              contentVisibility: 'auto',
-              containIntrinsicSize: '200px 300px',
             } as React.CSSProperties
           }
           onContextMenu={(e) => {

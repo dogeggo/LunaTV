@@ -179,7 +179,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
   };
 
   return (
-    <section className={`mb-8 ${className || ''}`}>
+    <section className={`sm:mb-8 ${className || ''}`}>
       <div className='mb-4 flex items-center justify-between'>
         <SectionTitle
           title='继续观看'
