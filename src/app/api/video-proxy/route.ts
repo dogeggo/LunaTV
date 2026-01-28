@@ -398,7 +398,7 @@ async function downloadToCache(
       ? await fetchDoubanWithAntiScraping(url, {
           headers: cappedHeaders,
           signal: controller.signal,
-          timeoutMs: 10000,
+          timeoutMs: 60000,
         })
       : await fetch(url, {
           headers: cappedHeaders,

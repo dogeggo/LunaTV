@@ -212,11 +212,12 @@ async function refreshRecordAndFavorites() {
   try {
     const config = await loadConfig();
 
-    const userNames = config.UserConfig.Users.map((u) => u.username);
+    const userNameSet = new Set(config.UserConfig.Users.map((u) => u.username));
 
-    if (process.env.USERNAME && !userNames.includes(process.env.USERNAME)) {
-      userNames.push(process.env.USERNAME);
+    if (process.env.USERNAME) {
+      userNameSet.add(process.env.USERNAME);
     }
+    const userNames = Array.from(userNameSet);
     console.log('📋 最终处理用户列表:', userNames);
     // 函数级缓存：key 为 `${source}+${id}`，值为 Promise<VideoDetail | null>
     const detailCache = new Map<string, Promise<SearchResult | null>>();
@@ -233,21 +234,18 @@ async function refreshRecordAndFavorites() {
           source,
           id,
           fallbackTitle: fallbackTitle.trim(),
-        })
-          .then((detail) => {
-            // 成功时才缓存结果
-            const successPromise = Promise.resolve(detail);
-            detailCache.set(key, successPromise);
-            return detail;
-          })
-          .catch((err) => {
-            return null;
-          });
+        }).catch((err) => {
+          detailCache.delete(key);
+          return null;
+        });
+        // 先缓存 Promise，避免并发重复请求
+        detailCache.set(key, promise);
       }
       return promise;
     };
     console.error(`开始处理播放记录/收藏任务...`);
-    for (const userName of userNames) {
+
+    const processUser = async (userName: string) => {
       // 播放记录
       try {
         const playRecords = await db.getAllPlayRecords(userName);
@@ -335,7 +333,25 @@ async function refreshRecordAndFavorites() {
       } catch (err) {
         console.error(`获取用户收藏失败 (${userName}):`, err);
       }
-    }
+    };
+
+    const rawConcurrency = Number(process.env.CRON_USER_CONCURRENCY || 3);
+    const concurrency = Number.isFinite(rawConcurrency)
+      ? Math.max(1, Math.min(userNames.length, rawConcurrency))
+      : Math.min(userNames.length, 3);
+    console.log(`⚙️ 并发处理用户数: ${concurrency}`);
+
+    const userQueue = [...userNames];
+    const workers = Array.from({ length: concurrency }, async () => {
+      while (userQueue.length > 0) {
+        const nextUser = userQueue.shift();
+        if (!nextUser) {
+          return;
+        }
+        await processUser(nextUser);
+      }
+    });
+    await Promise.all(workers);
 
     console.log('刷新播放记录/收藏任务完成');
   } catch (err) {
