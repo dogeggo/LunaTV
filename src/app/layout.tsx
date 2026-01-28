@@ -6,6 +6,7 @@ import './globals.css';
 
 import { loadConfig } from '@/lib/config';
 
+import CacheCleaner from '../components/CacheCleaner';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import QueryProvider from '../components/QueryProvider';
@@ -14,7 +15,7 @@ import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], preload: false });
 export const dynamic = 'force-dynamic';
 
 // 动态生成 metadata，支持配置更新后的标题变化
@@ -113,6 +114,7 @@ export default async function RootLayout({
           <QueryProvider>
             <DownloadProvider>
               <SiteProvider siteName={siteName} announcement={announcement}>
+                <CacheCleaner />
                 <SessionTracker />
                 {children}
                 <GlobalErrorIndicator />

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { CalendarCacheManager } from '@/lib/calendar-cache';
-import { getFilters, getReleaseCalendar } from '@/lib/release-calendar-scraper';
+import { getReleaseCalendarWithFilters } from '@/lib/release-calendar-scraper';
 import { ReleaseCalendarResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -103,8 +103,8 @@ export async function GET(request: NextRequest) {
     console.log('🌐 获取新的发布日历数据...');
 
     // 获取数据和过滤器
-    const [calendarData, filters] = await Promise.all([
-      getReleaseCalendar({
+    const { items, total, hasMore, filters, allCalendar } =
+      await getReleaseCalendarWithFilters({
         type: type || undefined,
         region: region || undefined,
         genre: genre || undefined,
@@ -112,25 +112,22 @@ export async function GET(request: NextRequest) {
         dateTo: dateTo || undefined,
         limit,
         offset,
-      }),
-      getFilters(),
-    ]);
+      });
 
     const result: ReleaseCalendarResult = {
-      items: calendarData.items,
-      total: calendarData.total,
-      hasMore: calendarData.hasMore,
+      items,
+      total,
+      hasMore,
       filters,
     };
 
     // 💾 更新数据库缓存（仅在获取完整数据时）
     if (!type && !region && !genre && !dateFrom && !dateTo && offset === 0) {
       console.log('📊 获取完整数据，更新数据库缓存...');
-      const allData = await getReleaseCalendar({});
       const cacheData = {
-        items: allData.items,
-        total: allData.total,
-        hasMore: allData.hasMore,
+        items: allCalendar.items,
+        total: allCalendar.total,
+        hasMore: allCalendar.hasMore,
         filters,
       };
 
@@ -138,7 +135,7 @@ export async function GET(request: NextRequest) {
         await CalendarCacheManager.saveCalendarData(cacheData);
       if (saveSuccess) {
         console.log(
-          `✅ 发布日历数据库缓存已更新，包含 ${allData.items.length} 项`,
+          `✅ 发布日历数据库缓存已更新，包含 ${allCalendar.items.length} 项`,
         );
       } else {
         console.warn('⚠️ 数据库缓存更新失败，但不影响API响应');
@@ -172,16 +169,13 @@ export async function POST(request: NextRequest) {
     await CalendarCacheManager.clearCalendarData();
 
     // 重新获取数据
-    const [calendarData, filters] = await Promise.all([
-      getReleaseCalendar({}),
-      getFilters(),
-    ]);
+    const { allCalendar, filters } = await getReleaseCalendarWithFilters({});
 
     // 更新数据库缓存
     const cacheData = {
-      items: calendarData.items,
-      total: calendarData.total,
-      hasMore: calendarData.hasMore,
+      items: allCalendar.items,
+      total: allCalendar.total,
+      hasMore: allCalendar.hasMore,
       filters,
     };
 
@@ -189,7 +183,7 @@ export async function POST(request: NextRequest) {
 
     if (saveSuccess) {
       console.log(
-        `✅ 发布日历数据库缓存刷新完成，包含 ${calendarData.items.length} 项`,
+        `✅ 发布日历数据库缓存刷新完成，包含 ${allCalendar.items.length} 项`,
       );
     } else {
       console.warn('⚠️ 数据库缓存刷新失败');
@@ -198,7 +192,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: '发布日历缓存已刷新',
-      itemCount: calendarData.items.length,
+      itemCount: allCalendar.items.length,
       cacheUpdated: saveSuccess,
     });
   } catch (error) {

@@ -44,34 +44,55 @@ export const YOUTUBE_CACHE_EXPIRE = {
   search_fallback: 5 * 60, // 失败兜底5分钟
 };
 
-async function initCache(): Promise<void> {
-  let prefixs = [
-    'douban-',
-    'tmdb-',
-    'shortdrama-',
-    'netdisk-',
-    'bangumi-',
-    'danmu-',
-  ];
-  for (const prefix of prefixs) {
+const DEFAULT_CACHE_PREFIXES = [
+  'douban-',
+  'tmdb-',
+  'shortdrama-',
+  'netdisk-',
+  'bangumi-',
+  'danmu-',
+];
+
+type CacheCleanerState = {
+  started: boolean;
+  intervalId?: number;
+};
+
+function getCacheCleanerState(): CacheCleanerState | null {
+  if (typeof window === 'undefined') return null;
+  const win = window as typeof window & {
+    __cacheCleanerState?: CacheCleanerState;
+  };
+  if (!win.__cacheCleanerState) {
+    win.__cacheCleanerState = { started: false };
+  }
+  return win.__cacheCleanerState;
+}
+
+// 在客户端显式初始化缓存清理（避免模块加载副作用）
+export async function initCacheCleaner(options?: {
+  intervalMs?: number;
+  prefixes?: string[];
+}): Promise<void> {
+  const state = getCacheCleanerState();
+  if (!state || state.started) return;
+
+  state.started = true;
+  const prefixes = options?.prefixes ?? DEFAULT_CACHE_PREFIXES;
+
+  for (const prefix of prefixes) {
     // 立即清理一次过期缓存
     await cleanExpiredCache(prefix);
   }
-  // 每10分钟清理一次过期缓存
-  setInterval(
-    () => {
-      for (const prefix of prefixs) {
-        cleanExpiredCache(prefix);
-      }
-    },
-    10 * 60 * 1000,
-  );
-  console.log('缓存系统已初始化');
-}
 
-// 在模块加载时初始化缓存系统
-if (typeof window !== 'undefined') {
-  initCache().catch(console.error);
+  const intervalMs = options?.intervalMs ?? 10 * 60 * 1000;
+  state.intervalId = window.setInterval(() => {
+    for (const prefix of prefixes) {
+      cleanExpiredCache(prefix);
+    }
+  }, intervalMs);
+
+  console.log('缓存系统已初始化');
 }
 
 // 缓存工具函数
@@ -207,13 +228,6 @@ export async function setCache(
 // 清理过期缓存
 export async function cleanExpiredCache(prefix: string): Promise<void> {
   try {
-    // 如果在服务端，直接使用 DB
-    if (typeof window === 'undefined') {
-      const { db } = await import('@/lib/db');
-      await db.clearExpiredCache(prefix);
-      return;
-    }
-
     // 清理localStorage中的过期缓存
     if (typeof localStorage !== 'undefined') {
       const keysToRemove: string[] = [];
@@ -234,6 +248,7 @@ export async function cleanExpiredCache(prefix: string): Promise<void> {
         }
       }
       keysToRemove.forEach((key) => localStorage.removeItem(key));
+      console.log('定时清理过期缓存完成.');
     }
   } catch (e) {
     console.warn('清理过期缓存失败:', e);

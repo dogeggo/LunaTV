@@ -850,72 +850,127 @@ export async function scrapeAllReleases(): Promise<ReleaseCalendarItem[]> {
 /**
  * 获取发布日历数据（带缓存）
  */
+type ReleaseCalendarQueryOptions = {
+  type?: 'movie' | 'tv';
+  region?: string;
+  genre?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  limit?: number;
+  offset?: number;
+};
+
+type ReleaseCalendarFilters = {
+  types: Array<{ value: 'movie' | 'tv'; label: string; count: number }>;
+  regions: Array<{ value: string; label: string; count: number }>;
+  genres: Array<{ value: string; label: string; count: number }>;
+};
+
+function buildReleaseCalendarFilters(
+  allItems: ReleaseCalendarItem[],
+): ReleaseCalendarFilters {
+  // 统计类型
+  const typeCount = { movie: 0, tv: 0 };
+  allItems.forEach((item) => typeCount[item.type]++);
+
+  // 统计地区
+  const regionCount: Record<string, number> = {};
+  allItems.forEach((item) => {
+    const region = item.region || '未知';
+    regionCount[region] = (regionCount[region] || 0) + 1;
+  });
+
+  // 统计类型/标签
+  const genreCount: Record<string, number> = {};
+  allItems.forEach((item) => {
+    const genre = item.genre || '未知';
+    genreCount[genre] = (genreCount[genre] || 0) + 1;
+  });
+
+  return {
+    types: [
+      { value: 'movie', label: '电影', count: typeCount.movie },
+      { value: 'tv', label: '电视剧', count: typeCount.tv },
+    ],
+    regions: Object.entries(regionCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([region, count]) => ({ value: region, label: region, count })),
+    genres: Object.entries(genreCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 15)
+      .map(([genre, count]) => ({ value: genre, label: genre, count })),
+  };
+}
+
+function filterReleaseCalendarItems(
+  allItems: ReleaseCalendarItem[],
+  options: ReleaseCalendarQueryOptions,
+): {
+  items: ReleaseCalendarItem[];
+  total: number;
+  hasMore: boolean;
+} {
+  // 应用过滤条件
+  let filteredItems = allItems;
+
+  if (options.type) {
+    filteredItems = filteredItems.filter((item) => item.type === options.type);
+  }
+
+  if (options.region && options.region !== '全部') {
+    filteredItems = filteredItems.filter((item) =>
+      item.region.includes(options.region!),
+    );
+  }
+
+  if (options.genre && options.genre !== '全部') {
+    filteredItems = filteredItems.filter((item) =>
+      item.genre.includes(options.genre!),
+    );
+  }
+
+  if (options.dateFrom) {
+    filteredItems = filteredItems.filter(
+      (item) => item.releaseDate >= options.dateFrom!,
+    );
+  }
+
+  if (options.dateTo) {
+    filteredItems = filteredItems.filter(
+      (item) => item.releaseDate <= options.dateTo!,
+    );
+  }
+
+  // 按发布日期排序
+  filteredItems.sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
+
+  const total = filteredItems.length;
+  const limit = options.limit;
+  const offset = options.offset || 0;
+
+  // 如果没有指定limit，返回所有数据
+  const items = limit
+    ? filteredItems.slice(offset, offset + limit)
+    : filteredItems.slice(offset);
+  const hasMore = limit ? offset + limit < total : false;
+
+  return { items, total, hasMore };
+}
+
+/**
+ * 获取发布日历数据（带缓存）
+ */
 export async function getReleaseCalendar(
-  options: {
-    type?: 'movie' | 'tv';
-    region?: string;
-    genre?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    limit?: number;
-    offset?: number;
-  } = {},
+  options: ReleaseCalendarQueryOptions = {},
 ): Promise<{
   items: ReleaseCalendarItem[];
   total: number;
   hasMore: boolean;
 }> {
   try {
-    // 获取所有数据
     const allItems = await scrapeAllReleases();
-
-    // 应用过滤条件
-    let filteredItems = allItems;
-
-    if (options.type) {
-      filteredItems = filteredItems.filter(
-        (item) => item.type === options.type,
-      );
-    }
-
-    if (options.region && options.region !== '全部') {
-      filteredItems = filteredItems.filter((item) =>
-        item.region.includes(options.region!),
-      );
-    }
-
-    if (options.genre && options.genre !== '全部') {
-      filteredItems = filteredItems.filter((item) =>
-        item.genre.includes(options.genre!),
-      );
-    }
-
-    if (options.dateFrom) {
-      filteredItems = filteredItems.filter(
-        (item) => item.releaseDate >= options.dateFrom!,
-      );
-    }
-
-    if (options.dateTo) {
-      filteredItems = filteredItems.filter(
-        (item) => item.releaseDate <= options.dateTo!,
-      );
-    }
-
-    // 按发布日期排序
-    filteredItems.sort((a, b) => a.releaseDate.localeCompare(b.releaseDate));
-
-    const total = filteredItems.length;
-    const limit = options.limit;
-    const offset = options.offset || 0;
-
-    // 如果没有指定limit，返回所有数据
-    const items = limit
-      ? filteredItems.slice(offset, offset + limit)
-      : filteredItems.slice(offset);
-    const hasMore = limit ? offset + limit < total : false;
-
-    return { items, total, hasMore };
+    return filterReleaseCalendarItems(allItems, options);
   } catch (error) {
     console.error('获取发布日历失败:', error);
     return { items: [], total: 0, hasMore: false };
@@ -925,48 +980,46 @@ export async function getReleaseCalendar(
 /**
  * 获取过滤器选项
  */
-export async function getFilters(): Promise<{
-  types: Array<{ value: 'movie' | 'tv'; label: string; count: number }>;
-  regions: Array<{ value: string; label: string; count: number }>;
-  genres: Array<{ value: string; label: string; count: number }>;
-}> {
+export async function getFilters(): Promise<ReleaseCalendarFilters> {
   try {
     const allItems = await scrapeAllReleases();
-
-    // 统计类型
-    const typeCount = { movie: 0, tv: 0 };
-    allItems.forEach((item) => typeCount[item.type]++);
-
-    // 统计地区
-    const regionCount: Record<string, number> = {};
-    allItems.forEach((item) => {
-      const region = item.region || '未知';
-      regionCount[region] = (regionCount[region] || 0) + 1;
-    });
-
-    // 统计类型/标签
-    const genreCount: Record<string, number> = {};
-    allItems.forEach((item) => {
-      const genre = item.genre || '未知';
-      genreCount[genre] = (genreCount[genre] || 0) + 1;
-    });
-
-    return {
-      types: [
-        { value: 'movie', label: '电影', count: typeCount.movie },
-        { value: 'tv', label: '电视剧', count: typeCount.tv },
-      ],
-      regions: Object.entries(regionCount)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
-        .map(([region, count]) => ({ value: region, label: region, count })),
-      genres: Object.entries(genreCount)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 15)
-        .map(([genre, count]) => ({ value: genre, label: genre, count })),
-    };
+    return buildReleaseCalendarFilters(allItems);
   } catch (error) {
     console.error('获取过滤器失败:', error);
     return { types: [], regions: [], genres: [] };
+  }
+}
+
+/**
+ * 一次抓取构建数据和过滤器，避免重复请求
+ */
+export async function getReleaseCalendarWithFilters(
+  options: ReleaseCalendarQueryOptions = {},
+): Promise<{
+  items: ReleaseCalendarItem[];
+  total: number;
+  hasMore: boolean;
+  filters: ReleaseCalendarFilters;
+  allCalendar: {
+    items: ReleaseCalendarItem[];
+    total: number;
+    hasMore: boolean;
+  };
+}> {
+  try {
+    const allItems = await scrapeAllReleases();
+    const calendar = filterReleaseCalendarItems(allItems, options);
+    const filters = buildReleaseCalendarFilters(allItems);
+    const allCalendar = filterReleaseCalendarItems(allItems, {});
+    return { ...calendar, filters, allCalendar };
+  } catch (error) {
+    console.error('获取发布日历失败:', error);
+    return {
+      items: [],
+      total: 0,
+      hasMore: false,
+      filters: { types: [], regions: [], genres: [] },
+      allCalendar: { items: [], total: 0, hasMore: false },
+    };
   }
 }

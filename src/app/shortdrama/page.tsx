@@ -6,7 +6,6 @@ import { ChevronUp, Filter, Search } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { cleanExpiredCache } from '@/lib/cache';
 import {
   getShortDramaCategories,
   getShortDramaList,
@@ -57,9 +56,6 @@ export default function ShortDramaPage() {
 
   // 获取分类列表
   useEffect(() => {
-    // 清理过期缓存
-    cleanExpiredCache('shortdrama-').catch(console.error);
-
     const fetchCategories = async () => {
       const cats = await getShortDramaCategories();
       setCategories(cats);

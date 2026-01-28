@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCache, setCache } from '@/lib/cache';
 import { getShowAdultContent, loadConfig } from '@/lib/config';
-import { db } from '@/lib/db';
 import { getCandidates, getSpiderJar } from '@/lib/spiderJar';
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
@@ -46,16 +45,6 @@ async function checkRateLimit(
     console.error('Rate limit check failed:', error);
     // 如果数据库操作失败，允许请求通过（fail-open策略）
     return true;
-  }
-}
-
-// 清理过期的频率限制缓存（内部使用）
-async function _cleanExpiredRateLimitCache(): Promise<void> {
-  try {
-    await db.clearExpiredCache('tvbox-rate-limit');
-    console.log('Cleaned expired TVBox rate limit cache');
-  } catch (error) {
-    console.error('Failed to clean expired rate limit cache:', error);
   }
 }
 

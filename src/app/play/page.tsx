@@ -8,7 +8,6 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import artplayerPluginChromecast from '@/lib/artplayer-plugin-chromecast';
 import artplayerPluginLiquidGlass from '@/lib/artplayer-plugin-liquid-glass';
 import {
-  cleanExpiredCache,
   DOUBAN_CACHE_EXPIRE,
   getCache,
   NETDISK_CACHE_EXPIRE,
@@ -1210,11 +1209,7 @@ function PlayPageClient() {
     if (sources.length === 1) return sources[0];
 
     // 使用全局统一的设备检测结果
-    const _isIPad =
-      /iPad/i.test(userAgent) ||
-      (userAgent.includes('Macintosh') && navigator.maxTouchPoints >= 1);
     const isIOS13 = isIOS13Global;
-    const isMobile = isMobileGlobal;
 
     // 如果是iPad或iOS13+（包括新iPad在桌面模式下），使用极简策略避免崩溃
     if (isIOS13) {
@@ -1641,67 +1636,6 @@ function PlayPageClient() {
       userAgent,
     ) || isIOS13Global;
 
-  // 内存压力检测和清理（针对移动设备）
-  const checkMemoryPressure = async () => {
-    // 仅在支持performance.memory的浏览器中执行
-    if (typeof performance !== 'undefined' && 'memory' in performance) {
-      try {
-        const memInfo = (performance as any).memory;
-        const usedJSHeapSize = memInfo.usedJSHeapSize;
-        const heapLimit = memInfo.jsHeapSizeLimit;
-
-        // 计算内存使用率
-        const memoryUsageRatio = usedJSHeapSize / heapLimit;
-
-        console.log(
-          `内存使用情况: ${(memoryUsageRatio * 100).toFixed(2)}% (${(usedJSHeapSize / 1024 / 1024).toFixed(2)}MB / ${(heapLimit / 1024 / 1024).toFixed(2)}MB)`,
-        );
-
-        // 如果内存使用超过75%，触发清理
-        if (memoryUsageRatio > 0.75) {
-          console.warn('内存使用过高，清理缓存...');
-
-          // 清理弹幕缓存
-          try {
-            // 清理统一存储中的弹幕缓存
-            await cleanExpiredCache('danmu-cache');
-
-            // 兜底清理localStorage中的弹幕缓存（兼容性）
-            const oldCacheKey = 'lunatv_danmu_cache';
-            localStorage.removeItem(oldCacheKey);
-            console.log('弹幕缓存已清理');
-          } catch (e) {
-            console.warn('清理弹幕缓存失败:', e);
-          }
-
-          // 尝试强制垃圾回收（如果可用）
-          if (typeof (window as any).gc === 'function') {
-            (window as any).gc();
-            console.log('已触发垃圾回收');
-          }
-
-          return true; // 返回真表示高内存压力
-        }
-      } catch (error) {
-        console.warn('内存检测失败:', error);
-      }
-    }
-    return false;
-  };
-
-  // 定期内存检查（仅在移动设备上）
-  useEffect(() => {
-    if (!isMobileGlobal) return;
-
-    const memoryCheckInterval = setInterval(() => {
-      // 异步调用内存检查，不阻塞定时器
-      checkMemoryPressure().catch(console.error);
-    }, 30000); // 每30秒检查一次
-
-    return () => {
-      clearInterval(memoryCheckInterval);
-    };
-  }, [isMobileGlobal]);
   const requestWakeLock = async () => {
     try {
       if ('wakeLock' in navigator && document.visibilityState === 'visible') {

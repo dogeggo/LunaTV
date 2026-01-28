@@ -118,7 +118,7 @@ function executeCronJob() {
   ];
 
   cacheDirs.forEach((dir) => {
-    cleanExpiredFiles(dir, 7);
+    cleanExpiredFiles(dir, 15);
   });
 
   const cronUrl = `http://127.0.0.1:${process.env.PORT || 3000}/api/cron`;
