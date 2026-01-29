@@ -50,7 +50,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
 
   const { data: allPlayRecords = {}, isLoading } = useQuery({
     queryKey: ['playRecords'],
-    queryFn: () => getAllPlayRecords({ skipBackgroundSync: true }),
+    queryFn: () => getAllPlayRecords(true),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

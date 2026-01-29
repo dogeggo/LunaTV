@@ -123,7 +123,7 @@ function saveCompletedSeriesCache(recordKey: string, episodes: number): void {
 /**
  * 检查追番更新
  * 真实API调用检查用户的播放记录，检测是否有新集数更新
- * @param forceRefresh 是否强制刷新，跳过缓存时间检查
+ * @param forceRefresh 是否强制刷新
  */
 export async function checkWatchingUpdates(
   forceRefresh = false,
@@ -155,12 +155,14 @@ export async function checkWatchingUpdates(
       }
     }
 
-    // 🔧 优化：立即清除缓存并强制从服务器获取最新播放记录
-    console.log('🔄 强制从服务器获取最新播放记录以确保数据同步...');
-    forceRefreshPlayRecordsCache(true);
+    // 🔧 优化：仅在强制刷新时才从服务器获取最新播放记录
+    if (forceRefresh) {
+      console.log('🔄 强制从服务器获取最新播放记录以确保数据同步...');
+      forceRefreshPlayRecordsCache(true);
+    }
 
-    // 获取用户的播放记录（强制刷新）
-    const recordsObj = await getAllPlayRecords(true);
+    // 获取用户的播放记录
+    const recordsObj = await getAllPlayRecords(forceRefresh);
     const records = Object.entries(recordsObj).map(([key, record]) => ({
       ...record,
       id: key,

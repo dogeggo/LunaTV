@@ -265,7 +265,7 @@ function HomeClient() {
   // 🚀 TanStack Query - 使用 useQuery 获取播放记录（自动缓存，跨页面持久化）
   const { data: allPlayRecords = {} } = useQuery({
     queryKey: ['playRecords'],
-    queryFn: () => getAllPlayRecords({ skipBackgroundSync: true }),
+    queryFn: () => getAllPlayRecords(),
     staleTime: 5 * 60 * 1000, // 5分钟内数据保持新鲜
     gcTime: 10 * 60 * 1000, // 10分钟后垃圾回收
   });

@@ -107,9 +107,6 @@ const memoryCache: Map<string, UserCacheStore> = new Map();
 // 用于避免在短时间内重复触发后台同步请求，解决 net::ERR_INSUFFICIENT_RESOURCES 问题
 const SYNC_THROTTLE_TIME = 10000; // 10秒内不重复触发后台同步
 
-let pendingPlayRecordsSync: Promise<void> | null = null;
-let lastPlayRecordsSyncTime = 0;
-
 let pendingFavoritesRequest: Promise<Record<string, Favorite>> | null = null;
 let lastFavoritesSyncTime = 0;
 
@@ -829,21 +826,9 @@ async function checkShouldUpdateOriginalEpisodes(
  * 在服务端渲染阶段 (window === undefined) 时返回空对象，避免报错。
  * @param forceRefresh 是否强制从服务器获取最新数据（跳过缓存）
  */
-type GetAllPlayRecordsOptions = {
-  forceRefresh?: boolean;
-  skipBackgroundSync?: boolean;
-};
-
 export async function getAllPlayRecords(
-  options: boolean | GetAllPlayRecordsOptions = false,
+  forceRefresh = false,
 ): Promise<Record<string, PlayRecord>> {
-  const { forceRefresh, skipBackgroundSync } =
-    typeof options === 'boolean'
-      ? { forceRefresh: options, skipBackgroundSync: false }
-      : {
-          forceRefresh: options.forceRefresh ?? false,
-          skipBackgroundSync: options.skipBackgroundSync ?? false,
-        };
   // 服务器端渲染阶段直接返回空，交由客户端 useEffect 再行请求
   if (typeof window === 'undefined') {
     return {};
@@ -878,41 +863,6 @@ export async function getAllPlayRecords(
     const cachedData = cacheManager.getCachedPlayRecords();
 
     if (cachedData) {
-      // 返回缓存数据，同时后台异步更新（带节流和去重）
-      const now = Date.now();
-
-      // 如果正在同步中，直接复用当前同步任务（不需要做任何事，因为同步完成后会触发事件）
-      // 如果距离上次同步时间太短，跳过同步
-      if (
-        !skipBackgroundSync &&
-        !pendingPlayRecordsSync &&
-        now - lastPlayRecordsSyncTime > SYNC_THROTTLE_TIME
-      ) {
-        pendingPlayRecordsSync = fetchFromApi<Record<string, PlayRecord>>(
-          `/api/playrecords`,
-        )
-          .then((freshData) => {
-            // 只有数据真正不同时才更新缓存
-            if (JSON.stringify(cachedData) !== JSON.stringify(freshData)) {
-              cacheManager.cachePlayRecords(freshData);
-              // 触发数据更新事件，供组件监听
-              window.dispatchEvent(
-                new CustomEvent('playRecordsUpdated', {
-                  detail: freshData,
-                }),
-              );
-            }
-            lastPlayRecordsSyncTime = Date.now();
-          })
-          .catch((err) => {
-            console.warn('后台同步播放记录失败:', err);
-            // 不显示全局错误，以免打扰用户
-          })
-          .finally(() => {
-            pendingPlayRecordsSync = null;
-          });
-      }
-
       return cachedData;
     } else {
       // 缓存为空，直接从 API 获取并缓存（带重试）
@@ -1034,10 +984,6 @@ export async function savePlayRecord(
         detail: cachedRecords,
       }),
     );
-
-    // 🔧 修复：更新同步时间戳，防止 getAllPlayRecords 的后台同步在短时间内再次触发事件
-    // 这样可以避免 savePlayRecord 触发事件后，getAllPlayRecords 又触发一次，导致重复更新
-    lastPlayRecordsSyncTime = Date.now();
 
     // 异步同步到数据库
     try {

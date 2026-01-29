@@ -162,11 +162,13 @@ export const UserMenu: React.FC = () => {
   const [passwordError, setPasswordError] = useState('');
 
   const playRecordsQueryEnabled =
-    isOpen && !!authInfo?.username && storageType !== 'localstorage';
+    (isOpen || isContinueWatchingOpen) &&
+    !!authInfo?.username &&
+    storageType !== 'localstorage';
 
   const { data: allPlayRecords = {} } = useQuery({
     queryKey: ['playRecords'],
-    queryFn: () => getAllPlayRecords({ skipBackgroundSync: true }),
+    queryFn: () => getAllPlayRecords(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     enabled: playRecordsQueryEnabled,

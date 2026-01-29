@@ -90,6 +90,7 @@ export async function initCacheCleaner(options?: {
     for (const prefix of prefixes) {
       cleanExpiredCache(prefix);
     }
+    console.log('定时清理过期缓存完成.');
   }, intervalMs);
 
   console.log('缓存系统已初始化');
@@ -248,7 +249,6 @@ export async function cleanExpiredCache(prefix: string): Promise<void> {
         }
       }
       keysToRemove.forEach((key) => localStorage.removeItem(key));
-      console.log('定时清理过期缓存完成.');
     }
   } catch (e) {
     console.warn('清理过期缓存失败:', e);

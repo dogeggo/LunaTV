@@ -8,8 +8,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
-import { useMediaQuery } from '@/hooks/useMediaQuery';
-
 interface NetDiskLink {
   url: string;
   password: string;
@@ -89,7 +87,7 @@ const CLOUD_TYPES = {
   },
   magnet: {
     name: '磁力链接',
-    color: 'bg-black',
+    color: 'bg-slate-600',
     icon: '🧲',
     domain: 'magnet:',
   },
@@ -114,24 +112,10 @@ export default function NetDiskSearchResults({
   const [copiedItems, setCopiedItems] = useState<{ [key: string]: boolean }>(
     {},
   );
-  const [selectedFilter, setSelectedFilter] = useState<string[]>([]);
-  const [filterMode, setFilterMode] = useState<'all' | 'selected'>('all');
+  const [activeType, setActiveType] = useState<string | null>(null);
   const [expandedTitles, setExpandedTitles] = useState<{
     [key: string]: boolean;
   }>({});
-  // const [isLargeScreen, setIsLargeScreen] = useState(false);
-
-  const isLargeScreen = useMediaQuery('(min-width: 640px)');
-
-  // 检测屏幕尺寸用于响应式 sticky top
-  // useEffect(() => {
-  //   const mediaQuery = window.matchMedia('(min-width: 640px)');
-  //   setIsLargeScreen(mediaQuery.matches);
-
-  //   const handler = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
-  //   mediaQuery.addEventListener('change', handler);
-  //   return () => mediaQuery.removeEventListener('change', handler);
-  // }, []);
 
   const togglePasswordVisibility = (key: string) => {
     setVisiblePasswords((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -155,28 +139,9 @@ export default function NetDiskSearchResults({
 
   // 筛选结果
   const filteredResults =
-    results && filterMode === 'selected' && selectedFilter.length > 0
-      ? Object.fromEntries(
-          Object.entries(results).filter(([type]) =>
-            selectedFilter.includes(type),
-          ),
-        )
+    results && activeType
+      ? { [activeType]: results[activeType] || [] }
       : results;
-
-  // 快速跳转到指定网盘类型
-  const scrollToCloudType = (type: string) => {
-    const element = document.getElementById(`cloud-type-${type}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  // 切换筛选标签
-  const toggleFilterTag = (type: string) => {
-    setSelectedFilter((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
-    );
-  };
 
   // 获取有结果的网盘类型统计
   const availableTypes = results
@@ -308,21 +273,10 @@ export default function NetDiskSearchResults({
 
   return (
     <div className='relative'>
-      {/* 快速筛选和导航栏 - sticky 顶部对齐，避免滚动时遮挡按钮 */}
-      <div
-        className='bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-gray-700 sticky z-10 mb-6'
-        style={{
-          top: isLargeScreen ? '20px' : '0px',
-          marginLeft: isLargeScreen ? '-1.5rem' : '-1rem',
-          marginRight: isLargeScreen ? '-1.5rem' : '-1rem',
-          paddingLeft: isLargeScreen ? '1.5rem' : '1rem',
-          paddingRight: isLargeScreen ? '1.5rem' : '1rem',
-          paddingTop: '1rem',
-          paddingBottom: '1rem',
-        }}
-      >
+      {/* 快速筛选和导航栏 */}
+      <div className='bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6'>
         <div>
-          {/* 筛选模式切换 */}
+          {/* 筛选导航 */}
           <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-3 sm:space-y-0'>
             <div className='flex items-center space-x-2'>
               <h3 className='text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100'>
@@ -351,54 +305,37 @@ export default function NetDiskSearchResults({
                 </div>
               </div> */}
             </div>
-            {/* <div className='flex items-center justify-between sm:justify-end space-x-2'>
-              <span className='text-xs text-gray-500 dark:text-gray-400 hidden md:inline'>
-                {filterMode === 'all'
-                  ? '点击标签跳转到对应类型 →'
-                  : '点击标签筛选显示 →'}
-              </span>
-              <button
-                onClick={() => {
-                  setFilterMode(filterMode === 'all' ? 'selected' : 'all');
-                  if (filterMode === 'selected') {
-                    setSelectedFilter([]);
-                  }
-                }}
-                className={`px-3 py-1.5 sm:py-1 text-xs rounded-full transition-colors relative ${
-                  filterMode === 'selected'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-                title={
-                  filterMode === 'all' ? '切换到筛选模式' : '切换到跳转模式'
-                }
-              >
-                {filterMode === 'all' ? '显示全部' : '仅显示选中'}
-                {filterMode === 'all' && (
-                  <span className='absolute -top-1 -right-1 h-2 w-2 bg-orange-400 rounded-full animate-pulse'></span>
-                )}
-              </button>
-            </div> */}
           </div>
 
           {/* 网盘类型标签 */}
           <div className='flex flex-wrap gap-2'>
+            <button
+              onClick={() => setActiveType(null)}
+              className={`inline-flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors ${
+                activeType === null
+                  ? 'bg-blue-500 text-white border-transparent'
+                  : 'bg-blue-500/10 border-gray-300 dark:border-gray-600 hover:bg-blue-500/20'
+              } text-xs sm:text-sm font-medium`}
+              title='显示全部内容'
+            >
+              <span className='text-sm sm:text-lg'>📋</span>
+              <span className='whitespace-nowrap'>显示全部</span>
+              <span className='bg-white/20 px-1 sm:px-1.5 py-0.5 rounded text-xs'>
+                {total}
+              </span>
+            </button>
             {availableTypes.map(({ type, count, info }) => (
               <button
                 key={type}
                 onClick={() => {
-                  if (filterMode === 'all') {
-                    scrollToCloudType(type);
-                  } else {
-                    toggleFilterTag(type);
-                  }
+                  setActiveType(type);
                 }}
                 className={`inline-flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors ${
-                  filterMode === 'selected' && selectedFilter.includes(type)
+                  activeType === type
                     ? `${info.color} text-white border-transparent`
                     : `${info.color} bg-opacity-10 border-gray-300 dark:border-gray-600 hover:bg-opacity-20`
                 } text-xs sm:text-sm font-medium`}
-                title={filterMode === 'all' ? '点击跳转' : '点击筛选'}
+                title='点击筛选'
               >
                 <span className='text-sm sm:text-lg'>{info.icon}</span>
                 <span className='whitespace-nowrap'>
@@ -415,69 +352,6 @@ export default function NetDiskSearchResults({
               </button>
             ))}
           </div>
-
-          {/* 筛选状态提示 */}
-          {/* <div className='mt-3'>
-            {filterMode === 'all' ? (
-              <div className='flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg'>
-                <svg
-                  className='h-4 w-4'
-                  fill='currentColor'
-                  viewBox='0 0 20 20'
-                >
-                  <path
-                    fillRule='evenodd'
-                    d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z'
-                    clipRule='evenodd'
-                  />
-                </svg>
-                <span>
-                  🎯 <strong>快速跳转模式</strong> -
-                  点击任意标签快速滚动到对应网盘类型
-                </span>
-              </div>
-            ) : (
-              <div className='text-sm text-gray-600 dark:text-gray-400'>
-                {selectedFilter.length === 0 ? (
-                  <div className='flex items-center space-x-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg'>
-                    <svg
-                      className='h-4 w-4'
-                      fill='currentColor'
-                      viewBox='0 0 20 20'
-                    >
-                      <path
-                        fillRule='evenodd'
-                        d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z'
-                        clipRule='evenodd'
-                      />
-                    </svg>
-                    <span>
-                      📌
-                      点击上方标签选择要显示的网盘类型，或切换到"显示全部"模式使用快速跳转
-                    </span>
-                  </div>
-                ) : (
-                  <div className='flex items-center space-x-2 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg'>
-                    <svg
-                      className='h-4 w-4'
-                      fill='currentColor'
-                      viewBox='0 0 20 20'
-                    >
-                      <path
-                        fillRule='evenodd'
-                        d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
-                        clipRule='evenodd'
-                      />
-                    </svg>
-                    <span>
-                      ✅ 已选择 <strong>{selectedFilter.length}</strong>{' '}
-                      种网盘类型，点击标签可取消选择
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div> */}
         </div>
       </div>
       {/* 搜索结果统计 */}
@@ -495,11 +369,20 @@ export default function NetDiskSearchResults({
             />
           </svg>
           <span className='text-sm text-blue-800 dark:text-blue-200'>
-            {filterMode === 'selected' && selectedFilter.length > 0 ? (
+            {activeType ? (
               <>
-                显示{' '}
-                <strong>{Object.keys(filteredResults || {}).length}</strong>{' '}
-                种筛选的网盘类型 (总共 <strong>{total}</strong> 个资源)
+                仅显示{' '}
+                <strong>
+                  {
+                    (
+                      CLOUD_TYPES[activeType as keyof typeof CLOUD_TYPES] ||
+                      CLOUD_TYPES.others
+                    ).name
+                  }
+                </strong>{' '}
+                类型，共{' '}
+                <strong>{filteredResults?.[activeType]?.length || 0}</strong>{' '}
+                个资源
               </>
             ) : (
               <>
@@ -521,9 +404,7 @@ export default function NetDiskSearchResults({
             <div
               key={type}
               id={`cloud-type-${type}`}
-              className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${
-                isLargeScreen ? 'scroll-mt-40' : 'scroll-mt-50'
-              }`}
+              className='bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700'
             >
               {/* 网盘类型头部 */}
               <div

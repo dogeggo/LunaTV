@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import Hls from 'hls.js';
 import { RefreshCw, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -63,11 +64,13 @@ function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { createTask, setShowDownloadPanel } = useDownload();
+  const queryClient = useQueryClient();
 
   // -----------------------------------------------------------------------------
   // 状态变量（State）
   // -----------------------------------------------------------------------------
   const [loading, setLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [loadingStage, setLoadingStage] = useState<
     'searching' | 'preferring' | 'fetching' | 'ready'
   >('searching');
@@ -2962,6 +2965,7 @@ function PlayPageClient() {
 
       try {
         const allRecords = await getAllPlayRecords();
+        queryClient.setQueryData(['playRecords'], allRecords);
         const key = generateStorageKey(currentSource, currentId);
         const record = allRecords[key];
 
@@ -3261,6 +3265,7 @@ function PlayPageClient() {
       // 🔥 优化：检查目标集数是否有历史播放记录
       try {
         const allRecords = await getAllPlayRecords();
+        queryClient.setQueryData(['playRecords'], allRecords);
         const key = generateStorageKey(
           currentSourceRef.current,
           currentIdRef.current,
@@ -3445,6 +3450,7 @@ function PlayPageClient() {
       // 获取现有播放记录以保持原始集数
       const existingRecord = await getAllPlayRecords()
         .then((records) => {
+          queryClient.setQueryData(['playRecords'], records);
           const key = generateStorageKey(
             currentSourceRef.current,
             currentIdRef.current,
@@ -7184,7 +7190,18 @@ function PlayPageClient() {
                           bangumiDetails?.images?.large || videoCover,
                         )}
                         alt={videoTitle}
-                        className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-105'
+                        className={`'w-full h-full object-cover transition-transform duration-500 group-hover:scale-105${
+                          imageLoaded
+                            ? 'opacity-100 blur-0 scale-100'
+                            : 'opacity-0 blur-md scale-105'
+                        }`}
+                        onLoad={() => setImageLoaded(true)}
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          img.src =
+                            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300"%3E%3Crect fill="%23374151" width="200" height="300"/%3E%3Cg fill="%239CA3AF"%3E%3Cpath d="M100 80 L100 120 M80 100 L120 100" stroke="%239CA3AF" stroke-width="8" stroke-linecap="round"/%3E%3Crect x="60" y="140" width="80" height="100" rx="5" fill="none" stroke="%239CA3AF" stroke-width="4"/%3E%3Cpath d="M70 160 L90 180 L130 140" stroke="%239CA3AF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/%3E%3C/g%3E%3Ctext x="100" y="270" font-family="Arial" font-size="12" fill="%239CA3AF" text-anchor="middle"%3E暂无海报%3C/text%3E%3C/svg%3E';
+                          setImageLoaded(true);
+                        }}
                       />
 
                       {/* 悬浮遮罩 */}
@@ -7342,6 +7359,7 @@ function PlayPageClient() {
             <div
               ref={netdiskModalContentRef}
               className='flex-1 overflow-y-auto p-4 sm:p-6 relative'
+              data-netdisk-scroll-container='true'
             >
               {/* 根据资源类型显示不同的内容 */}
               {netdiskResourceType === 'netdisk' ? (
