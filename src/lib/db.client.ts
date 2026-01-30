@@ -975,13 +975,16 @@ export async function savePlayRecord(
   if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
-    cachedRecords[key] = record;
-    cacheManager.cachePlayRecords(cachedRecords);
+    const updatedRecords = {
+      ...cachedRecords,
+      [key]: record,
+    };
+    cacheManager.cachePlayRecords(updatedRecords);
 
     // 触发立即更新事件
     window.dispatchEvent(
       new CustomEvent('playRecordsUpdated', {
-        detail: cachedRecords,
+        detail: updatedRecords,
       }),
     );
 
@@ -1077,13 +1080,14 @@ export async function deletePlayRecord(
   if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
-    delete cachedRecords[key];
-    cacheManager.cachePlayRecords(cachedRecords);
+    const updatedRecords = { ...cachedRecords };
+    delete updatedRecords[key];
+    cacheManager.cachePlayRecords(updatedRecords);
 
     // 触发立即更新事件
     window.dispatchEvent(
       new CustomEvent('playRecordsUpdated', {
-        detail: cachedRecords,
+        detail: updatedRecords,
       }),
     );
 
@@ -1468,13 +1472,16 @@ export async function saveFavorite(
   if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedFavorites = cacheManager.getCachedFavorites() || {};
-    cachedFavorites[key] = favorite;
-    cacheManager.cacheFavorites(cachedFavorites);
+    const updatedFavorites = {
+      ...cachedFavorites,
+      [key]: favorite,
+    };
+    cacheManager.cacheFavorites(updatedFavorites);
 
     // 触发立即更新事件
     window.dispatchEvent(
       new CustomEvent('favoritesUpdated', {
-        detail: cachedFavorites,
+        detail: updatedFavorites,
       }),
     );
 
@@ -1531,13 +1538,14 @@ export async function deleteFavorite(
   if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedFavorites = cacheManager.getCachedFavorites() || {};
-    delete cachedFavorites[key];
-    cacheManager.cacheFavorites(cachedFavorites);
+    const updatedFavorites = { ...cachedFavorites };
+    delete updatedFavorites[key];
+    cacheManager.cacheFavorites(updatedFavorites);
 
     // 触发立即更新事件
     window.dispatchEvent(
       new CustomEvent('favoritesUpdated', {
-        detail: cachedFavorites,
+        detail: updatedFavorites,
       }),
     );
 
