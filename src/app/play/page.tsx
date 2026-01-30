@@ -1,6 +1,5 @@
 ﻿'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
 import Hls from 'hls.js';
 import { RefreshCw, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -64,7 +63,6 @@ function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { createTask, setShowDownloadPanel } = useDownload();
-  const queryClient = useQueryClient();
 
   // -----------------------------------------------------------------------------
   // 状态变量（State）
@@ -212,6 +210,189 @@ function PlayPageClient() {
   const anime4kModeRef = useRef(anime4kMode);
   const anime4kScaleRef = useRef(anime4kScale);
   const netdiskModalContentRef = useRef<HTMLDivElement>(null);
+
+  const ANIME4K_DEFAULT_MAX_BUFFER_BYTES = 256 * 1024 * 1024;
+  const ANIME4K_BYTES_PER_PIXEL = 4;
+  const ANIME4K_BUFFER_FACTOR = 16;
+  const isWindowsPlatform =
+    typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent);
+
+  const getAnime4KModeLabel = (mode: string) => {
+    switch (mode) {
+      case 'ModeA':
+        return 'ModeA (快速)';
+      case 'ModeB':
+        return 'ModeB (标准)';
+      case 'ModeC':
+        return 'ModeC (高质)';
+      case 'ModeAA':
+        return 'ModeAA (极速)';
+      case 'ModeBB':
+        return 'ModeBB (平衡)';
+      case 'ModeCA':
+        return 'ModeCA (优质)';
+      default:
+        return mode || 'ModeA (快速)';
+    }
+  };
+
+  const getAnime4KScaleLabel = (scale: number) => {
+    if (!Number.isFinite(scale)) return '2.0x';
+    return `${scale.toFixed(1)}x`;
+  };
+
+  const estimateAnime4KBufferBytes = (
+    width: number,
+    height: number,
+    scale: number,
+  ) => {
+    const outputWidth = Math.floor(width * scale);
+    const outputHeight = Math.floor(height * scale);
+    if (!outputWidth || !outputHeight) return Number.POSITIVE_INFINITY;
+    return (
+      outputWidth *
+      outputHeight *
+      ANIME4K_BYTES_PER_PIXEL *
+      ANIME4K_BUFFER_FACTOR
+    );
+  };
+
+  const ensureRequestVideoFrameCallback = (
+    element: HTMLVideoElement | HTMLCanvasElement,
+  ) => {
+    const anyElement = element as any;
+    if (anyElement.__anime4kRvfcWrapped) return;
+
+    anyElement.__anime4kRvfcWrapped = true;
+    anyElement.__anime4kOriginalRequestVideoFrameCallback =
+      anyElement.requestVideoFrameCallback;
+    anyElement.__anime4kOriginalCancelVideoFrameCallback =
+      anyElement.cancelVideoFrameCallback;
+
+    const scheduleWithRaf = (cb: any) => {
+      const handle = requestAnimationFrame((now) => {
+        if (anyElement.__anime4kFrameCallbackEnabled === false) {
+          return;
+        }
+        const width = anyElement.videoWidth ?? anyElement.width ?? 0;
+        const height = anyElement.videoHeight ?? anyElement.height ?? 0;
+        const metadata = {
+          mediaTime: anyElement.currentTime ?? now / 1000,
+          presentedFrames: 0,
+          expectedDisplayTime: now,
+          width,
+          height,
+        };
+        cb(now, metadata);
+      });
+      return handle;
+    };
+
+    anyElement.requestVideoFrameCallback = (cb: any) => {
+      if (anyElement.__anime4kFrameCallbackEnabled === false) {
+        return 0;
+      }
+
+      const original = anyElement.__anime4kOriginalRequestVideoFrameCallback;
+      const handle =
+        typeof original === 'function'
+          ? original.call(anyElement, (now: number, metadata: any) => {
+              if (anyElement.__anime4kFrameCallbackEnabled === false) {
+                return;
+              }
+              cb(now, metadata);
+            })
+          : scheduleWithRaf(cb);
+      anyElement.__anime4kFrameCallbackHandle = handle;
+      return handle;
+    };
+
+    anyElement.cancelVideoFrameCallback = (handle: number) => {
+      const originalCancel =
+        anyElement.__anime4kOriginalCancelVideoFrameCallback;
+      if (typeof originalCancel === 'function') {
+        originalCancel.call(anyElement, handle);
+      } else {
+        cancelAnimationFrame(handle);
+      }
+      if (anyElement.__anime4kFrameCallbackHandle === handle) {
+        anyElement.__anime4kFrameCallbackHandle = null;
+      }
+    };
+  };
+
+  const ensureAnime4KMaxBufferLimit = async (requiredBytes: number) => {
+    if (requiredBytes <= ANIME4K_DEFAULT_MAX_BUFFER_BYTES) return true;
+    if (typeof navigator === 'undefined' || !('gpu' in navigator)) {
+      return false;
+    }
+
+    try {
+      const adapter = await (navigator as any).gpu.requestAdapter(
+        isWindowsPlatform ? undefined : { powerPreference: 'high-performance' },
+      );
+      if (!adapter) return false;
+
+      const maxSupported = adapter.limits?.maxBufferSize ?? 0;
+      if (!maxSupported || maxSupported < requiredBytes) return false;
+
+      const requiredLimit = Math.min(maxSupported, requiredBytes);
+      const win = window as any;
+      win.__anime4kRequiredMaxBufferBytes = Math.max(
+        win.__anime4kRequiredMaxBufferBytes ?? 0,
+        requiredLimit,
+      );
+
+      const gpu = navigator.gpu as any;
+      if (!gpu.__anime4kPatched) {
+        const originalRequestAdapter = navigator.gpu.requestAdapter.bind(
+          navigator.gpu,
+        );
+        gpu.__anime4kPatched = true;
+        gpu.__anime4kOriginalRequestAdapter = originalRequestAdapter;
+
+        gpu.requestAdapter = async (options?: any) => {
+          const patchedAdapter = await originalRequestAdapter(options);
+          if (!patchedAdapter) return patchedAdapter;
+
+          const originalRequestDevice =
+            patchedAdapter.requestDevice.bind(patchedAdapter);
+
+          patchedAdapter.requestDevice = async (descriptor?: any) => {
+            const currentRequired = (window as any)
+              .__anime4kRequiredMaxBufferBytes;
+            if (!currentRequired) return originalRequestDevice(descriptor);
+
+            const supportedLimit =
+              patchedAdapter.limits?.maxBufferSize ?? currentRequired;
+            const existingLimit =
+              descriptor?.requiredLimits?.maxBufferSize ?? 0;
+            const targetLimit = Math.min(
+              supportedLimit,
+              Math.max(existingLimit, currentRequired),
+            );
+
+            const requiredLimits = {
+              ...(descriptor?.requiredLimits ?? {}),
+              maxBufferSize: targetLimit,
+            };
+
+            return originalRequestDevice({
+              ...descriptor,
+              requiredLimits,
+            });
+          };
+
+          return patchedAdapter;
+        };
+      }
+
+      return true;
+    } catch (err) {
+      console.warn('提升WebGPU缓冲上限失败:', err);
+      return false;
+    }
+  };
 
   // 获取服务器配置（下载功能开关）
   useEffect(() => {
@@ -1771,7 +1952,7 @@ function PlayPageClient() {
 
   // 初始化Anime4K超分
   const initAnime4K = async () => {
-    if (!artPlayerRef.current?.video) return;
+    if (!artPlayerRef.current?.video) return false;
 
     let frameRequestId: number | null = null;
     let outputCanvas: HTMLCanvasElement | null = null;
@@ -1808,7 +1989,17 @@ function PlayPageClient() {
       outputCanvas = document.createElement('canvas');
       const container = artPlayerRef.current.template.$video.parentElement;
 
-      const scale = anime4kScaleRef.current;
+      const requestedScale = anime4kScaleRef.current;
+      const requiredBytes = estimateAnime4KBufferBytes(
+        video.videoWidth,
+        video.videoHeight,
+        requestedScale,
+      );
+      const scale = requestedScale;
+
+      if (requiredBytes > ANIME4K_DEFAULT_MAX_BUFFER_BYTES) {
+        await ensureAnime4KMaxBufferLimit(requiredBytes);
+      }
       outputCanvas.width = Math.floor(video.videoWidth * scale);
       outputCanvas.height = Math.floor(video.videoHeight * scale);
 
@@ -1845,6 +2036,14 @@ function PlayPageClient() {
           throw new Error(
             `sourceCanvas尺寸无效: ${sourceCanvas.width}x${sourceCanvas.height}`,
           );
+        }
+
+        // 兼容 anime4k-webgpu 期望的 videoWidth/videoHeight
+        try {
+          (sourceCanvas as any).videoWidth = sourceCanvas.width;
+          (sourceCanvas as any).videoHeight = sourceCanvas.height;
+        } catch (err) {
+          console.warn('无法设置sourceCanvas视频尺寸字段:', err);
         }
 
         sourceCtx = sourceCanvas.getContext('2d', {
@@ -1914,6 +2113,11 @@ function PlayPageClient() {
         captureVideoFrame();
       }
 
+      const renderInput = isFirefox ? sourceCanvas : video;
+      if (!renderInput) throw new Error('无法获取超分输入源');
+      ensureRequestVideoFrameCallback(renderInput);
+      (renderInput as any).__anime4kFrameCallbackEnabled = true;
+
       const {
         render: anime4kRender,
         ModeA,
@@ -1951,7 +2155,7 @@ function PlayPageClient() {
       }
 
       const renderConfig: any = {
-        video: isFirefox ? sourceCanvas : video,
+        video: renderInput,
         canvas: outputCanvas,
         pipelineBuilder: (device: GPUDevice, inputTexture: GPUTexture) => {
           if (!outputCanvas) throw new Error('outputCanvas is null');
@@ -1980,6 +2184,7 @@ function PlayPageClient() {
         frameRequestId: isFirefox ? frameRequestId : null,
         handleCanvasClick,
         handleCanvasDblClick,
+        renderInput,
       };
 
       console.log(
@@ -1991,6 +2196,7 @@ function PlayPageClient() {
       if (artPlayerRef.current) {
         artPlayerRef.current.notice.show = `超分已启用 (${anime4kModeRef.current}, ${scale}x)`;
       }
+      return true;
     } catch (err) {
       console.error('初始化Anime4K失败:', err);
       if (artPlayerRef.current) {
@@ -2009,6 +2215,7 @@ function PlayPageClient() {
         artPlayerRef.current.video.style.position = '';
         artPlayerRef.current.video.style.zIndex = '';
       }
+      return false;
     }
   };
 
@@ -2043,6 +2250,20 @@ function PlayPageClient() {
           );
         }
 
+        if (anime4kRef.current.renderInput) {
+          const renderInput = anime4kRef.current.renderInput as any;
+          renderInput.__anime4kFrameCallbackEnabled = false;
+          if (
+            typeof renderInput.cancelVideoFrameCallback === 'function' &&
+            renderInput.__anime4kFrameCallbackHandle != null
+          ) {
+            renderInput.cancelVideoFrameCallback(
+              renderInput.__anime4kFrameCallbackHandle,
+            );
+          }
+          renderInput.__anime4kFrameCallbackHandle = null;
+        }
+
         if (anime4kRef.current.sourceCanvas) {
           const ctx = anime4kRef.current.sourceCanvas.getContext('2d');
           if (ctx) {
@@ -2075,7 +2296,12 @@ function PlayPageClient() {
   const toggleAnime4K = async (enabled: boolean) => {
     try {
       if (enabled) {
-        await initAnime4K();
+        const ok = await initAnime4K();
+        if (!ok) {
+          setAnime4kEnabled(false);
+          localStorage.setItem('enable_anime4k', 'false');
+          return;
+        }
       } else {
         await cleanupAnime4K();
       }
@@ -2094,7 +2320,11 @@ function PlayPageClient() {
 
       if (anime4kEnabledRef.current) {
         await cleanupAnime4K();
-        await initAnime4K();
+        const ok = await initAnime4K();
+        if (!ok) {
+          setAnime4kEnabled(false);
+          localStorage.setItem('enable_anime4k', 'false');
+        }
       }
     } catch (err) {
       console.error('更改超分模式失败:', err);
@@ -2109,7 +2339,11 @@ function PlayPageClient() {
 
       if (anime4kEnabledRef.current) {
         await cleanupAnime4K();
-        await initAnime4K();
+        const ok = await initAnime4K();
+        if (!ok) {
+          setAnime4kEnabled(false);
+          localStorage.setItem('enable_anime4k', 'false');
+        }
       }
     } catch (err) {
       console.error('更改超分倍数失败:', err);
@@ -2155,49 +2389,54 @@ function PlayPageClient() {
       }
     }
 
-    // 默认去广告逻辑
+    // 默认去广告规则
+    if (!m3u8Content) return '';
+
+    // 广告关键字列表
+    const adKeywords = [
+      'sponsor',
+      '/ad/',
+      '/ads/',
+      'advert',
+      'advertisement',
+      '/adjump',
+      'redtraffic',
+    ];
+
     // 按行分割M3U8内容
     const lines = m3u8Content.split('\n');
     const filteredLines = [];
-    let inAdBlock = false; // 是否在广告区块内
-    let adSegmentCount = 0; // 统计移除的广告片段数量
 
-    for (let i = 0; i < lines.length; i++) {
+    let i = 0;
+    while (i < lines.length) {
       const line = lines[i];
 
-      // 🎯 增强功能1: 检测行业标准广告标记（SCTE-35系列）
-      // 使用 line.includes() 保持与原逻辑一致，兼容各种格式
-      if (
-        line.includes('#EXT-X-CUE-OUT') ||
-        (line.includes('#EXT-X-DATERANGE') && line.includes('SCTE35')) ||
-        line.includes('#EXT-X-SCTE35') ||
-        line.includes('#EXT-OATCLS-SCTE35')
-      ) {
-        inAdBlock = true;
-        adSegmentCount++;
-        continue; // 跳过广告开始标记
-      }
-
-      // 🎯 增强功能2: 检测广告结束标记
-      if (line.includes('#EXT-X-CUE-IN')) {
-        inAdBlock = false;
-        continue; // 跳过广告结束标记
-      }
-
-      // 🎯 增强功能3: 如果在广告区块内，跳过所有内容
-      if (inAdBlock) {
+      // 跳过 #EXT-X-DISCONTINUITY 标识
+      if (line.includes('#EXT-X-DISCONTINUITY')) {
+        i++;
         continue;
       }
 
-      // ✅ 原始逻辑保留: 过滤#EXT-X-DISCONTINUITY标识
-      if (!line.includes('#EXT-X-DISCONTINUITY')) {
-        filteredLines.push(line);
-      }
-    }
+      // 如果是 EXTINF 行，检查下一行 URL 是否包含广告关键字
+      if (line.includes('#EXTINF:')) {
+        // 检查下一行 URL 是否包含广告关键字
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          const containsAdKeyword = adKeywords.some((keyword) =>
+            nextLine.toLowerCase().includes(keyword.toLowerCase()),
+          );
 
-    // 输出统计信息
-    if (adSegmentCount > 0) {
-      console.log(`✅ M3U8广告过滤: 移除 ${adSegmentCount} 个广告片段`);
+          if (containsAdKeyword) {
+            // 跳过 EXTINF 行和 URL 行
+            i += 2;
+            continue;
+          }
+        }
+      }
+
+      // 保留当前行
+      filteredLines.push(line);
+      i++;
     }
 
     return filteredLines.join('\n');
@@ -2999,7 +3238,6 @@ function PlayPageClient() {
 
       try {
         const allRecords = await getAllPlayRecords();
-        queryClient.setQueryData(['playRecords'], allRecords);
         const key = generateStorageKey(currentSource, currentId);
         const record = allRecords[key];
 
@@ -3299,7 +3537,6 @@ function PlayPageClient() {
       // 🔥 优化：检查目标集数是否有历史播放记录
       try {
         const allRecords = await getAllPlayRecords();
-        queryClient.setQueryData(['playRecords'], allRecords);
         const key = generateStorageKey(
           currentSourceRef.current,
           currentIdRef.current,
@@ -3484,7 +3721,6 @@ function PlayPageClient() {
       // 获取现有播放记录以保持原始集数
       const existingRecord = await getAllPlayRecords()
         .then((records) => {
-          queryClient.setQueryData(['playRecords'], records);
           const key = generateStorageKey(
             currentSourceRef.current,
             currentIdRef.current,
@@ -4619,6 +4855,7 @@ function PlayPageClient() {
                   {
                     name: '超分模式',
                     html: '超分模式',
+                    tooltip: getAnime4KModeLabel(anime4kModeRef.current),
                     selector: [
                       {
                         html: 'ModeA (快速)',
@@ -4659,11 +4896,12 @@ function PlayPageClient() {
                   {
                     name: '超分倍数',
                     html: '超分倍数',
+                    tooltip: getAnime4KScaleLabel(anime4kScaleRef.current),
                     selector: [
                       {
-                        html: '1.5x',
-                        value: '1.5',
-                        default: anime4kScaleRef.current === 1.5,
+                        html: '1.0x',
+                        value: '1.0',
+                        default: anime4kScaleRef.current === 1.0,
                       },
                       {
                         html: '2.0x',
@@ -5977,7 +6215,6 @@ function PlayPageClient() {
         } else {
           console.log('✅ 使用已预加载的播放器模块');
         }
-
         await initPlayer();
       } catch (error) {
         console.error('动态导入 ArtPlayer 失败:', error);
