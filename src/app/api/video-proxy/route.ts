@@ -45,7 +45,7 @@ export async function GET(request: Request) {
   // 仅轮播视频：如果没有 url 但有 id，尝试获取 url
   if (doubanId && isCarousel) {
     try {
-      videoUrl = await fetchTrailerWithRetry(doubanId);
+      videoUrl = (await fetchTrailerWithRetry(doubanId)).trailerUrl;
     } catch (e) {
       console.error(
         `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
@@ -64,12 +64,6 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
   }
-
-  // 获取客户端的 Range 请求头
-  const rangeHeader = request.headers.get('range');
-  // 获取条件请求头（用于缓存重验证）
-  const ifNoneMatch = request.headers.get('if-none-match');
-  const ifModifiedSince = request.headers.get('if-modified-since');
 
   // 创建 AbortController 用于超时控制
   const controller = new AbortController();
@@ -110,9 +104,6 @@ export async function GET(request: Request) {
         if (!downloadingFiles.has(filename)) {
           downloadingFiles.add(filename);
           const downloadHeaders = { ...fetchHeaders };
-          // @ts-ignore
-          delete downloadHeaders['Range'];
-
           downloadToCache(videoUrl, filePath, downloadHeaders, MAX_CACHE_BYTES)
             .catch((err) =>
               console.error('[Video Cache] Background download failed:', err),
@@ -138,6 +129,11 @@ export async function GET(request: Request) {
       return warmingResponse;
     }
 
+    // 获取客户端的 Range 请求头
+    const rangeHeader = request.headers.get('range');
+    // 获取条件请求头（用于缓存重验证）
+    const ifNoneMatch = request.headers.get('if-none-match');
+    const ifModifiedSince = request.headers.get('if-modified-since');
     if (rangeHeader) {
       fetchHeaders['Range'] = rangeHeader;
     }
@@ -271,7 +267,7 @@ export async function HEAD(request: Request) {
 
   if (doubanId && isCarousel) {
     try {
-      videoUrl = await fetchTrailerWithRetry(doubanId);
+      videoUrl = (await fetchTrailerWithRetry(doubanId)).trailerUrl;
     } catch (e) {
       console.error(
         `[Video Proxy] Failed to fetch trailer for ${doubanId}:`,
@@ -406,7 +402,7 @@ async function downloadToCache(
         });
     if (!response.ok || !response.body) {
       console.error(
-        `[Video Cache] Failed to fetch source: ${response.status}, url = ${response.url}`,
+        `[Video Cache] Failed to fetch source: ${response.status}, url = ${url}`,
       );
       return;
     }

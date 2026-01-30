@@ -42,15 +42,6 @@ export class DoubanError extends Error {
   }
 }
 
-type TrailerFetchOptions = {
-  includeBackdrop?: boolean;
-};
-
-type TrailerWithBackdrop = {
-  trailerUrl?: string;
-  backdrop?: string;
-};
-
 function getBackdropFromMobileData(data: any): string | undefined {
   let backdrop =
     data.cover?.image?.raw?.url ||
@@ -71,37 +62,21 @@ function getBackdropFromMobileData(data: any): string | undefined {
   return backdrop;
 }
 
-// 带重试的获取函数
-export async function fetchTrailerWithRetry(
-  id: string,
-  retryCount?: number,
-): Promise<string | null>;
-export async function fetchTrailerWithRetry(
-  id: string,
-  retryCount: number | undefined,
-  options: TrailerFetchOptions & { includeBackdrop: true },
-): Promise<TrailerWithBackdrop | null>;
-export async function fetchTrailerWithRetry(
-  id: string,
-  retryCount: number | undefined,
-  options?: TrailerFetchOptions,
-): Promise<string | null>;
+type TrailerWithBackdrop = {
+  trailerUrl?: string;
+  backdrop?: string;
+};
+
 export async function fetchTrailerWithRetry(
   id: string,
   retryCount = 0,
-  options?: TrailerFetchOptions,
-): Promise<string | TrailerWithBackdrop | null> {
-  const includeBackdrop = options?.includeBackdrop === true;
+  getTrailerUrl = true,
+): Promise<TrailerWithBackdrop> {
   const cacheKey = getDouBanCacheKey('trailer_url', { id });
 
-  const cachedData = (await getCache(cacheKey)) as TrailerWithBackdrop | null;
+  const cachedData = (await getCache(cacheKey)) as TrailerWithBackdrop;
   if (cachedData) {
-    if (includeBackdrop) {
-      return cachedData;
-    }
-    if (cachedData.trailerUrl) {
-      return cachedData.trailerUrl;
-    }
+    return cachedData;
   }
   const MAX_RETRIES = 2;
   const RETRY_DELAY = 2000; // 2秒后重试
@@ -130,27 +105,22 @@ export async function fetchTrailerWithRetry(
     }
     const data = await response.json();
     const trailerUrl = data.trailers?.[0]?.video_url;
-    const backdrop = includeBackdrop
-      ? getBackdropFromMobileData(data)
-      : undefined;
+    const backdrop = getBackdropFromMobileData(data);
 
     if (!trailerUrl) {
       console.warn(`[refresh-trailer] 影片 ${id} 没有预告片数据`);
-      if (includeBackdrop) {
-        const cachedData = { trailerUrl: undefined, backdrop };
-        await setCache(cacheKey, cachedData, DOUBAN_CACHE_EXPIRE.trailer_url);
-        return cachedData;
+      const cachedData = { trailerUrl: undefined, backdrop };
+      await setCache(cacheKey, cachedData, DOUBAN_CACHE_EXPIRE.trailer_url);
+      if (getTrailerUrl) {
+        throw new Error('该影片没有预告片');
       }
-      throw new Error('该影片没有预告片');
+      return cachedData;
     }
     console.log(`[refresh-trailer] 影片 ${id} 刷新成功. url = ${trailerUrl}`);
     // 写入缓存
     const cachedData = { trailerUrl, backdrop };
     await setCache(cacheKey, cachedData, DOUBAN_CACHE_EXPIRE.trailer_url);
-    if (includeBackdrop) {
-      return cachedData;
-    }
-    return trailerUrl;
+    return cachedData;
   } catch (error) {
     const failTime = Date.now() - startTime;
     if (
@@ -162,7 +132,7 @@ export async function fetchTrailerWithRetry(
       );
       if (retryCount < MAX_RETRIES) {
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-        return fetchTrailerWithRetry(id, retryCount + 1, options);
+        return fetchTrailerWithRetry(id, retryCount + 1);
       }
     }
     throw error;

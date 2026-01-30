@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const trailerUrl = await fetchTrailerWithRetry(id);
+    const trailerUrl = (await fetchTrailerWithRetry(id)).trailerUrl;
 
     return NextResponse.json(
       {

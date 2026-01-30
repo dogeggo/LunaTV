@@ -7,7 +7,7 @@ export const DOUBAN_CACHE_EXPIRE = {
   recommends: 4 * 60 * 60, // 推荐2小时
   comments: 24 * 60 * 60, // 短评1小时（更新频繁）
   platform_link: 24 * 60 * 60, // 平台链接
-  trailer_url: 7 * 24 * 60 * 60, // 7 days
+  trailer_url: 4 * 60 * 60,
   danmu: 24 * 60 * 60,
   top250: 24 * 60 * 60,
 };

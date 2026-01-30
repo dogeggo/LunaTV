@@ -139,7 +139,7 @@ async function downloadToCache(url: string, filePath: string, headers: any) {
         });
     if (!response.ok || !response.body) {
       console.error(
-        `[ImageCache] Failed to fetch source: ${response.status}, url = ${response.url}`,
+        `[ImageCache] Failed to fetch source: ${response.status}, url = ${url}`,
       );
       return false;
     }

@@ -74,7 +74,7 @@ export async function GET(request: Request) {
     // 并行获取详情和移动端API数据
     const [details, mobileData] = await Promise.all([
       getDoubanDetails(id),
-      fetchTrailerWithRetry(id, 0, { includeBackdrop: true }),
+      fetchTrailerWithRetry(id, 0, false),
     ]);
 
     // 合并数据：混合使用爬虫和移动端API的优势
