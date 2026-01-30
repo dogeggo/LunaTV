@@ -18,20 +18,18 @@ export async function GET(request: NextRequest) {
     }
 
     // 读取配置以获取备用API地址
-    let alternativeApiUrl: string | undefined;
-    let enableAlternative = false;
+    let primaryApiUrl: string | undefined;
 
     try {
       const config = await loadConfig();
       const shortDramaConfig = config.ShortDramaConfig;
-      alternativeApiUrl = shortDramaConfig?.alternativeApiUrl;
-      enableAlternative = shortDramaConfig?.enableAlternative || false;
+      primaryApiUrl = shortDramaConfig?.primaryApiUrl;
     } catch (configError) {
       console.error('读取短剧配置失败:', configError);
     }
 
     // 如果没有启用备用API或没有配置地址，返回错误
-    if (!enableAlternative || !alternativeApiUrl) {
+    if (!primaryApiUrl) {
       return NextResponse.json(
         { error: '备用API未启用或未配置' },
         { status: 503 },
@@ -39,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 使用备用API搜索短剧获取集数
-    const searchUrl = `${alternativeApiUrl}/api/v1/drama/d?dramaName=${encodeURIComponent(name)}`;
+    const searchUrl = `${primaryApiUrl}/api/v1/drama/d?dramaName=${encodeURIComponent(name)}`;
 
     const searchResponse = await fetch(searchUrl, {
       headers: {
@@ -51,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     if (!searchResponse.ok) {
       // 精确搜索失败，尝试模糊搜索
-      const fuzzySearchUrl = `${alternativeApiUrl}/api/v1/drama/dl?dramaName=${encodeURIComponent(name)}`;
+      const fuzzySearchUrl = `${primaryApiUrl}/api/v1/drama/dl?dramaName=${encodeURIComponent(name)}`;
       const fuzzyResponse = await fetch(fuzzySearchUrl, {
         headers: {
           'User-Agent':

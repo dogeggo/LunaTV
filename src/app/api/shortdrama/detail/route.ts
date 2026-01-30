@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
-import { loadConfig } from '@/lib/config';
 import { getShortDramaDetail } from '@/lib/shortdrama-api';
 
 // 标记为动态路由
@@ -23,28 +22,6 @@ export async function GET(request: NextRequest) {
 
     if (isNaN(videoId) || isNaN(episodeNum)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
-    }
-
-    // 读取配置以获取备用API地址
-    let alternativeApiUrl: string | undefined;
-    try {
-      const config = await loadConfig();
-      const shortDramaConfig = config.ShortDramaConfig;
-      alternativeApiUrl = shortDramaConfig?.enableAlternative
-        ? shortDramaConfig.alternativeApiUrl
-        : undefined;
-
-      // 调试日志
-      console.log('[ShortDrama Detail] 配置读取:', {
-        hasConfig: !!shortDramaConfig,
-        enableAlternative: shortDramaConfig?.enableAlternative,
-        hasAlternativeUrl: !!alternativeApiUrl,
-        name: name,
-      });
-    } catch (configError) {
-      console.error('读取短剧配置失败:', configError);
-      // 配置读取失败时，不使用备用API
-      alternativeApiUrl = undefined;
     }
 
     let detail: Awaited<ReturnType<typeof getShortDramaDetail>>;

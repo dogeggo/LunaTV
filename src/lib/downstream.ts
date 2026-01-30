@@ -585,13 +585,11 @@ export async function getDetailFromApi(
   }).finally(() => {
     clearTimeout(timeoutId);
   });
-
   if (!response.ok) {
     throw new Error(`详情请求失败: ${response.status}`);
   }
 
   const data = await response.json();
-
   if (
     !data ||
     !data.list ||
@@ -600,7 +598,6 @@ export async function getDetailFromApi(
   ) {
     throw new Error('获取到的详情内容无效');
   }
-
   const videoDetail = data.list[0];
   let episodes: string[] = [];
   let titles: string[] = [];

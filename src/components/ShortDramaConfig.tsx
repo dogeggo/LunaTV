@@ -19,8 +19,6 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
 
   const [shortDramaSettings, setShortDramaSettings] = useState({
     primaryApiUrl: 'https://api.r2afosne.dpdns.org',
-    alternativeApiUrl: '',
-    enableAlternative: false,
   });
 
   // 从config加载设置
@@ -30,8 +28,6 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
         primaryApiUrl:
           config.ShortDramaConfig.primaryApiUrl ||
           'https://api.r2afosne.dpdns.org',
-        alternativeApiUrl: config.ShortDramaConfig.alternativeApiUrl || '',
-        enableAlternative: config.ShortDramaConfig.enableAlternative ?? false,
       });
     }
   }, [config]);
@@ -47,14 +43,6 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
     // 基本验证
     if (!shortDramaSettings.primaryApiUrl.trim()) {
       showMessage('error', '请填写主API地址');
-      return;
-    }
-
-    if (
-      shortDramaSettings.enableAlternative &&
-      !shortDramaSettings.alternativeApiUrl.trim()
-    ) {
-      showMessage('error', '启用备用API时必须填写备用API地址');
       return;
     }
 
@@ -139,102 +127,7 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
             主要的短剧视频解析API地址，默认优先使用此API
           </p>
         </div>
-
-        {/* 启用备用API开关 */}
-        <div className='mb-6'>
-          <label className='flex items-center cursor-pointer'>
-            <input
-              type='checkbox'
-              className='sr-only'
-              checked={shortDramaSettings.enableAlternative}
-              onChange={(e) =>
-                setShortDramaSettings((prev) => ({
-                  ...prev,
-                  enableAlternative: e.target.checked,
-                }))
-              }
-            />
-            <div
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                shortDramaSettings.enableAlternative
-                  ? 'bg-green-600'
-                  : 'bg-gray-200 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  shortDramaSettings.enableAlternative
-                    ? 'translate-x-6'
-                    : 'translate-x-1'
-                }`}
-              />
-            </div>
-            <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
-              启用备用API自动切换
-            </span>
-          </label>
-          <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-            开启后，当主API失败时会自动尝试使用备用API解析视频
-          </p>
-        </div>
-
-        {/* 备用API地址 - 仅在启用时显示 */}
-        {shortDramaSettings.enableAlternative && (
-          <div className='mb-6'>
-            <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-              备用API地址 <span className='text-red-500'>*</span>
-            </label>
-            <input
-              type='text'
-              value={shortDramaSettings.alternativeApiUrl}
-              onChange={(e) =>
-                setShortDramaSettings((prev) => ({
-                  ...prev,
-                  alternativeApiUrl: e.target.value,
-                }))
-              }
-              className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-              placeholder='https://...'
-            />
-            <div className='mt-2 space-y-2'>
-              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                当主API不可用时使用的备用解析API地址
-              </p>
-              <div className='p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg'>
-                <p className='text-yellow-700 dark:text-yellow-300 text-xs font-medium mb-1'>
-                  🔒 隐私保护
-                </p>
-                <p className='text-yellow-700 dark:text-yellow-300 text-xs'>
-                  • 备用API地址<strong>仅存储在服务器</strong>
-                  ，不会暴露给前端用户
-                </p>
-                <p className='text-yellow-700 dark:text-yellow-300 text-xs'>
-                  • 该配置<strong>不会包含在</strong>配置导出或TVBox订阅中
-                </p>
-                <p className='text-yellow-700 dark:text-yellow-300 text-xs'>
-                  • 推荐用于<strong>私有API</strong>或<strong>付费API</strong>
-                  地址
-                </p>
-              </div>
-              <div className='p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-                <p className='text-blue-700 dark:text-blue-300 text-xs font-medium mb-1'>
-                  💡 工作原理
-                </p>
-                <p className='text-blue-700 dark:text-blue-300 text-xs'>
-                  1. 首先尝试使用<strong>主API</strong>解析视频
-                </p>
-                <p className='text-blue-700 dark:text-blue-300 text-xs'>
-                  2. 如果主API失败或超时，自动切换到<strong>备用API</strong>
-                </p>
-                <p className='text-blue-700 dark:text-blue-300 text-xs'>
-                  3. 备用API需要剧名参数，确保更精准的匹配
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-
       {/* 操作按钮 */}
       <div className='flex flex-wrap gap-3'>
         <button

@@ -465,8 +465,6 @@ export async function configSelfCheck(
   if (!adminConfig.ShortDramaConfig) {
     adminConfig.ShortDramaConfig = {
       primaryApiUrl: 'https://api.r2afosne.dpdns.org', // 默认主API
-      alternativeApiUrl: '', // 默认为空，需要管理员配置
-      enableAlternative: false, // 默认关闭备用API
     };
   }
 

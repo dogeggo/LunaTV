@@ -26,18 +26,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { primaryApiUrl, alternativeApiUrl, enableAlternative } = body;
+    const { primaryApiUrl } = body;
 
     // 验证必填字段
     if (!primaryApiUrl) {
       return NextResponse.json({ error: '主API地址不能为空' }, { status: 400 });
-    }
-
-    if (enableAlternative && !alternativeApiUrl) {
-      return NextResponse.json(
-        { error: '启用备用API时必须提供备用API地址' },
-        { status: 400 },
-      );
     }
 
     // 获取当前配置
@@ -46,8 +39,6 @@ export async function POST(request: NextRequest) {
     // 更新短剧配置
     config.ShortDramaConfig = {
       primaryApiUrl: primaryApiUrl.trim(),
-      alternativeApiUrl: alternativeApiUrl.trim(),
-      enableAlternative: !!enableAlternative,
     };
 
     // 保存到数据库
@@ -88,8 +79,6 @@ export async function GET(request: NextRequest) {
       success: true,
       config: config.ShortDramaConfig || {
         primaryApiUrl: 'https://api.r2afosne.dpdns.org',
-        alternativeApiUrl: '',
-        enableAlternative: false,
       },
     });
   } catch (error) {

@@ -115,7 +115,7 @@ function ShortDramaCard({
       onFocus={() => setShouldCheckStatus(true)}
     >
       <Link
-        href={`/play?title=${encodeURIComponent(drama.name)}&shortdrama_id=${drama.id}`}
+        href={`/play?title=${encodeURIComponent(drama.name)}`}
         className='block'
       >
         {/* 封面图片 */}

@@ -25,7 +25,6 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
-import { getShortDramaDetail } from '@/lib/shortdrama-api';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
@@ -102,17 +101,7 @@ function PlayPageClient() {
   const [bangumiDetails, setBangumiDetails] = useState<any>(null);
   const [loadingBangumiDetails, setLoadingBangumiDetails] = useState(false);
 
-  // 短剧详情状态（用于显示简介等信息）
-  const [shortdramaDetails, setShortdramaDetails] = useState<any>(null);
-  const [loadingShortdramaDetails, setLoadingShortdramaDetails] =
-    useState(false);
-  const loadingShortdramaDetailsRef = useRef(false);
   const loadedCommentsIdRef = useRef<string | number | null>(null);
-  const doubanDetailsRequestRef = useRef<{
-    id: number | null;
-    inFlight: boolean;
-    lastAttempt: number;
-  }>({ id: null, inFlight: false, lastAttempt: 0 });
 
   // 网盘搜索状态
   const [netdiskResults, setNetdiskResults] = useState<{
@@ -480,9 +469,6 @@ function PlayPageClient() {
   );
   const [currentId, setCurrentId] = useState(searchParams.get('id') || '');
 
-  // 短剧ID（用于获取详情显示，不影响源搜索）
-  const [shortdramaId] = useState(searchParams.get('shortdrama_id') || '');
-
   // 搜索所需信息
   const [searchTitle] = useState(searchParams.get('stitle') || '');
   const [searchType] = useState(searchParams.get('stype') || '');
@@ -641,11 +627,7 @@ function PlayPageClient() {
   // 加载详情（豆瓣或bangumi）
   useEffect(() => {
     const loadMovieDetails = async () => {
-      if (
-        !videoDoubanId ||
-        videoDoubanId === 0 ||
-        detail?.source === 'shortdrama'
-      ) {
+      if (!videoDoubanId || videoDoubanId === 0) {
         return;
       }
       const isAnimeType = searchType === 'anime';
@@ -758,11 +740,7 @@ function PlayPageClient() {
   // 加载豆瓣短评
   useEffect(() => {
     const loadComments = async () => {
-      if (
-        !videoDoubanId ||
-        videoDoubanId === 0 ||
-        detail?.source === 'shortdrama'
-      ) {
+      if (!videoDoubanId || videoDoubanId === 0) {
         return;
       }
 
@@ -814,70 +792,6 @@ function PlayPageClient() {
     loadComments();
   }, [videoDoubanId, detail?.source]);
 
-  // 加载短剧详情（仅用于显示简介等信息，不影响源搜索）
-  useEffect(() => {
-    // 如果没有ID或已经有数据，直接返回
-    if (!shortdramaId || shortdramaDetails) {
-      return;
-    }
-
-    // 优化：如果当前源就是短剧，initAll 已经会获取详情，从 availableSources 中提取即可
-    // 避免重复请求同一个 API
-    if (currentSource === 'shortdrama' && currentId === shortdramaId) {
-      // 从 availableSources 中查找短剧详情
-      const shortdramaFromSources = availableSources.find(
-        (s) => s.source === 'shortdrama' && s.id === shortdramaId,
-      );
-      if (shortdramaFromSources) {
-        setShortdramaDetails(shortdramaFromSources);
-        return;
-      }
-      // 如果 availableSources 还没加载完，等待下次 effect 触发
-      if (availableSources.length === 0) {
-        return;
-      }
-    }
-
-    const loadShortdramaDetails = async () => {
-      // 避免重复请求
-      if (loadingShortdramaDetailsRef.current) return;
-
-      setLoadingShortdramaDetails(true);
-      loadingShortdramaDetailsRef.current = true;
-
-      try {
-        const shortdramaSource = await fetchSourceDetail(
-          'shortdrama',
-          shortdramaId,
-        );
-        setShortdramaDetails(shortdramaSource[0]);
-      } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('Failed to load shortdrama details:', error);
-        }
-      } finally {
-        setLoadingShortdramaDetails(false);
-        loadingShortdramaDetailsRef.current = false;
-      }
-    };
-    loadShortdramaDetails();
-    // 清理函数：取消请求
-    return () => {
-      loadingShortdramaDetailsRef.current = false;
-    };
-    // 依赖说明：
-    // - shortdramaId: 短剧ID变化时重新加载
-    // - currentSource/currentId: 用于判断是否可以从 availableSources 复用数据
-    // - availableSources: 当 initAll 加载完成后，从中提取短剧详情
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shortdramaId, currentSource, currentId, availableSources]);
-
-  // 自动网盘搜索：当有视频标题时可以随时搜索
-  useEffect(() => {
-    // 移除自动搜索，改为用户点击按钮时触发
-    // 这样可以避免不必要的API调用
-  }, []);
-
   // 视频播放地址
   const [videoUrl, setVideoUrl] = useState('');
 
@@ -886,9 +800,6 @@ function PlayPageClient() {
   const filteredSources = availableSources.filter((source) => {
     // 必须有集数数据
     if (!source.episodes || source.episodes.length < 1) return false;
-
-    // 短剧源始终显示，不受集数差异限制
-    if (source.source === 'shortdrama') return true;
 
     // 如果当前有 detail，只显示集数相近的源（允许约30%的差异）
     if (detail && detail.episodes && detail.episodes.length > 0) {
@@ -1420,6 +1331,46 @@ function PlayPageClient() {
     }
   };
 
+  // 简单 ping：选择延迟最低的源，全部失败则回退第一个
+  const pickLowestPingSource = async (
+    sources: SearchResult[],
+  ): Promise<SearchResult> => {
+    if (sources.length <= 1) return sources[0];
+
+    const results = await Promise.all(
+      sources.map(async (source) => {
+        try {
+          if (!source.episodes || source.episodes.length === 0) {
+            return { source, pingTime: 9999, available: false };
+          }
+
+          const episodeUrl = source.episodes[0] || source.episodes[1];
+          if (!episodeUrl || !/^https?:\/\//i.test(episodeUrl)) {
+            return { source, pingTime: 9999, available: false };
+          }
+
+          const startTime = performance.now();
+          await fetch(episodeUrl, {
+            method: 'HEAD',
+            mode: 'no-cors',
+            signal: AbortSignal.timeout(2000),
+          });
+
+          const pingTime = Math.round(performance.now() - startTime);
+          return { source, pingTime, available: true };
+        } catch (error) {
+          return { source, pingTime: 9999, available: false };
+        }
+      }),
+    );
+
+    const sorted = results
+      .filter((item) => item.available)
+      .sort((a, b) => a.pingTime - b.pingTime);
+
+    return sorted.length > 0 ? sorted[0].source : sources[0];
+  };
+
   // 播放源优选函数（针对旧iPad做极端保守优化）
   const preferBestSource = async (
     sources: SearchResult[],
@@ -1779,46 +1730,10 @@ function PlayPageClient() {
     }
 
     const episodeData = detailData.episodes[episodeIndex];
-
-    // 检查是否为短剧格式
-    if (episodeData && episodeData.startsWith('shortdrama:')) {
-      try {
-        const [, videoId, episode] = episodeData.split(':');
-        // 添加剧名参数以支持备用API fallback
-        const nameParam = detailData.drama_name
-          ? `&name=${encodeURIComponent(detailData.drama_name)}`
-          : '';
-        const response = await fetch(
-          `/api/shortdrama/parse?id=${videoId}&episode=${episode}${nameParam}`,
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          const newUrl = result.url || '';
-          if (newUrl !== videoUrl) {
-            setVideoUrl(newUrl);
-          }
-        } else {
-          // 读取API返回的错误信息
-          try {
-            const errorData = await response.json();
-            setError(errorData.error || '短剧解析失败');
-          } catch {
-            setError('短剧解析失败');
-          }
-          setVideoUrl('');
-        }
-      } catch (err) {
-        console.error('短剧URL解析失败:', err);
-        setError('播放失败，请稍后再试');
-        setVideoUrl('');
-      }
-    } else {
-      // 普通视频格式
-      const newUrl = episodeData || '';
-      if (newUrl !== videoUrl) {
-        setVideoUrl(newUrl);
-      }
+    // 普通视频格式
+    const newUrl = episodeData || '';
+    if (newUrl !== videoUrl) {
+      setVideoUrl(newUrl);
     }
   };
 
@@ -2768,38 +2683,28 @@ function PlayPageClient() {
     }
   }, [detail, currentEpisodeIndex]);
 
+  const normalizeSources = (
+    sources: Array<SearchResult | null | undefined>,
+  ): SearchResult[] =>
+    sources.filter((source): source is SearchResult => Boolean(source));
+
   const fetchSourceDetail = async (
     source: string,
     id: string,
   ): Promise<SearchResult[]> => {
     try {
       let detailData: SearchResult;
-      // 判断是否为短剧源
-      if (source === 'shortdrama') {
-        const dramaTitle =
-          searchParams.get('title') || videoTitleRef.current || '';
-        const videoId = Number.parseInt(id, 10);
-        if (Number.isNaN(videoId)) {
-          throw new Error('短剧ID格式错误');
-        }
-        detailData = await getShortDramaDetail({
-          id,
-          videoId,
-          episode: 1,
-          name: dramaTitle || undefined,
-        });
-      } else {
-        const response = await fetch(
-          `/api/detail?source=${encodeURIComponent(source)}&id=${encodeURIComponent(id)}`,
-        );
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.error || '获取视频详情失败');
-        }
-        detailData = await response.json();
+      const response = await fetch(
+        `/api/detail?source=${encodeURIComponent(source)}&id=${encodeURIComponent(id)}`,
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || '获取视频详情失败');
       }
-      setAvailableSources([detailData]);
-      return [detailData];
+      detailData = await response.json();
+      const normalized = normalizeSources([detailData]);
+      setAvailableSources(normalized);
+      return normalized;
     } catch (err) {
       console.error('获取视频详情失败:', err);
       return [];
@@ -3018,8 +2923,9 @@ function PlayPageClient() {
         }
 
         console.log(`智能搜索完成，最终返回 ${finalResults.length} 个结果`);
-        setAvailableSources(finalResults);
-        return finalResults;
+        const normalized = normalizeSources(finalResults);
+        setAvailableSources(normalized);
+        return normalized;
       } catch (err) {
         console.error('智能搜索失败:', err);
         setSourceSearchError(err instanceof Error ? err.message : '搜索失败');
@@ -3071,60 +2977,28 @@ function PlayPageClient() {
                 console.error('⚠️ ArtPlayer 预加载失败:', error);
                 // 预加载失败不影响后续流程，initPlayer 时会重新尝试
               });
-
       let sourcesInfo: SearchResult[] = [];
+      // 其他情况先搜索所有视频源
+      sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
 
-      // 对于短剧，直接获取详情，跳过搜索
-      if (currentSource === 'shortdrama' && currentId) {
+      if (
+        currentSource &&
+        currentId &&
+        !sourcesInfo.some(
+          (source) =>
+            source.source === currentSource && source.id === currentId,
+        )
+      ) {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
-        // 设置可用源列表（即使只有短剧源本身）
-        setAvailableSources(sourcesInfo);
-      } else {
-        // 其他情况先搜索所有视频源
-        sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
-
-        if (
-          currentSource &&
-          currentId &&
-          !sourcesInfo.some(
-            (source) =>
-              source.source === currentSource && source.id === currentId,
-          )
-        ) {
-          sourcesInfo = await fetchSourceDetail(currentSource, currentId);
-        }
-
-        // 如果有 shortdrama_id，额外添加短剧源到可用源列表
-        // 即使已经有其他源，也尝试添加短剧源到换源列表中
-        if (shortdramaId) {
-          try {
-            const shortdramaSource = await fetchSourceDetail(
-              'shortdrama',
-              shortdramaId,
-            );
-            if (shortdramaSource.length > 0) {
-              // 检查是否已存在相同的短剧源，避免重复
-              const existingShortdrama = sourcesInfo.find(
-                (s) => s.source === 'shortdrama' && s.id === shortdramaId,
-              );
-              if (!existingShortdrama) {
-                sourcesInfo.push(...shortdramaSource);
-                // 重新设置 availableSources 以包含短剧源
-                setAvailableSources(sourcesInfo);
-              }
-            }
-          } catch (error) {
-            console.error('添加短剧源失败:', error);
-          }
-        }
       }
+      sourcesInfo = normalizeSources(sourcesInfo);
       if (sourcesInfo.length === 0) {
         setError('未找到匹配结果');
         setLoading(false);
         return;
       }
 
-      let detailData: SearchResult = sourcesInfo[0];
+      let detailData: SearchResult = await pickLowestPingSource(sourcesInfo);
       // 指定源和id则优先使用指定源
       if (currentSource && currentId) {
         const target = sourcesInfo.find(
@@ -3834,7 +3708,6 @@ function PlayPageClient() {
             `${currentSource}+${currentId}`, // 当前真实播放源
             videoDoubanId ? `douban+${videoDoubanId}` : null, // 豆瓣收藏
             videoDoubanId ? `bangumi+${videoDoubanId}` : null, // Bangumi收藏
-            shortdramaId ? `shortdrama+${shortdramaId}` : null, // 短剧收藏
           ].filter(Boolean);
 
           // 检查是否任一key已被收藏
@@ -3847,7 +3720,7 @@ function PlayPageClient() {
     }, 500); // 延迟500ms
 
     return () => clearTimeout(timer);
-  }, [currentSource, currentId, videoDoubanId, shortdramaId]);
+  }, [currentSource, currentId, videoDoubanId]);
 
   // 监听收藏数据更新事件（支持豆瓣/Bangumi等虚拟源）
   useEffect(() => {
@@ -3861,7 +3734,6 @@ function PlayPageClient() {
           generateStorageKey(currentSource, currentId), // 当前真实播放源
           videoDoubanId ? `douban+${videoDoubanId}` : null, // 豆瓣收藏
           videoDoubanId ? `bangumi+${videoDoubanId}` : null, // Bangumi收藏
-          shortdramaId ? `shortdrama+${shortdramaId}` : null, // 短剧收藏
         ].filter(Boolean);
 
         // 检查是否任一key已被收藏
@@ -3871,7 +3743,7 @@ function PlayPageClient() {
     );
 
     return unsubscribe;
-  }, [currentSource, currentId, videoDoubanId, shortdramaId]);
+  }, [currentSource, currentId, videoDoubanId]);
 
   // 自动更新收藏的集数和片源信息（支持豆瓣/Bangumi/短剧等虚拟源）
   useEffect(() => {
@@ -3927,13 +3799,6 @@ function PlayPageClient() {
           const inferType = (typeName?: string): string | undefined => {
             if (!typeName) return undefined;
             const lowerType = typeName.toLowerCase();
-            if (
-              lowerType.includes('短剧') ||
-              lowerType.includes('shortdrama') ||
-              lowerType.includes('short-drama') ||
-              lowerType.includes('short drama')
-            )
-              return 'shortdrama';
             if (lowerType.includes('综艺') || lowerType.includes('variety'))
               return 'variety';
             if (lowerType.includes('电影') || lowerType.includes('movie'))
@@ -3962,11 +3827,6 @@ function PlayPageClient() {
           // 确定内容类型：优先使用已有的 type，如果没有则推断
           let contentType =
             favoriteToUpdate.type || inferType(detail.type_name);
-          // 如果还是无法确定类型，检查 source 是否为 shortdrama
-          if (!contentType && favSource === 'shortdrama') {
-            contentType = 'shortdrama';
-          }
-
           // 更新收藏
           await saveFavorite(favSource, favId, {
             ...favoriteToUpdate,
@@ -4017,13 +3877,6 @@ function PlayPageClient() {
         const inferType = (typeName?: string): string | undefined => {
           if (!typeName) return undefined;
           const lowerType = typeName.toLowerCase();
-          if (
-            lowerType.includes('短剧') ||
-            lowerType.includes('shortdrama') ||
-            lowerType.includes('short-drama') ||
-            lowerType.includes('short drama')
-          )
-            return 'shortdrama';
           if (lowerType.includes('综艺') || lowerType.includes('variety'))
             return 'variety';
           if (lowerType.includes('电影') || lowerType.includes('movie'))
@@ -4045,14 +3898,8 @@ function PlayPageClient() {
             return 'documentary';
           return undefined;
         };
-
         // 根据 source 或 type_name 确定内容类型
         let contentType = inferType(detailRef.current?.type_name);
-        // 如果 type_name 无法推断类型，检查 source 是否为 shortdrama
-        if (!contentType && currentSourceRef.current === 'shortdrama') {
-          contentType = 'shortdrama';
-        }
-
         // 如果未收藏，添加收藏
         await saveFavorite(currentSourceRef.current, currentIdRef.current, {
           title: videoTitleRef.current,
@@ -6697,334 +6544,289 @@ function PlayPageClient() {
                 </div>
 
                 {/* 详细信息（豆瓣或bangumi） */}
-                {currentSource !== 'shortdrama' &&
-                  videoDoubanId !== 0 &&
-                  detail &&
-                  detail.source !== 'shortdrama' && (
-                    <div className='mb-4 shrink-0'>
-                      {/* 加载状态 */}
-                      {(loadingMovieDetails || loadingBangumiDetails) &&
-                        !movieDetails &&
-                        !bangumiDetails && (
-                          <div className='animate-pulse'>
-                            <div className='h-4 bg-gray-300 rounded w-64 mb-2'></div>
-                            <div className='h-4 bg-gray-300 rounded w-48'></div>
+                {videoDoubanId !== 0 && detail && (
+                  <div className='mb-4 shrink-0'>
+                    {/* 加载状态 */}
+                    {(loadingMovieDetails || loadingBangumiDetails) &&
+                      !movieDetails &&
+                      !bangumiDetails && (
+                        <div className='animate-pulse'>
+                          <div className='h-4 bg-gray-300 rounded w-64 mb-2'></div>
+                          <div className='h-4 bg-gray-300 rounded w-48'></div>
+                        </div>
+                      )}
+
+                    {/* Bangumi详情 */}
+                    {bangumiDetails && (
+                      <div className='space-y-2 text-sm'>
+                        {/* Bangumi评分 */}
+                        {bangumiDetails.rating?.score &&
+                          parseFloat(bangumiDetails.rating.score) > 0 && (
+                            <div className='flex items-center gap-2'>
+                              <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                                Bangumi评分:{' '}
+                              </span>
+                              <div className='flex items-center group'>
+                                <span className='relative text-transparent bg-clip-text bg-linear-to-r from-pink-600 via-rose-600 to-pink-600 dark:from-pink-400 dark:via-rose-400 dark:to-pink-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(236,72,153,0.5)]'>
+                                  {bangumiDetails.rating.score}
+                                </span>
+                                <div className='flex ml-2 gap-0.5'>
+                                  {[...Array(5)].map((_, i) => (
+                                    <svg
+                                      key={i}
+                                      className={`w-4 h-4 transition-all duration-300 ${
+                                        i <
+                                        Math.floor(
+                                          parseFloat(
+                                            bangumiDetails.rating.score,
+                                          ) / 2,
+                                        )
+                                          ? 'text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.5)] group-hover:scale-110'
+                                          : 'text-gray-300 dark:text-gray-600'
+                                      }`}
+                                      fill='currentColor'
+                                      viewBox='0 0 20 20'
+                                      style={{
+                                        transitionDelay: `${i * 50}ms`,
+                                      }}
+                                    >
+                                      <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                                    </svg>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* 制作信息从infobox提取 */}
+                        {bangumiDetails.infobox &&
+                          bangumiDetails.infobox.map(
+                            (info: any, index: number) => {
+                              if (info.key === '导演' && info.value) {
+                                const directors = Array.isArray(info.value)
+                                  ? info.value
+                                      .map((v: any) => v.v || v)
+                                      .join('、')
+                                  : info.value;
+                                return (
+                                  <div key={index}>
+                                    <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                                      导演:{' '}
+                                    </span>
+                                    <span className='text-gray-600 dark:text-gray-400'>
+                                      {directors}
+                                    </span>
+                                  </div>
+                                );
+                              }
+                              if (info.key === '制作' && info.value) {
+                                const studios = Array.isArray(info.value)
+                                  ? info.value
+                                      .map((v: any) => v.v || v)
+                                      .join('、')
+                                  : info.value;
+                                return (
+                                  <div key={index}>
+                                    <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                                      制作:{' '}
+                                    </span>
+                                    <span className='text-gray-600 dark:text-gray-400'>
+                                      {studios}
+                                    </span>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            },
+                          )}
+
+                        {/* 播出日期 */}
+                        {bangumiDetails.date && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                              播出日期:{' '}
+                            </span>
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {bangumiDetails.date}
+                            </span>
                           </div>
                         )}
 
-                      {/* Bangumi详情 */}
-                      {bangumiDetails && (
-                        <div className='space-y-2 text-sm'>
-                          {/* Bangumi评分 */}
-                          {bangumiDetails.rating?.score &&
-                            parseFloat(bangumiDetails.rating.score) > 0 && (
-                              <div className='flex items-center gap-2'>
-                                <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                  Bangumi评分:{' '}
+                        {/* 标签信息 */}
+                        <div className='flex flex-wrap gap-2 mt-3'>
+                          {bangumiDetails.tags &&
+                            bangumiDetails.tags
+                              .slice(0, 4)
+                              .map((tag: any, index: number) => (
+                                <span
+                                  key={index}
+                                  className='relative group bg-linear-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'
+                                >
+                                  <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                                  <span className='relative'>{tag.name}</span>
                                 </span>
-                                <div className='flex items-center group'>
-                                  <span className='relative text-transparent bg-clip-text bg-linear-to-r from-pink-600 via-rose-600 to-pink-600 dark:from-pink-400 dark:via-rose-400 dark:to-pink-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(236,72,153,0.5)]'>
-                                    {bangumiDetails.rating.score}
-                                  </span>
-                                  <div className='flex ml-2 gap-0.5'>
-                                    {[...Array(5)].map((_, i) => (
-                                      <svg
-                                        key={i}
-                                        className={`w-4 h-4 transition-all duration-300 ${
-                                          i <
-                                          Math.floor(
-                                            parseFloat(
-                                              bangumiDetails.rating.score,
-                                            ) / 2,
-                                          )
-                                            ? 'text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.5)] group-hover:scale-110'
-                                            : 'text-gray-300 dark:text-gray-600'
-                                        }`}
-                                        fill='currentColor'
-                                        viewBox='0 0 20 20'
-                                        style={{
-                                          transitionDelay: `${i * 50}ms`,
-                                        }}
-                                      >
-                                        <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                                      </svg>
-                                    ))}
-                                  </div>
+                              ))}
+                          {bangumiDetails.total_episodes && (
+                            <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>
+                                共{bangumiDetails.total_episodes}话
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 豆瓣详情 */}
+                    {movieDetails && (
+                      <div className='space-y-2 text-sm'>
+                        {/* 豆瓣评分 */}
+                        {movieDetails.rate &&
+                          movieDetails.rate !== '0' &&
+                          parseFloat(movieDetails.rate) > 0 && (
+                            <div className='flex items-center gap-2'>
+                              <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                                豆瓣评分:{' '}
+                              </span>
+                              <div className='flex items-center group'>
+                                <span className='relative text-transparent bg-clip-text bg-linear-to-r from-yellow-600 via-amber-600 to-yellow-600 dark:from-yellow-400 dark:via-amber-400 dark:to-yellow-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]'>
+                                  {movieDetails.rate}
+                                </span>
+                                <div className='flex ml-2 gap-0.5'>
+                                  {[...Array(5)].map((_, i) => (
+                                    <svg
+                                      key={i}
+                                      className={`w-4 h-4 transition-all duration-300 ${
+                                        i <
+                                        Math.floor(
+                                          parseFloat(movieDetails.rate) / 2,
+                                        )
+                                          ? 'text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)] group-hover:scale-110'
+                                          : 'text-gray-300 dark:text-gray-600'
+                                      }`}
+                                      fill='currentColor'
+                                      viewBox='0 0 20 20'
+                                      style={{
+                                        transitionDelay: `${i * 50}ms`,
+                                      }}
+                                    >
+                                      <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                                    </svg>
+                                  ))}
                                 </div>
                               </div>
-                            )}
+                            </div>
+                          )}
 
-                          {/* 制作信息从infobox提取 */}
-                          {bangumiDetails.infobox &&
-                            bangumiDetails.infobox.map(
-                              (info: any, index: number) => {
-                                if (info.key === '导演' && info.value) {
-                                  const directors = Array.isArray(info.value)
-                                    ? info.value
-                                        .map((v: any) => v.v || v)
-                                        .join('、')
-                                    : info.value;
-                                  return (
-                                    <div key={index}>
-                                      <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                        导演:{' '}
-                                      </span>
-                                      <span className='text-gray-600 dark:text-gray-400'>
-                                        {directors}
-                                      </span>
-                                    </div>
-                                  );
-                                }
-                                if (info.key === '制作' && info.value) {
-                                  const studios = Array.isArray(info.value)
-                                    ? info.value
-                                        .map((v: any) => v.v || v)
-                                        .join('、')
-                                    : info.value;
-                                  return (
-                                    <div key={index}>
-                                      <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                        制作:{' '}
-                                      </span>
-                                      <span className='text-gray-600 dark:text-gray-400'>
-                                        {studios}
-                                      </span>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              },
-                            )}
-
-                          {/* 播出日期 */}
-                          {bangumiDetails.date && (
+                        {/* 导演 */}
+                        {movieDetails.directors &&
+                          movieDetails.directors.length > 0 && (
                             <div>
                               <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                播出日期:{' '}
+                                导演:{' '}
                               </span>
                               <span className='text-gray-600 dark:text-gray-400'>
-                                {bangumiDetails.date}
+                                {movieDetails.directors.join('、')}
                               </span>
                             </div>
                           )}
 
-                          {/* 标签信息 */}
-                          <div className='flex flex-wrap gap-2 mt-3'>
-                            {bangumiDetails.tags &&
-                              bangumiDetails.tags
-                                .slice(0, 4)
-                                .map((tag: any, index: number) => (
-                                  <span
-                                    key={index}
-                                    className='relative group bg-linear-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'
-                                  >
-                                    <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                    <span className='relative'>{tag.name}</span>
-                                  </span>
-                                ))}
-                            {bangumiDetails.total_episodes && (
-                              <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                                <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                <span className='relative'>
-                                  共{bangumiDetails.total_episodes}话
-                                </span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 豆瓣详情 */}
-                      {movieDetails && (
-                        <div className='space-y-2 text-sm'>
-                          {/* 豆瓣评分 */}
-                          {movieDetails.rate &&
-                            movieDetails.rate !== '0' &&
-                            parseFloat(movieDetails.rate) > 0 && (
-                              <div className='flex items-center gap-2'>
-                                <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                  豆瓣评分:{' '}
-                                </span>
-                                <div className='flex items-center group'>
-                                  <span className='relative text-transparent bg-clip-text bg-linear-to-r from-yellow-600 via-amber-600 to-yellow-600 dark:from-yellow-400 dark:via-amber-400 dark:to-yellow-400 font-bold text-lg transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]'>
-                                    {movieDetails.rate}
-                                  </span>
-                                  <div className='flex ml-2 gap-0.5'>
-                                    {[...Array(5)].map((_, i) => (
-                                      <svg
-                                        key={i}
-                                        className={`w-4 h-4 transition-all duration-300 ${
-                                          i <
-                                          Math.floor(
-                                            parseFloat(movieDetails.rate) / 2,
-                                          )
-                                            ? 'text-yellow-500 drop-shadow-[0_0_4px_rgba(234,179,8,0.5)] group-hover:scale-110'
-                                            : 'text-gray-300 dark:text-gray-600'
-                                        }`}
-                                        fill='currentColor'
-                                        viewBox='0 0 20 20'
-                                        style={{
-                                          transitionDelay: `${i * 50}ms`,
-                                        }}
-                                      >
-                                        <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                                      </svg>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                          {/* 导演 */}
-                          {movieDetails.directors &&
-                            movieDetails.directors.length > 0 && (
-                              <div>
-                                <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                  导演:{' '}
-                                </span>
-                                <span className='text-gray-600 dark:text-gray-400'>
-                                  {movieDetails.directors.join('、')}
-                                </span>
-                              </div>
-                            )}
-
-                          {/* 编剧 */}
-                          {movieDetails.screenwriters &&
-                            movieDetails.screenwriters.length > 0 && (
-                              <div>
-                                <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                  编剧:{' '}
-                                </span>
-                                <span className='text-gray-600 dark:text-gray-400'>
-                                  {movieDetails.screenwriters.join('、')}
-                                </span>
-                              </div>
-                            )}
-
-                          {/* 主演 */}
-                          {movieDetails.cast &&
-                            movieDetails.cast.length > 0 && (
-                              <div>
-                                <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                  主演:{' '}
-                                </span>
-                                <span className='text-gray-600 dark:text-gray-400'>
-                                  {movieDetails.cast.join('、')}
-                                </span>
-                              </div>
-                            )}
-
-                          {/* 首播日期 */}
-                          {movieDetails.first_aired && (
+                        {/* 编剧 */}
+                        {movieDetails.screenwriters &&
+                          movieDetails.screenwriters.length > 0 && (
                             <div>
                               <span className='font-semibold text-gray-700 dark:text-gray-300'>
-                                {movieDetails.episodes ? '首播' : '上映'}:
+                                编剧:{' '}
                               </span>
                               <span className='text-gray-600 dark:text-gray-400'>
-                                {movieDetails.first_aired}
+                                {movieDetails.screenwriters.join('、')}
                               </span>
                             </div>
                           )}
 
-                          {/* 标签信息 */}
-                          <div className='flex flex-wrap gap-2 mt-3'>
-                            {movieDetails.countries &&
-                              movieDetails.countries
-                                .slice(0, 2)
-                                .map((country: string, index: number) => (
-                                  <span
-                                    key={index}
-                                    className='relative group bg-linear-to-r from-blue-500/90 to-cyan-500/90 dark:from-blue-600/90 dark:to-cyan-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'
-                                  >
-                                    <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                    <span className='relative'>{country}</span>
-                                  </span>
-                                ))}
-                            {movieDetails.languages &&
-                              movieDetails.languages
-                                .slice(0, 2)
-                                .map((language: string, index: number) => (
-                                  <span
-                                    key={index}
-                                    className='relative group bg-linear-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'
-                                  >
-                                    <span className='absolute inset-0 bg-linear-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                    <span className='relative'>{language}</span>
-                                  </span>
-                                ))}
-                            {movieDetails.episodes && (
-                              <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                                <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                <span className='relative'>
-                                  共{movieDetails.episodes}集
-                                </span>
-                              </span>
-                            )}
-                            {movieDetails.episode_length && (
-                              <span className='relative group bg-linear-to-r from-orange-500/90 to-amber-500/90 dark:from-orange-600/90 dark:to-amber-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105'>
-                                <span className='absolute inset-0 bg-linear-to-r from-orange-400 to-amber-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                <span className='relative'>
-                                  单集{movieDetails.episode_length}分钟
-                                </span>
-                              </span>
-                            )}
-                            {movieDetails.movie_duration && (
-                              <span className='relative group bg-linear-to-r from-red-500/90 to-rose-500/90 dark:from-red-600/90 dark:to-rose-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 hover:scale-105'>
-                                <span className='absolute inset-0 bg-linear-to-r from-red-400 to-rose-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                                <span className='relative'>
-                                  {movieDetails.movie_duration}分钟
-                                </span>
-                              </span>
-                            )}
+                        {/* 主演 */}
+                        {movieDetails.cast && movieDetails.cast.length > 0 && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                              主演:{' '}
+                            </span>
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {movieDetails.cast.join('、')}
+                            </span>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
 
-                {/* 短剧详细信息 */}
-                {(detail?.source === 'shortdrama' || shortdramaDetails) && (
-                  <div className='mb-4 shrink-0'>
-                    <div className='space-y-2 text-sm'>
-                      {/* 集数信息 */}
-                      {((detail?.source === 'shortdrama' &&
-                        detail?.episodes &&
-                        detail.episodes.length > 0) ||
-                        (shortdramaDetails?.episodes &&
-                          shortdramaDetails.episodes.length > 0)) && (
-                        <div className='flex flex-wrap gap-2'>
-                          <span className='relative group bg-linear-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>
-                              共
-                              {
-                                (
-                                  shortdramaDetails?.episodes ||
-                                  detail?.episodes
-                                )?.length
-                              }
-                              集
+                        {/* 首播日期 */}
+                        {movieDetails.first_aired && (
+                          <div>
+                            <span className='font-semibold text-gray-700 dark:text-gray-300'>
+                              {movieDetails.episodes ? '首播' : '上映'}:
                             </span>
-                          </span>
-                          <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>短剧</span>
-                          </span>
-                          <span className='relative group bg-linear-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'>
-                            <span className='absolute inset-0 bg-linear-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
-                            <span className='relative'>
-                              {shortdramaDetails?.year || detail?.year}年
+                            <span className='text-gray-600 dark:text-gray-400'>
+                              {movieDetails.first_aired}
                             </span>
-                          </span>
+                          </div>
+                        )}
+
+                        {/* 标签信息 */}
+                        <div className='flex flex-wrap gap-2 mt-3'>
+                          {movieDetails.countries &&
+                            movieDetails.countries
+                              .slice(0, 2)
+                              .map((country: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className='relative group bg-linear-to-r from-blue-500/90 to-cyan-500/90 dark:from-blue-600/90 dark:to-cyan-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'
+                                >
+                                  <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                                  <span className='relative'>{country}</span>
+                                </span>
+                              ))}
+                          {movieDetails.languages &&
+                            movieDetails.languages
+                              .slice(0, 2)
+                              .map((language: string, index: number) => (
+                                <span
+                                  key={index}
+                                  className='relative group bg-linear-to-r from-purple-500/90 to-pink-500/90 dark:from-purple-600/90 dark:to-pink-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 hover:scale-105'
+                                >
+                                  <span className='absolute inset-0 bg-linear-to-r from-purple-400 to-pink-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                                  <span className='relative'>{language}</span>
+                                </span>
+                              ))}
+                          {movieDetails.episodes && (
+                            <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>
+                                共{movieDetails.episodes}集
+                              </span>
+                            </span>
+                          )}
+                          {movieDetails.episode_length && (
+                            <span className='relative group bg-linear-to-r from-orange-500/90 to-amber-500/90 dark:from-orange-600/90 dark:to-amber-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-linear-to-r from-orange-400 to-amber-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>
+                                单集{movieDetails.episode_length}分钟
+                              </span>
+                            </span>
+                          )}
+                          {movieDetails.movie_duration && (
+                            <span className='relative group bg-linear-to-r from-red-500/90 to-rose-500/90 dark:from-red-600/90 dark:to-rose-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-red-500/30 transition-all duration-300 hover:scale-105'>
+                              <span className='absolute inset-0 bg-linear-to-r from-red-400 to-rose-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                              <span className='relative'>
+                                {movieDetails.movie_duration}分钟
+                              </span>
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* 剧情简介 */}
-                {(shortdramaDetails?.desc ||
-                  detail?.desc ||
+                {(detail?.desc ||
                   bangumiDetails?.summary ||
                   movieDetails?.plot_summary) && (
                   <div
@@ -7032,38 +6834,8 @@ function PlayPageClient() {
                     style={{ whiteSpace: 'pre-line' }}
                   >
                     {movieDetails?.plot_summary ||
-                      shortdramaDetails?.desc ||
                       bangumiDetails?.summary ||
                       detail?.desc}
-                  </div>
-                )}
-
-                {/* 短剧元数据（备用API提供） */}
-                {shortdramaDetails?.metadata && (
-                  <div className='mt-4 space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4'>
-                    {/* 评分 */}
-                    {shortdramaDetails.metadata.vote_average > 0 && (
-                      <div className='flex items-center gap-2'>
-                        <span className='text-yellow-500'>⭐</span>
-                        <span className='font-semibold text-gray-800 dark:text-gray-200'>
-                          {shortdramaDetails.metadata.vote_average.toFixed(1)}
-                        </span>
-                        <span className='text-sm text-gray-500 dark:text-gray-400'>
-                          / 10
-                        </span>
-                      </div>
-                    )}
-                    {/* 演员 */}
-                    {shortdramaDetails.metadata.author && (
-                      <div className='flex items-start gap-2'>
-                        <span className='text-gray-600 dark:text-gray-400 shrink-0'>
-                          🎭 演员:
-                        </span>
-                        <span className='text-gray-800 dark:text-gray-200'>
-                          {shortdramaDetails.metadata.author}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
 
