@@ -98,13 +98,13 @@ async function cronJob() {
     console.error('❌ 播放记录和收藏刷新失败:', err);
   }
 
-  try {
-    console.log('📊 设置用户TvBox Token...');
-    const count = await setUserTvBoxToken();
-    console.log('✅ 设置用户TvBox Token完成. sum = ', count);
-  } catch (err) {
-    console.error('❌ 设置用户TvBox Token失败:', err);
-  }
+  // try {
+  //   console.log('📊 设置用户TvBox Token...');
+  //   const count = await setUserTvBoxToken();
+  //   console.log('✅ 设置用户TvBox Token完成. sum = ', count);
+  // } catch (err) {
+  //   console.error('❌ 设置用户TvBox Token失败:', err);
+  // }
 
   console.log('🎉 定时任务执行完成');
 }

@@ -467,9 +467,9 @@ function PlayPageClient() {
       ) {
         return;
       }
-
+      const isAnimeType = searchType === 'anime';
       // 检测是否为bangumi ID
-      if (isBangumiId(videoDoubanId)) {
+      if (isBangumiId(videoDoubanId) || isAnimeType) {
         // 加载bangumi详情
         if (loadingBangumiDetails || bangumiDetails) {
           return;
@@ -480,9 +480,39 @@ function PlayPageClient() {
           const bangumiData = await fetchBangumiDetails(videoDoubanId);
           if (bangumiData) {
             setBangumiDetails(bangumiData);
+          } else if (isAnimeType && !isBangumiId(videoDoubanId)) {
+            // anime 类型但 bangumi 无数据，fallback 到豆瓣
+            const response = await getDoubanDetails(videoDoubanId.toString());
+            if (
+              response.code === 200 &&
+              response.list &&
+              response.list[0] &&
+              response.list[0].title
+            ) {
+              setMovieDetails(response.list);
+            }
           }
         } catch (error) {
           console.error('Failed to load bangumi details:', error);
+          // anime 类型 bangumi 失败时，fallback 到豆瓣
+          if (isAnimeType && !isBangumiId(videoDoubanId)) {
+            try {
+              const response = await getDoubanDetails(videoDoubanId.toString());
+              if (
+                response.code === 200 &&
+                response.list &&
+                response.list[0] &&
+                response.list[0].title
+              ) {
+                setMovieDetails(response.list);
+              }
+            } catch (doubanError) {
+              console.error(
+                'Failed to load douban details as fallback:',
+                doubanError,
+              );
+            }
+          }
         } finally {
           setLoadingBangumiDetails(false);
         }
@@ -541,6 +571,7 @@ function PlayPageClient() {
     loadingBangumiDetails,
     bangumiDetails,
     lastMovieDetailsFetchTime,
+    searchType,
   ]);
 
   // 加载豆瓣短评
@@ -555,7 +586,10 @@ function PlayPageClient() {
       }
 
       // 跳过bangumi ID
-      if (isBangumiId(videoDoubanId)) {
+      if (
+        isBangumiId(videoDoubanId) ||
+        (searchType === 'anime' && bangumiDetails)
+      ) {
         return;
       }
 
