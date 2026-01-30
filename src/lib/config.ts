@@ -56,9 +56,6 @@ export const API_CONFIG = {
   },
 };
 
-// 在模块加载时根据环境决定配置来源
-let cachedConfig: AdminConfig;
-
 // 从配置文件补充管理员配置
 export function refineConfig(adminConfig: AdminConfig): AdminConfig {
   let fileConfig: ConfigFileStruct;
@@ -104,6 +101,17 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
   });
 
   adminConfig.SourceConfig = finalApiSites;
+
+  if (adminConfig.UserConfig.Tags) {
+    const validSourceKeys = new Set(adminConfig.SourceConfig.map((s) => s.key));
+    adminConfig.UserConfig.Tags.forEach((tag) => {
+      if (tag.enabledApis) {
+        tag.enabledApis = tag.enabledApis.filter((key) =>
+          validSourceKeys.has(key),
+        );
+      }
+    });
+  }
 
   // 覆盖 CustomCategories
   const customCategoriesFromFile = fileConfig.custom_category || [];
@@ -429,7 +437,7 @@ export async function configSelfCheck(
   if (!adminConfig.NetDiskConfig) {
     adminConfig.NetDiskConfig = {
       enabled: true, // 默认启用
-      pansouUrl: 'https://so.252035.xyz', // 默认公益服务
+      pansouUrl: 'https://so.dogegg.online', // 默认公益服务
       timeout: 30, // 默认30秒超时
       enabledCloudTypes: ['baidu', 'aliyun', 'quark'], // 默认只启用百度、阿里、夸克三大主流网盘
     };

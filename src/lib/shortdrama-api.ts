@@ -15,8 +15,6 @@ import {
 import { DEFAULT_USER_AGENT } from './user-agent';
 import { processImageUrl } from './utils';
 
-const SHORTDRAMA_API_BASE = 'https://api.r2afosne.dpdns.org';
-
 // 检测是否为移动端环境
 const isMobile = () => {
   if (typeof window === 'undefined') return false;
@@ -26,12 +24,14 @@ const isMobile = () => {
 };
 
 // 获取API基础URL - 浏览器端使用内部API代理，服务端直接调用外部API
-const getApiBase = (endpoint: string) => {
+const getApiBase = async (endpoint: string) => {
   if (typeof window !== 'undefined') {
     return `/api/shortdrama${endpoint}`;
   }
+  const { loadConfig } = await import('@/lib/config');
+  var config = await loadConfig();
   // 服务端使用外部API的完整路径
-  return `${SHORTDRAMA_API_BASE}/vod${endpoint}`;
+  return `${config.ShortDramaConfig.primaryApiUrl}/vod${endpoint}`;
 };
 
 export interface ShortDramaDetailOptions {
@@ -155,7 +155,7 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
     const useInternalApi = typeof window !== 'undefined';
     const apiUrl = useInternalApi
       ? `/api/shortdrama/categories`
-      : getApiBase('/categories');
+      : await getApiBase('/categories');
 
     // 浏览器端使用内部API，服务端调用外部API
     const fetchOptions: RequestInit = useInternalApi

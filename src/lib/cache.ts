@@ -1,12 +1,12 @@
 // 豆瓣数据缓存配置（秒）
 export const DOUBAN_CACHE_EXPIRE = {
-  details: 24 * 60 * 60, // 详情4小时（变化较少）
+  details: 7 * 24 * 60 * 60, // 详情4小时（变化较少）
   details_failure: 30 * 60, // 详情失败缓存30分钟
   lists: 4 * 60 * 60, // 列表2小时（更新频繁）
   categories: 4 * 60 * 60, // 分类2小时
   recommends: 4 * 60 * 60, // 推荐2小时
-  comments: 24 * 60 * 60, // 短评1小时（更新频繁）
-  platform_link: 24 * 60 * 60, // 平台链接
+  comments: 7 * 24 * 60 * 60, // 短评1小时（更新频繁）
+  platform_link: 7 * 24 * 60 * 60, // 平台链接
   trailer_url: 4 * 60 * 60,
   danmu: 24 * 60 * 60,
   top250: 24 * 60 * 60,

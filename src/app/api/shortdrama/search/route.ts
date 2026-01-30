@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { loadConfig } from '@/lib/config';
 import { processImageUrl } from '@/lib/utils';
 
 // 强制动态路由，禁用所有缓存
@@ -9,8 +10,9 @@ export const fetchCache = 'force-no-store';
 
 // 服务端专用函数，直接调用外部API
 async function searchShortDramasInternal(query: string, page = 1, size = 20) {
+  var config = await loadConfig();
   const response = await fetch(
-    `https://api.r2afosne.dpdns.org/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`,
+    `${config.ShortDramaConfig.primaryApiUrl}/vod/search?name=${encodeURIComponent(query)}&page=${page}&size=${size}`,
     {
       headers: {
         'User-Agent':

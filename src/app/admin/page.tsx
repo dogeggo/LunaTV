@@ -6759,7 +6759,7 @@ const NetDiskConfig = ({
 
   const [netDiskSettings, setNetDiskSettings] = useState({
     enabled: true,
-    pansouUrl: 'https://so.252035.xyz',
+    pansouUrl: 'https://so.dogegg.online',
     timeout: 30,
     enabledCloudTypes: [
       'baidu',
@@ -6798,7 +6798,7 @@ const NetDiskConfig = ({
     if (config?.NetDiskConfig) {
       setNetDiskSettings({
         enabled: config.NetDiskConfig.enabled ?? true,
-        pansouUrl: config.NetDiskConfig.pansouUrl || 'https://so.252035.xyz',
+        pansouUrl: config.NetDiskConfig.pansouUrl || 'https://so.dogegg.online',
         timeout: config.NetDiskConfig.timeout || 30,
         enabledCloudTypes: config.NetDiskConfig.enabledCloudTypes || [
           'baidu',
@@ -6919,7 +6919,7 @@ const NetDiskConfig = ({
                   pansouUrl: e.target.value,
                 }))
               }
-              placeholder='https://so.252035.xyz'
+              placeholder='https://so.dogegg.online'
               className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
             />
             <div className='flex items-start space-x-2 text-sm text-gray-500 dark:text-gray-400'>
