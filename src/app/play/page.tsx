@@ -1331,46 +1331,6 @@ function PlayPageClient() {
     }
   };
 
-  // 简单 ping：选择延迟最低的源，全部失败则回退第一个
-  const pickLowestPingSource = async (
-    sources: SearchResult[],
-  ): Promise<SearchResult> => {
-    if (sources.length <= 1) return sources[0];
-
-    const results = await Promise.all(
-      sources.map(async (source) => {
-        try {
-          if (!source.episodes || source.episodes.length === 0) {
-            return { source, pingTime: 9999, available: false };
-          }
-
-          const episodeUrl = source.episodes[0] || source.episodes[1];
-          if (!episodeUrl || !/^https?:\/\//i.test(episodeUrl)) {
-            return { source, pingTime: 9999, available: false };
-          }
-
-          const startTime = performance.now();
-          await fetch(episodeUrl, {
-            method: 'HEAD',
-            mode: 'no-cors',
-            signal: AbortSignal.timeout(2000),
-          });
-
-          const pingTime = Math.round(performance.now() - startTime);
-          return { source, pingTime, available: true };
-        } catch (error) {
-          return { source, pingTime: 9999, available: false };
-        }
-      }),
-    );
-
-    const sorted = results
-      .filter((item) => item.available)
-      .sort((a, b) => a.pingTime - b.pingTime);
-
-    return sorted.length > 0 ? sorted[0].source : sources[0];
-  };
-
   // 播放源优选函数（针对旧iPad做极端保守优化）
   const preferBestSource = async (
     sources: SearchResult[],
@@ -1437,8 +1397,8 @@ function PlayPageClient() {
   const lightweightPreference = async (
     sources: SearchResult[],
   ): Promise<SearchResult> => {
+    if (sources.length <= 1) return sources[0];
     console.log('开始轻量级测速，仅测试连通性');
-
     const results = await Promise.all(
       sources.map(async (source) => {
         try {
@@ -1471,23 +1431,10 @@ function PlayPageClient() {
         }
       }),
     );
-
-    // 按可用性和响应时间排序
-    const sortedResults = results
-      .filter((r) => r.available)
+    const sorted = results
+      .filter((item) => item.available)
       .sort((a, b) => a.pingTime - b.pingTime);
-
-    if (sortedResults.length === 0) {
-      console.warn('所有源都不可用，返回第一个');
-      return sources[0];
-    }
-
-    console.log(
-      '轻量级优选结果:',
-      sortedResults.map((r) => `${r.source.source_name}: ${r.pingTime}ms`),
-    );
-
-    return sortedResults[0].source;
+    return sorted.length > 0 ? sorted[0].source : sources[0];
   };
 
   // 完整测速（桌面设备）
@@ -2998,20 +2945,16 @@ function PlayPageClient() {
         return;
       }
 
-      let detailData: SearchResult = await pickLowestPingSource(sourcesInfo);
+      let detailData: SearchResult;
       // 指定源和id则优先使用指定源
       if (currentSource && currentId) {
         const target = sourcesInfo.find(
           (source) =>
             source.source === currentSource && source.id === currentId,
         );
-        if (target) {
-          detailData = target;
-        } else {
-          setError('未找到匹配结果');
-          setLoading(false);
-          return;
-        }
+        detailData = target ? target : await lightweightPreference(sourcesInfo);
+      } else {
+        detailData = await lightweightPreference(sourcesInfo);
       }
 
       const shouldPrefer =
