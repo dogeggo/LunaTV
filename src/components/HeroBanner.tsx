@@ -44,6 +44,15 @@ const RETRY_INTERVAL_MS = 10 * 60 * 1000;
 
 const toItemKey = (item: BannerItem) => String(item.douban_id ?? item.id);
 
+const isAbortError = (error: unknown, signal?: AbortSignal) => {
+  if (signal?.aborted) return true;
+  if (error instanceof DOMException && error.name === 'AbortError') return true;
+  if (error && typeof error === 'object' && 'name' in error) {
+    return (error as { name?: string }).name === 'AbortError';
+  }
+  return false;
+};
+
 const normalizeUrl = (raw: string) => {
   try {
     return decodeURIComponent(raw);
@@ -278,21 +287,26 @@ export default function HeroBanner({
     ) => {
       if (typeof window === 'undefined' || !('caches' in window)) return false;
 
-      const cache = await caches.open(cacheName);
-      const cachedResponse = await cache.match(cacheKey);
-      if (cachedResponse) return true;
+      try {
+        const cache = await caches.open(cacheName);
+        const cachedResponse = await cache.match(cacheKey);
+        if (cachedResponse) return true;
 
-      const response = await fetch(url, {
-        cache: 'no-store',
-        signal,
-      });
+        const response = await fetch(url, {
+          cache: 'no-store',
+          signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`${response.status} ${response.statusText}`);
+        }
+
+        await cache.put(cacheKey, response.clone());
+        return true;
+      } catch (error) {
+        if (isAbortError(error, signal)) return false;
+        throw error;
       }
-
-      await cache.put(cacheKey, response);
-      return true;
     },
     [],
   );
