@@ -237,9 +237,13 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
           // 🎯 立即更新 UI（乐观更新）- 用户感知零延迟
           if (from === 'search') {
-            setOptimisticSearchFavorited(newFavoritedState);
+            startTransition(() => {
+              setOptimisticSearchFavorited(newFavoritedState);
+            });
           } else {
-            setOptimisticFavorited(newFavoritedState);
+            startTransition(() => {
+              setOptimisticFavorited(newFavoritedState);
+            });
           }
 
           // 🔄 后台异步执行数据库操作
