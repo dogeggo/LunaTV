@@ -1,8 +1,12 @@
+import { promisify } from 'util';
+import { gunzip } from 'zlib';
+
 import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 const defaultUA = 'AptvPlayer/1.4.10';
 const TVBOX_UA = 'okhttp/4.1.0';
+const gunzipAsync = promisify(gunzip);
 
 export interface LiveChannels {
   channelNumber: number;
@@ -504,110 +508,151 @@ async function parseEpg(
       null;
     let currentEpgChannelId = '';
 
-    // Streaming parser logic - Support both single-line and multi-line XML formats
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    const processLine = (line: string) => {
+      const trimmed = line.trim();
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
+      // Handle <channel> tag - support multi-line format
+      if (trimmed.startsWith('<channel')) {
+        const idMatch = trimmed.match(/id="([^"]*)"/);
+        if (idMatch) {
+          currentChannelId = idMatch[1];
+          inChannelTag = true;
+        }
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-
-        // Handle <channel> tag - support multi-line format
-        if (trimmed.startsWith('<channel')) {
-          const idMatch = trimmed.match(/id="([^"]*)"/);
-          if (idMatch) {
-            currentChannelId = idMatch[1];
-            inChannelTag = true;
-          }
-
-          // Check if display-name is on the same line (single-line format)
-          const nameMatch = trimmed.match(
-            /<display-name[^>]*>(.*?)<\/display-name>/,
+        // Check if display-name is on the same line (single-line format)
+        const nameMatch = trimmed.match(
+          /<display-name[^>]*>(.*?)<\/display-name>/,
+        );
+        if (currentChannelId && nameMatch) {
+          epgNameToChannelId.set(
+            normalizeChannelName(nameMatch[1]),
+            currentChannelId,
           );
-          if (currentChannelId && nameMatch) {
-            epgNameToChannelId.set(
-              normalizeChannelName(nameMatch[1]),
-              currentChannelId,
-            );
-          }
-          const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
-          if (currentChannelId && iconMatch) {
-            epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
-          }
+        }
+        const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
+        if (currentChannelId && iconMatch) {
+          epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
+        }
 
-          // Check if it's a self-closing or closing on same line
-          if (trimmed.includes('</channel>')) {
-            inChannelTag = false;
-            currentChannelId = '';
-          }
-        }
-        // Handle display-name in multi-line format (when inside channel tag)
-        else if (inChannelTag && trimmed.startsWith('<display-name')) {
-          const nameMatch = trimmed.match(
-            /<display-name[^>]*>(.*?)<\/display-name>/,
-          );
-          if (currentChannelId && nameMatch) {
-            epgNameToChannelId.set(
-              normalizeChannelName(nameMatch[1]),
-              currentChannelId,
-            );
-          }
-        }
-        // Handle icon in multi-line format (when inside channel tag)
-        else if (inChannelTag && trimmed.startsWith('<icon')) {
-          const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
-          if (currentChannelId && iconMatch) {
-            epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
-          }
-        }
-        // Handle closing </channel> tag
-        else if (trimmed.startsWith('</channel>')) {
+        // Check if it's a self-closing or closing on same line
+        if (trimmed.includes('</channel>')) {
           inChannelTag = false;
           currentChannelId = '';
         }
-        // Handle <programme> tag
-        else if (trimmed.startsWith('<programme')) {
-          const channelIdMatch = trimmed.match(/channel="([^"]*)"/);
-          const epgChannelId = channelIdMatch ? channelIdMatch[1] : '';
-          const startMatch = trimmed.match(/start="([^"]*)"/);
-          const endMatch = trimmed.match(/stop="([^"]*)"/);
-          if (epgChannelId && startMatch && endMatch) {
-            currentProgram = {
-              start: startMatch[1],
-              end: endMatch[1],
-              title: '',
-            };
-            currentEpgChannelId = epgChannelId;
-            // Check if title is on the same line (single-line format)
-            const titleMatch = trimmed.match(
-              /<title(?:\s+[^>]*)?>(.*?)<\/title>/,
-            );
-            if (titleMatch) {
-              currentProgram.title = titleMatch[1];
-              if (!epgDataByChannelId[epgChannelId])
-                epgDataByChannelId[epgChannelId] = [];
-              epgDataByChannelId[epgChannelId].push({ ...currentProgram });
-              currentProgram = null;
-            }
-          }
+      }
+      // Handle display-name in multi-line format (when inside channel tag)
+      else if (inChannelTag && trimmed.startsWith('<display-name')) {
+        const nameMatch = trimmed.match(
+          /<display-name[^>]*>(.*?)<\/display-name>/,
+        );
+        if (currentChannelId && nameMatch) {
+          epgNameToChannelId.set(
+            normalizeChannelName(nameMatch[1]),
+            currentChannelId,
+          );
         }
-        // Handle <title> tag in multi-line format (when inside programme tag)
-        else if (trimmed.startsWith('<title') && currentProgram) {
+      }
+      // Handle icon in multi-line format (when inside channel tag)
+      else if (inChannelTag && trimmed.startsWith('<icon')) {
+        const iconMatch = trimmed.match(/<icon\s+src="([^"]*)"/);
+        if (currentChannelId && iconMatch) {
+          epgChannelIdToLogo.set(currentChannelId, iconMatch[1]);
+        }
+      }
+      // Handle closing </channel> tag
+      else if (trimmed.startsWith('</channel>')) {
+        inChannelTag = false;
+        currentChannelId = '';
+      }
+      // Handle <programme> tag
+      else if (trimmed.startsWith('<programme')) {
+        const channelIdMatch = trimmed.match(/channel="([^"]*)"/);
+        const epgChannelId = channelIdMatch ? channelIdMatch[1] : '';
+        const startMatch = trimmed.match(/start="([^"]*)"/);
+        const endMatch = trimmed.match(/stop="([^"]*)"/);
+        if (epgChannelId && startMatch && endMatch) {
+          currentProgram = {
+            start: startMatch[1],
+            end: endMatch[1],
+            title: '',
+          };
+          currentEpgChannelId = epgChannelId;
+          // Check if title is on the same line (single-line format)
           const titleMatch = trimmed.match(
             /<title(?:\s+[^>]*)?>(.*?)<\/title>/,
           );
           if (titleMatch) {
             currentProgram.title = titleMatch[1];
-            if (!epgDataByChannelId[currentEpgChannelId])
-              epgDataByChannelId[currentEpgChannelId] = [];
-            epgDataByChannelId[currentEpgChannelId].push({ ...currentProgram });
+            if (!epgDataByChannelId[epgChannelId])
+              epgDataByChannelId[epgChannelId] = [];
+            epgDataByChannelId[epgChannelId].push({ ...currentProgram });
             currentProgram = null;
           }
         }
+      }
+      // Handle <title> tag in multi-line format (when inside programme tag)
+      else if (trimmed.startsWith('<title') && currentProgram) {
+        const titleMatch = trimmed.match(/<title(?:\s+[^>]*)?>(.*?)<\/title>/);
+        if (titleMatch) {
+          currentProgram.title = titleMatch[1];
+          if (!epgDataByChannelId[currentEpgChannelId])
+            epgDataByChannelId[currentEpgChannelId] = [];
+          epgDataByChannelId[currentEpgChannelId].push({ ...currentProgram });
+          currentProgram = null;
+        }
+      }
+    };
+
+    const processBuffer = () => {
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        processLine(line);
+      }
+    };
+
+    const firstChunk = await reader.read();
+    if (firstChunk.done || !firstChunk.value) {
+      return { epgs: {}, logos: {} };
+    }
+
+    const isGzip =
+      firstChunk.value.length >= 2 &&
+      firstChunk.value[0] === 0x1f &&
+      firstChunk.value[1] === 0x8b;
+
+    if (isGzip) {
+      const chunks: Uint8Array[] = [firstChunk.value];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) chunks.push(value);
+      }
+
+      const gzBuffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+      try {
+        const xmlBuffer = await gunzipAsync(gzBuffer);
+        buffer += decoder.decode(xmlBuffer);
+      } catch (error) {
+        console.warn(
+          '[Live] Failed to gunzip EPG payload, fallback to plain text:',
+          error,
+        );
+        buffer += decoder.decode(gzBuffer);
+      }
+
+      processBuffer();
+    } else {
+      buffer += decoder.decode(firstChunk.value, { stream: true });
+      processBuffer();
+
+      // Streaming parser logic - Support both single-line and multi-line XML formats
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        processBuffer();
       }
     }
   } catch (_e) {
@@ -617,24 +662,27 @@ async function parseEpg(
   // Map back to M3U channels
   if (channels) {
     for (const channel of channels) {
-      const key = channel.tvgId || channel.name;
-      const normalizedName = normalizeChannelName(channel.name);
-
-      if (
-        channel.tvgId &&
-        tvgs.has(channel.tvgId) &&
-        epgDataByChannelId[channel.tvgId]
-      ) {
-        result[key] = epgDataByChannelId[channel.tvgId];
-        const logoUrl = epgChannelIdToLogo.get(channel.tvgId);
+      const key = channel.tvgId.trim() || channel.name.trim();
+      const tvgId = channel.tvgId.trim();
+      if (tvgId && tvgs.has(tvgId) && epgDataByChannelId[tvgId]) {
+        result[key] = epgDataByChannelId[tvgId];
+        const logoUrl = epgChannelIdToLogo.get(tvgId);
         if (logoUrl && !logos[key]) logos[key] = logoUrl;
-      } else {
-        const epgChannelId = epgNameToChannelId.get(normalizedName);
-        if (epgChannelId && epgDataByChannelId[epgChannelId]) {
-          result[key] = epgDataByChannelId[epgChannelId];
-          const logoUrl = epgChannelIdToLogo.get(epgChannelId);
-          if (logoUrl && !logos[key]) logos[key] = logoUrl;
-        }
+        continue;
+      }
+      const normalizedName = normalizeChannelName(channel.name.trim());
+      let epgChannelId = epgNameToChannelId.get(normalizedName);
+      if (epgChannelId && epgDataByChannelId[epgChannelId]) {
+        result[key] = epgDataByChannelId[epgChannelId];
+        const logoUrl = epgChannelIdToLogo.get(epgChannelId);
+        if (logoUrl && !logos[key]) logos[key] = logoUrl;
+        continue;
+      }
+      epgChannelId = epgNameToChannelId.get(normalizeChannelName(tvgId));
+      if (epgChannelId && epgDataByChannelId[epgChannelId]) {
+        result[key] = epgDataByChannelId[epgChannelId];
+        const logoUrl = epgChannelIdToLogo.get(epgChannelId);
+        if (logoUrl && !logos[key]) logos[key] = logoUrl;
       }
     }
   }

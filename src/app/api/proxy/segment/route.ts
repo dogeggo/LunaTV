@@ -138,18 +138,42 @@ export async function GET(request: Request) {
     );
     let bytesTransferred = 0;
 
+    let isCancelled = false;
+    let cleanedUp = false;
+
+    const cleanup = () => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      isCancelled = true;
+
+      const hadReader = !!reader;
+      if (reader) {
+        reader.cancel().catch(() => {
+          // 忽略取消时的错误
+        });
+        reader = null;
+      }
+
+      if (response?.body && !hadReader) {
+        response.body.cancel().catch(() => {
+          // 忽略取消时的错误
+        });
+      }
+
+      segmentStats.activeStreams--;
+    };
+
     // 优化的流式传输，带背压控制
     const stream = new ReadableStream(
       {
         start(controller) {
           if (!response?.body) {
             controller.close();
-            segmentStats.activeStreams--;
+            cleanup();
             return;
           }
 
           reader = response?.body?.getReader();
-          const isCancelled = false;
 
           function pump(): void {
             if (isCancelled || !reader) {
@@ -165,7 +189,6 @@ export async function GET(request: Request) {
 
                 if (done) {
                   controller.close();
-                  cleanup();
 
                   // 更新统计信息
                   const responseTime = Date.now() - startTime;
@@ -175,8 +198,8 @@ export async function GET(request: Request) {
                       responseTime) /
                     segmentStats.requests;
                   segmentStats.totalBytes += bytesTransferred;
-                  segmentStats.activeStreams--;
 
+                  cleanup();
                   return;
                 }
 
@@ -197,50 +220,30 @@ export async function GET(request: Request) {
                 pump();
               })
               .catch((error) => {
-                if (!isCancelled) {
-                  if (process.env.NODE_ENV === 'development') {
-                    console.warn('Stream pump error:', error);
-                  }
-                  controller.error(error);
+                if (
+                  isCancelled ||
+                  controller.signal.aborted ||
+                  error?.name === 'AbortError' ||
+                  error?.code === 'ERR_INVALID_STATE' ||
+                  error?.message?.includes('Releasing reader')
+                ) {
                   cleanup();
+                  return;
                 }
-              });
-          }
 
-          function cleanup() {
-            if (reader) {
-              try {
-                reader.releaseLock();
-              } catch (_e) {
-                // reader 可能已经被释放，忽略错误
-              }
-              reader = null;
-            }
-            segmentStats.activeStreams--;
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('Stream pump error:', error);
+                }
+                controller.error(error);
+                cleanup();
+              });
           }
 
           pump();
         },
         cancel() {
           // 当流被取消时，确保释放所有资源
-          if (reader) {
-            try {
-              reader.releaseLock();
-            } catch (_e) {
-              // reader 可能已经被释放，忽略错误
-            }
-            reader = null;
-          }
-
-          if (response?.body) {
-            try {
-              response.body.cancel();
-            } catch (_e) {
-              // 忽略取消时的错误
-            }
-          }
-
-          segmentStats.activeStreams--;
+          cleanup();
         },
       },
       {
@@ -259,20 +262,18 @@ export async function GET(request: Request) {
     clearTimeout(timeoutId);
 
     // 确保在错误情况下也释放资源
+    const hadReader = !!reader;
     if (reader) {
-      try {
-        (reader as ReadableStreamDefaultReader<Uint8Array>).releaseLock();
-      } catch (_e) {
+      (reader as ReadableStreamDefaultReader<Uint8Array>).cancel().catch(() => {
         // 忽略错误
-      }
+      });
+      reader = null;
     }
 
-    if (response?.body) {
-      try {
-        response.body.cancel();
-      } catch (_e) {
+    if (response?.body && !hadReader) {
+      response.body.cancel().catch(() => {
         // 忽略错误
-      }
+      });
     }
 
     // 处理不同类型的错误
