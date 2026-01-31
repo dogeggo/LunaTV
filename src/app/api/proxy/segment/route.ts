@@ -61,8 +61,8 @@ export async function GET(request: Request) {
 
   let response: Response | null = null;
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 30000); // 30秒超时
 
   try {
     const decodedUrl = decodeURIComponent(url);
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     const agent = isHttps ? httpsAgent : httpAgent;
 
     response = await fetch(decodedUrl, {
-      signal: controller.signal,
+      signal: abortController.signal,
       headers: {
         'User-Agent': ua,
         Accept: 'video/mp2t, video/*, */*',
@@ -222,7 +222,7 @@ export async function GET(request: Request) {
               .catch((error) => {
                 if (
                   isCancelled ||
-                  controller.signal.aborted ||
+                  abortController.signal.aborted ||
                   error?.name === 'AbortError' ||
                   error?.code === 'ERR_INVALID_STATE' ||
                   error?.message?.includes('Releasing reader')
