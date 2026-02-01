@@ -106,8 +106,8 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
     const validSourceKeys = new Set(adminConfig.SourceConfig.map((s) => s.key));
     adminConfig.UserConfig.Tags.forEach((tag) => {
       if (tag.enabledApis) {
-        tag.enabledApis = tag.enabledApis.filter((key) =>
-          validSourceKeys.has(key),
+        tag.enabledApis = tag.enabledApis.filter(
+          (key) => validSourceKeys.has(key) || key.startsWith('youtube-search'),
         );
       }
     });
