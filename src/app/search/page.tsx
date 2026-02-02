@@ -1010,9 +1010,8 @@ function SearchPageClient() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = searchQuery.trim().replace(/\s+/g, ' ');
+  const runSearch = (rawQuery: string) => {
+    const trimmed = rawQuery.trim().replace(/\s+/g, ' ');
     if (!trimmed) return;
 
     // 回显搜索框
@@ -1029,32 +1028,36 @@ function SearchPageClient() {
         // ACG 搜索：触发 AcgSearch 组件搜索
         setAcgTriggerSearch((prev) => !prev);
       }
-    } else if (searchType === 'youtube') {
+      return;
+    }
+
+    if (searchType === 'youtube') {
       // YouTube搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
       handleYouTubeSearch(trimmed);
-    } else if (searchType === 'tmdb-actor') {
+      return;
+    }
+
+    if (searchType === 'tmdb-actor') {
       // TMDB演员搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
       handleTmdbActorSearch(trimmed, tmdbActorType, tmdbFilterState);
-    } else {
-      // 原有的影视搜索逻辑
-      setIsLoading(true);
-      router.push(`/search?q=${encodeURIComponent(trimmed)}`);
-      // 其余由 searchParams 变化的 effect 处理
+      return;
     }
+
+    // 原有的影视搜索逻辑
+    setIsLoading(true);
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+    // 其余由 searchParams 变化的 effect 处理
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    runSearch(searchQuery);
   };
 
   const handleSuggestionSelect = (suggestion: string) => {
-    setSearchQuery(suggestion);
-    setShowSuggestions(false);
-
-    // 自动执行搜索
-    setIsLoading(true);
-    setShowResults(true);
-
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
-    // 其余由 searchParams 变化的 effect 处理
+    runSearch(suggestion);
   };
 
   // 返回顶部功能 - 同时滚动页面和重置虚拟列表
@@ -1924,10 +1927,7 @@ function SearchPageClient() {
                       <div key={item} className='relative group'>
                         <button
                           onClick={() => {
-                            setSearchQuery(item);
-                            router.push(
-                              `/search?q=${encodeURIComponent(item.trim())}`,
-                            );
+                            runSearch(item);
                           }}
                           className='px-4 py-2 bg-gray-500/10 hover:bg-gray-300 rounded-full text-sm text-gray-700 transition-colors duration-200 dark:bg-gray-700/50 dark:hover:bg-gray-600 dark:text-gray-300'
                         >

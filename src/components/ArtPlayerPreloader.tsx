@@ -32,7 +32,7 @@ export default function ArtPlayerPreloader() {
         .catch((error) => {
           console.error('⚠️ ArtPlayer 预加载失败:', error);
         });
-    }, 3000); // 3秒后预加载，给予首屏充足的渲染时间
+    }, 5000); // 3秒后预加载，给予首屏充足的渲染时间
 
     return () => clearTimeout(timer);
   }, []);
