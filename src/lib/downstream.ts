@@ -159,16 +159,10 @@ export async function searchFromApi(
     // 智能搜索：使用预计算的变体（最多2个，由 generateSearchVariants 智能生成）
     const searchVariants = precomputedVariants || generateSearchVariants(query);
 
-    // 调试：输出搜索变体
-    console.log(`[DEBUG] 搜索变体 for "${query}":`, searchVariants);
-
     // 🚀 并行搜索所有变体（关键优化：不再串行等待）
     const variantPromises = searchVariants.map(async (variant, index) => {
       const apiUrl =
         apiBaseUrl + API_CONFIG.search.path + encodeURIComponent(variant);
-      console.log(
-        `[DEBUG] 并行搜索变体 ${index + 1}/${searchVariants.length}: "${variant}"`,
-      );
 
       try {
         const result = await searchWithCache(apiSite, variant, 1, apiUrl, 8000);
@@ -179,7 +173,7 @@ export async function searchFromApi(
           pageCount: result.pageCount,
         };
       } catch (error) {
-        console.log(`[DEBUG] 变体 "${variant}" 搜索失败:`, error);
+        console.log(`[ERROR] 变体 "${variant}" 搜索失败:`, error);
         return { variant, index, results: [], pageCount: undefined };
       }
     });
@@ -202,15 +196,10 @@ export async function searchFromApi(
       pageCount,
     } of variantResults) {
       if (variantData.length > 0) {
-        console.log(
-          `[DEBUG] 变体 "${variant}" 找到 ${variantData.length} 个结果`,
-        );
-
         // 记录第一个变体的页数
         if (index === 0 && pageCount) {
           pageCountFromFirst = pageCount;
         }
-
         // 去重添加结果
         variantData.forEach((result) => {
           const uniqueKey = `${result.source}_${result.id}`;
@@ -219,8 +208,6 @@ export async function searchFromApi(
             results.push(result);
           }
         });
-      } else {
-        console.log(`[DEBUG] 变体 "${variant}" 无结果`);
       }
     }
 
@@ -296,86 +283,6 @@ export async function searchFromApi(
   } catch (_error) {
     return [];
   }
-}
-
-/**
- * 计算搜索结果的相关性分数
- * @param originalQuery 原始查询
- * @param variant 搜索变体
- * @param results 搜索结果
- * @returns 相关性分数（越高越相关）
- */
-function _calculateRelevanceScore(
-  originalQuery: string,
-  variant: string,
-  results: SearchResult[],
-): number {
-  let score = 0;
-
-  // 基础分数：结果数量（越多越好，但有上限）
-  score += Math.min(results.length * 10, 100);
-
-  // 变体质量分数：越接近原始查询越好
-  if (variant === originalQuery) {
-    score += 1000; // 完全匹配最高分
-  } else if (variant.includes('：') && originalQuery.includes(' ')) {
-    score += 500; // 空格变冒号的变体较高分
-  } else if (variant.includes(':') && originalQuery.includes(' ')) {
-    score += 400; // 空格变英文冒号
-  }
-  // 移除数字变体加分逻辑，依赖智能匹配处理
-
-  // 结果质量分数：检查结果标题的匹配程度
-  const originalWords = originalQuery
-    .toLowerCase()
-    .replace(/[^\w\s\u4e00-\u9fff]/g, '')
-    .split(/\s+/)
-    .filter((w) => w.length > 0);
-
-  results.forEach((result) => {
-    const title = result.title.toLowerCase();
-    let titleScore = 0;
-
-    // 检查原始查询中的每个词是否在标题中
-    let matchedWords = 0;
-    originalWords.forEach((word) => {
-      if (title.includes(word)) {
-        // 较长的词（如"血脉诅咒"）给予更高权重
-        const wordWeight = word.length > 2 ? 100 : 50;
-        titleScore += wordWeight;
-        matchedWords++;
-      }
-    });
-
-    // 完全匹配奖励：所有词都匹配时给予巨大奖励
-    if (matchedWords === originalWords.length && originalWords.length > 1) {
-      titleScore += 500; // 大幅提高完全匹配的奖励
-    }
-
-    // 部分匹配惩罚：如果只匹配了部分词，降低分数
-    if (matchedWords < originalWords.length && originalWords.length > 1) {
-      titleScore -= 100; // 惩罚不完整匹配
-    }
-
-    // 标题长度惩罚：过长的标题降低优先级（可能不够精确）
-    if (title.length > 50) {
-      titleScore -= 20;
-    }
-
-    // 年份奖励：较新的年份获得更高分数
-    if (result.year && result.year !== 'unknown') {
-      const year = parseInt(result.year);
-      if (year >= 2020) {
-        titleScore += 30;
-      } else if (year >= 2010) {
-        titleScore += 10;
-      }
-    }
-
-    score += titleScore;
-  });
-
-  return score;
 }
 
 // 匹配 m3u8 链接的正则

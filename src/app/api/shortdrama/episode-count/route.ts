@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime, loadConfig } from '@/lib/config';
+import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
@@ -41,8 +42,7 @@ export async function GET(request: NextRequest) {
 
     const searchResponse = await fetch(searchUrl, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent': DEFAULT_USER_AGENT,
         Accept: 'application/json',
       },
     });
@@ -52,8 +52,7 @@ export async function GET(request: NextRequest) {
       const fuzzySearchUrl = `${primaryApiUrl}/api/v1/drama/dl?dramaName=${encodeURIComponent(name)}`;
       const fuzzyResponse = await fetch(fuzzySearchUrl, {
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': DEFAULT_USER_AGENT,
           Accept: 'application/json',
         },
       });
