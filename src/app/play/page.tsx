@@ -630,20 +630,33 @@ function PlayPageClient() {
       if (!videoDoubanId || videoDoubanId === 0) {
         return;
       }
-      const isAnimeType = searchType === 'anime';
+      const now = Date.now();
+      const oneMinute = 60 * 1000; // 1分钟 = 60秒 = 60000毫秒
+      const shouldSkipRetry =
+        lastMovieDetailsFetchTime > 0 &&
+        now - lastMovieDetailsFetchTime < oneMinute;
       // 检测是否为bangumi ID
-      if (isBangumiId(videoDoubanId) || isAnimeType) {
+      if (isBangumiId(videoDoubanId)) {
         // 加载bangumi详情
         if (loadingBangumiDetails || bangumiDetails) {
           return;
         }
 
+        // 🎯 防止频繁重试：如果上次请求在1分钟内，则跳过
+        if (shouldSkipRetry) {
+          console.log(
+            `⏱️ 距离上次请求不足1分钟，跳过重试（${Math.floor((now - lastMovieDetailsFetchTime) / 1000)}秒前）`,
+          );
+          return;
+        }
+
         setLoadingBangumiDetails(true);
+        setLastMovieDetailsFetchTime(now); // 记录本次请求时间（与豆瓣共用）
         try {
           const bangumiData = await fetchBangumiDetails(videoDoubanId);
           if (bangumiData) {
             setBangumiDetails(bangumiData);
-          } else if (isAnimeType && !isBangumiId(videoDoubanId)) {
+          } else if (!isBangumiId(videoDoubanId)) {
             // anime 类型但 bangumi 无数据，fallback 到豆瓣
             const response = await getDoubanDetails(videoDoubanId.toString());
             if (
@@ -658,7 +671,7 @@ function PlayPageClient() {
         } catch (error) {
           console.error('Failed to load bangumi details:', error);
           // anime 类型 bangumi 失败时，fallback 到豆瓣
-          if (isAnimeType && !isBangumiId(videoDoubanId)) {
+          if (!isBangumiId(videoDoubanId)) {
             try {
               const response = await getDoubanDetails(videoDoubanId.toString());
               if (
@@ -686,12 +699,7 @@ function PlayPageClient() {
         }
 
         // 🎯 防止频繁重试：如果上次请求在1分钟内，则跳过
-        const now = Date.now();
-        const oneMinute = 60 * 1000; // 1分钟 = 60秒 = 60000毫秒
-        if (
-          lastMovieDetailsFetchTime > 0 &&
-          now - lastMovieDetailsFetchTime < oneMinute
-        ) {
+        if (shouldSkipRetry) {
           console.log(
             `⏱️ 距离上次请求不足1分钟，跳过重试（${Math.floor((now - lastMovieDetailsFetchTime) / 1000)}秒前）`,
           );
