@@ -12,6 +12,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import {
+  getHeroImageCacheKey,
+  getHeroVideoCacheKey,
+  HERO_CAROUSEL_MANIFEST_KEY,
+  HERO_IMAGE_CACHE,
+  HERO_VIDEO_CACHE,
+} from '@/lib/cache';
 import { processImageUrl } from '@/lib/utils';
 
 import { useAutoplay } from './hooks/useAutoplay';
@@ -38,8 +45,6 @@ interface HeroBannerProps {
   enableVideo?: boolean;
 }
 
-const IMAGE_CACHE = 'luna-image-cache';
-const VIDEO_CACHE = 'luna-video-cache';
 const RETRY_INTERVAL_MS = 10 * 60 * 1000;
 
 const toItemKey = (item: BannerItem) => String(item.douban_id ?? item.id);
@@ -51,29 +56,6 @@ const isAbortError = (error: unknown, signal?: AbortSignal) => {
     return (error as { name?: string }).name === 'AbortError';
   }
   return false;
-};
-
-const normalizeUrl = (raw: string) => {
-  try {
-    return decodeURIComponent(raw);
-  } catch {
-    return raw;
-  }
-};
-
-const extractAssetId = (url: string) => {
-  try {
-    const urlObj = new URL(url, 'http://localhost');
-    const idParam = urlObj.searchParams.get('id');
-    if (idParam) return idParam;
-
-    const targetUrl = normalizeUrl(urlObj.searchParams.get('url') || url);
-    const targetObj = new URL(targetUrl, 'http://localhost');
-    const parts = targetObj.pathname.split('/');
-    return parts[parts.length - 1] || targetUrl;
-  } catch {
-    return url;
-  }
 };
 
 const getHDBackdrop = (url?: string) => {
@@ -94,12 +76,6 @@ const getImageUrl = (item: BannerItem) => {
 
 const getVideoFetchUrl = (doubanId: string | number) =>
   `/api/video-proxy?id=${doubanId}&carousel=1`;
-
-const getImageCacheKey = (imageUrl: string) =>
-  `https://luna-cache/image/${extractAssetId(imageUrl)}`;
-
-const getVideoCacheKey = (doubanId: string | number) =>
-  `https://luna-cache/video/${doubanId}`;
 
 const useCachedBlobUrl = (
   cacheName: string,
@@ -168,7 +144,7 @@ const BannerImage = ({
   alt: string;
   isPriority: boolean;
 }) => {
-  const blobUrl = useCachedBlobUrl(IMAGE_CACHE, cacheKey, true);
+  const blobUrl = useCachedBlobUrl(HERO_IMAGE_CACHE, cacheKey, true);
 
   if (!blobUrl) {
     return (
@@ -206,7 +182,7 @@ const BannerVideo = ({
   onError?: (e: any) => void;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const blobUrl = useCachedBlobUrl(VIDEO_CACHE, cacheKey, true);
+  const blobUrl = useCachedBlobUrl(HERO_VIDEO_CACHE, cacheKey, true);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -273,6 +249,46 @@ export default function HeroBanner({
   }, [items]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+
+    const imageKeys = new Set<string>();
+    const videoKeys = new Set<string>();
+
+    items.forEach((item) => {
+      const imageUrl = getImageUrl(item);
+      if (imageUrl) {
+        imageKeys.add(getHeroImageCacheKey(imageUrl));
+      }
+
+      if (enableVideo && item.douban_id) {
+        videoKeys.add(getHeroVideoCacheKey(item.douban_id));
+      }
+    });
+
+    const manifest = {
+      images: Array.from(imageKeys),
+      videos: Array.from(videoKeys),
+      updatedAt: Date.now(),
+    };
+
+    try {
+      localStorage.setItem(
+        HERO_CAROUSEL_MANIFEST_KEY,
+        JSON.stringify(manifest),
+      );
+    } catch (error) {
+      console.warn('[HeroBanner] 轮播缓存清单写入失败:', error);
+    }
+
+    const win = window as typeof window & {
+      __heroCarouselCacheManifest?: typeof manifest;
+    };
+    win.__heroCarouselCacheManifest = manifest;
+  }, [items, enableVideo]);
+
+  useEffect(() => {
     if (currentIndex >= items.length) {
       setCurrentIndex(0);
     }
@@ -321,8 +337,13 @@ export default function HeroBanner({
 
       downloadingImageKeysRef.current.add(key);
       try {
-        const cacheKey = getImageCacheKey(imageUrl);
-        const ok = await cacheAsset(IMAGE_CACHE, cacheKey, imageUrl, signal);
+        const cacheKey = getHeroImageCacheKey(imageUrl);
+        const ok = await cacheAsset(
+          HERO_IMAGE_CACHE,
+          cacheKey,
+          imageUrl,
+          signal,
+        );
         if (ok) {
           failedImageKeysRef.current.delete(key);
         }
@@ -347,9 +368,14 @@ export default function HeroBanner({
 
       downloadingVideoKeysRef.current.add(key);
       try {
-        const cacheKey = getVideoCacheKey(item.douban_id);
+        const cacheKey = getHeroVideoCacheKey(item.douban_id);
         const fetchUrl = getVideoFetchUrl(item.douban_id);
-        const ok = await cacheAsset(VIDEO_CACHE, cacheKey, fetchUrl, signal);
+        const ok = await cacheAsset(
+          HERO_VIDEO_CACHE,
+          cacheKey,
+          fetchUrl,
+          signal,
+        );
         if (ok) {
           failedVideoKeysRef.current.delete(key);
         }
@@ -516,10 +542,12 @@ export default function HeroBanner({
           if (!shouldRender) return null;
 
           const imageUrl = getImageUrl(item);
-          const imageCacheKey = imageUrl ? getImageCacheKey(imageUrl) : null;
+          const imageCacheKey = imageUrl
+            ? getHeroImageCacheKey(imageUrl)
+            : null;
           const videoCacheKey =
             enableVideo && item.douban_id
-              ? getVideoCacheKey(item.douban_id)
+              ? getHeroVideoCacheKey(item.douban_id)
               : null;
 
           return (
@@ -598,7 +626,7 @@ export default function HeroBanner({
             <Link
               href={
                 currentItem.type === 'shortdrama'
-                  ? `/play?title=${encodeURIComponent(currentItem.title)}&shortdrama_id=${currentItem.id}`
+                  ? `/play?title=${encodeURIComponent(currentItem.title)}`
                   : `/play?title=${encodeURIComponent(currentItem.title)}${currentItem.year ? `&year=${currentItem.year}` : ''}${currentItem.douban_id ? `&douban_id=${currentItem.douban_id}` : ''}${currentItem.type ? `&stype=${currentItem.type}` : ''}`
               }
               className='flex items-center gap-2 px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 bg-white text-black font-bold rounded hover:bg-white/90 transition-all transform hover:scale-105 active:scale-95 shadow-xl text-base sm:text-lg md:text-xl'

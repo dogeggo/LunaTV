@@ -334,7 +334,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         router.push(url);
       } else if (actualSource === 'shortdrama' && actualId) {
         // 短剧内容 - 使用shortdrama_id参数
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}&shortdrama_id=${actualId}`;
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}`;
         router.push(url);
       } else if (
         from === 'douban' ||
@@ -387,7 +387,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         window.open(url, '_blank');
       } else if (actualSource === 'shortdrama' && actualId) {
         // 短剧内容 - 使用shortdrama_id参数
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}&shortdrama_id=${actualId}`;
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}`;
         window.open(url, '_blank');
       } else if (
         from === 'douban' ||

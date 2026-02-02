@@ -53,6 +53,107 @@ const DEFAULT_CACHE_PREFIXES = [
   'danmu-',
 ];
 
+export const HERO_IMAGE_CACHE = 'luna-image-cache';
+export const HERO_VIDEO_CACHE = 'luna-video-cache';
+export const HERO_CAROUSEL_MANIFEST_KEY = 'luna-hero-carousel-manifest';
+
+const normalizeUrl = (raw: string) => {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+
+const extractAssetId = (url: string) => {
+  try {
+    const urlObj = new URL(url, 'http://localhost');
+    const idParam = urlObj.searchParams.get('id');
+    if (idParam) return idParam;
+
+    const targetUrl = normalizeUrl(urlObj.searchParams.get('url') || url);
+    const targetObj = new URL(targetUrl, 'http://localhost');
+    const parts = targetObj.pathname.split('/');
+    return parts[parts.length - 1] || targetUrl;
+  } catch {
+    return url;
+  }
+};
+
+export const getHeroImageCacheKey = (imageUrl: string) =>
+  `https://luna-cache/image/${extractAssetId(imageUrl)}`;
+
+export const getHeroVideoCacheKey = (doubanId: string | number) =>
+  `https://luna-cache/video/${doubanId}`;
+
+type HeroCarouselManifest = {
+  images: string[];
+  videos: string[];
+  updatedAt: number;
+};
+
+function readHeroCarouselManifest(): HeroCarouselManifest | null {
+  if (typeof window === 'undefined') return null;
+  const win = window as typeof window & {
+    __heroCarouselCacheManifest?: HeroCarouselManifest;
+  };
+  if (win.__heroCarouselCacheManifest) {
+    return win.__heroCarouselCacheManifest;
+  }
+
+  if (typeof localStorage === 'undefined') return null;
+  const raw = localStorage.getItem(HERO_CAROUSEL_MANIFEST_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<HeroCarouselManifest>;
+    const images = Array.isArray(parsed.images)
+      ? parsed.images.filter((item): item is string => typeof item === 'string')
+      : [];
+    const videos = Array.isArray(parsed.videos)
+      ? parsed.videos.filter((item): item is string => typeof item === 'string')
+      : [];
+    const updatedAt =
+      typeof parsed.updatedAt === 'number' ? parsed.updatedAt : 0;
+    const manifest = { images, videos, updatedAt };
+    win.__heroCarouselCacheManifest = manifest;
+    return manifest;
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function cleanCacheStorageEntries(
+  cacheName: string,
+  keepKeys: Set<string>,
+): Promise<void> {
+  if (typeof window === 'undefined' || !('caches' in window)) return;
+  try {
+    const cache = await caches.open(cacheName);
+    const requests = await cache.keys();
+    await Promise.all(
+      requests.map((request) => {
+        if (keepKeys.has(request.url)) return Promise.resolve(false);
+        return cache.delete(request);
+      }),
+    );
+  } catch (error) {
+    console.warn(`清理 ${cacheName} 缓存失败:`, error);
+  }
+}
+
+async function cleanHeroCarouselCache(): Promise<void> {
+  const manifest = readHeroCarouselManifest();
+  if (!manifest) return;
+
+  const imageKeys = new Set(manifest.images);
+  const videoKeys = new Set(manifest.videos);
+
+  await Promise.all([
+    cleanCacheStorageEntries(HERO_IMAGE_CACHE, imageKeys),
+    cleanCacheStorageEntries(HERO_VIDEO_CACHE, videoKeys),
+  ]);
+}
+
 type CacheCleanerState = {
   started: boolean;
   intervalId?: number;
@@ -84,12 +185,14 @@ export async function initCacheCleaner(options?: {
     // 立即清理一次过期缓存
     await cleanExpiredCache(prefix);
   }
+  await cleanHeroCarouselCache();
 
   const intervalMs = options?.intervalMs ?? 10 * 60 * 1000;
   state.intervalId = window.setInterval(() => {
     for (const prefix of prefixes) {
       cleanExpiredCache(prefix);
     }
+    void cleanHeroCarouselCache();
     console.log('定时清理过期缓存完成.');
   }, intervalMs);
 
