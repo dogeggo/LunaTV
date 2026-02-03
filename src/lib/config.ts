@@ -464,7 +464,7 @@ export async function configSelfCheck(
   // 确保短剧配置有默认值
   if (!adminConfig.ShortDramaConfig) {
     adminConfig.ShortDramaConfig = {
-      primaryApiUrl: 'https://api.r2afosne.dpdns.org', // 默认主API
+      primaryApiUrl: 'https://wwzy.tv/api.php/provide/vod', // 默认主API
     };
   }
 

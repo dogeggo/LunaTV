@@ -14,17 +14,6 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page');
     const size = searchParams.get('size');
 
-    // 详细日志记录
-    console.log('🚀 [SHORTDRAMA API] 收到请求:', {
-      timestamp: new Date().toISOString(),
-      categoryId,
-      page,
-      size,
-      userAgent: request.headers.get('user-agent'),
-      referer: request.headers.get('referer'),
-      url: request.url,
-    });
-
     if (!categoryId) {
       return NextResponse.json(
         { error: '缺少必要参数: categoryId' },
@@ -39,23 +28,7 @@ export async function GET(request: NextRequest) {
     if (isNaN(category) || isNaN(pageNum) || isNaN(pageSize)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
-
-    const result = await getShortDramaList(category, pageNum, pageSize);
-
-    // 记录返回的数据
-    console.log('✅ [SHORTDRAMA API] 返回数据:', {
-      timestamp: new Date().toISOString(),
-      count: result.list?.length || 0,
-      firstItem: result.list?.[0]
-        ? {
-            id: result.list[0].id,
-            name: result.list[0].name,
-            update_time: result.list[0].update_time,
-          }
-        : null,
-      hasMore: result.hasMore,
-    });
-
+    const result = await getShortDramaList(pageNum, pageSize);
     // 设置与网页端一致的缓存策略（lists: 2小时）
     const response = NextResponse.json(result);
 

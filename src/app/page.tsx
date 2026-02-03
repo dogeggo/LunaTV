@@ -579,7 +579,7 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { anime: false } }),
         );
 
-      const shortDramasPromise = getRecommendedShortDramas(undefined, 8)
+      const shortDramasPromise = getRecommendedShortDramas(undefined, 20)
         .then((dramas) => {
           dispatch({
             type: 'SET_SHORT_DRAMAS_ERROR',

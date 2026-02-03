@@ -27,13 +27,15 @@ export default function ShortDramaPage() {
   }, []);
 
   const [categories, setCategories] = useState<ShortDramaCategory[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number>(1);
+  const [selectedCategory, setSelectedCategory] = useState<number>();
   const [dramas, setDramas] = useState<ShortDramaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [hasUserScrolled, setHasUserScrolled] = useState(false);
   // 返回顶部按钮显示状态
   const [showBackToTop, setShowBackToTop] = useState(false);
   // 用于防止分类切换时的闪烁
@@ -46,12 +48,15 @@ export default function ShortDramaPage() {
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
+          if (isSearchMode && !hasUserScrolled) {
+            return;
+          }
           setPage((prevPage) => prevPage + 1);
         }
       });
       if (node) observer.current.observe(node);
     },
-    [loading, hasMore],
+    [loading, hasMore, isSearchMode, hasUserScrolled],
   );
 
   // 获取分类列表
@@ -59,6 +64,9 @@ export default function ShortDramaPage() {
     const fetchCategories = async () => {
       const cats = await getShortDramaCategories();
       setCategories(cats);
+      if (cats.length > 0 && !selectedCategory) {
+        setSelectedCategory(cats[0].type_id);
+      }
     };
     fetchCategories();
   }, []);
@@ -72,6 +80,9 @@ export default function ShortDramaPage() {
         window.requestAnimationFrame(() => {
           const scrollTop = document.body.scrollTop || 0;
           setShowBackToTop(scrollTop > 300);
+          if (!hasUserScrolled && scrollTop > 0) {
+            setHasUserScrolled(true);
+          }
           ticking = false;
         });
         ticking = true;
@@ -83,7 +94,7 @@ export default function ShortDramaPage() {
     return () => {
       document.body.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [hasUserScrolled]);
 
   // 加载短剧列表
   const loadDramas = useCallback(
@@ -91,7 +102,10 @@ export default function ShortDramaPage() {
       setLoading(true);
       try {
         let result: { list: ShortDramaItem[]; hasMore: boolean };
-        if (isSearchMode && searchQuery) {
+        if (isSearchMode) {
+          if (!searchQuery) {
+            return;
+          }
           result = await searchShortDramas(searchQuery, pageNum, 20);
         } else {
           result = await getShortDramaList(selectedCategory, pageNum, 20);
@@ -122,6 +136,15 @@ export default function ShortDramaPage() {
     }
   }, [selectedCategory, isSearchMode, loadDramas]);
 
+  // 当搜索条件变化时重新加载（统一走 loadDramas）
+  useEffect(() => {
+    if (isSearchMode && searchQuery) {
+      setPage(1);
+      setHasMore(true);
+      loadDramas(1, true);
+    }
+  }, [isSearchMode, searchQuery, loadDramas]);
+
   // 当页码变化时加载更多
   useEffect(() => {
     if (page > 1) {
@@ -130,17 +153,14 @@ export default function ShortDramaPage() {
   }, [page, loadDramas]);
 
   // 处理搜索
-  const handleSearch = useCallback(async (query: string) => {
-    setSearchQuery(query);
-    setIsSearchMode(!!query);
+  const handleSearch = useCallback((rawQuery: string) => {
+    const normalized = rawQuery.trim();
+    setSearchInput(normalized);
+    setSearchQuery(normalized);
+    setIsSearchMode(!!normalized);
     setPage(1);
     setHasMore(true);
-
-    if (query) {
-      const result = await searchShortDramas(query, 1, 20);
-      setDramas(result.list);
-      setHasMore(result.hasMore);
-    }
+    setHasUserScrolled(false);
     // 如果清空搜索，不需要手动调用 loadDramas
     // useEffect 会自动监听 isSearchMode 的变化并重新加载
   }, []);
@@ -174,6 +194,9 @@ export default function ShortDramaPage() {
     );
   }
 
+  const showSkeletons = loading && (isInitialLoad || page > 1);
+  const skeletonCount = 12;
+
   return (
     <PageLayout activePath='/shortdrama'>
       <div className='min-h-screen -mt-6 -md:mt-0 pb-0'>
@@ -196,10 +219,21 @@ export default function ShortDramaPage() {
                 type='text'
                 placeholder='搜索短剧名称...'
                 className='w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-purple-500 transition-all duration-300'
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch(searchInput);
+                  }
+                }}
               />
             </div>
+            {loading && isSearchMode && (
+              <div className='mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
+                <span className='inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-purple-500 dark:border-gray-600 dark:border-t-purple-400'></span>
+                正在搜索中...
+              </div>
+            )}
           </div>
 
           {/* 分类筛选 */}
@@ -258,10 +292,27 @@ export default function ShortDramaPage() {
                 <ShortDramaCard drama={drama} />
               </div>
             ))}
+            {showSkeletons &&
+              Array.from({ length: skeletonCount }).map((_, index) => (
+                <div
+                  key={`skeleton-${index}`}
+                  className='relative overflow-hidden'
+                >
+                  <div className='aspect-[2/3] w-full rounded-lg bg-linear-to-br from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800'>
+                    <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent'></div>
+                  </div>
+                  <div className='mt-2 h-4 rounded bg-linear-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 relative overflow-hidden'>
+                    <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent'></div>
+                  </div>
+                  <div className='mt-1 h-3 w-2/3 rounded bg-linear-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 relative overflow-hidden'>
+                    <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent'></div>
+                  </div>
+                </div>
+              ))}
           </div>
 
           {/* 加载状态 - 只在首次加载或加载更多时显示骨架屏 */}
-          {loading && (isInitialLoad || page > 1) && (
+          {showSkeletons && (
             <div className='mt-8'>
               <div className='flex justify-center mb-6'>
                 <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50 shadow-md'>
@@ -270,21 +321,6 @@ export default function ShortDramaPage() {
                     加载更多短剧...
                   </span>
                 </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'>
-                {Array.from({ length: 12 }).map((_, index) => (
-                  <div key={index} className='relative overflow-hidden'>
-                    <div className='aspect-[2/3] w-full rounded-lg bg-linear-to-br from-gray-100 via-gray-200 to-gray-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800'>
-                      <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent'></div>
-                    </div>
-                    <div className='mt-2 h-4 rounded bg-linear-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 relative overflow-hidden'>
-                      <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent'></div>
-                    </div>
-                    <div className='mt-1 h-3 w-2/3 rounded bg-linear-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 relative overflow-hidden'>
-                      <div className='absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent'></div>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           )}

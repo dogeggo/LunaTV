@@ -26,7 +26,12 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { parseCustomTimeFormat } from '@/lib/time';
-import { devicePerformance, isMobile, isSafari } from '@/lib/utils';
+import {
+  devicePerformance,
+  isMobile,
+  isSafari,
+  processImageUrl,
+} from '@/lib/utils';
 
 import PageLayout from '@/components/PageLayout';
 
@@ -1140,7 +1145,7 @@ function LivePageClient() {
               title: currentChannelRef.current.name,
               source_name: currentSourceRef.current.name,
               year: '',
-              cover: `/api/proxy/logo?url=${encodeURIComponent(currentChannelRef.current.logo)}&source=${currentSourceRef.current.key}`,
+              cover: `${processImageUrl(currentChannelRef.current.logo)}`,
               total_episodes: 1,
               save_time: Date.now(),
               search_title: '',
@@ -2489,7 +2494,7 @@ function LivePageClient() {
                                     <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
                                       {channel.logo ? (
                                         <img
-                                          src={`/api/proxy/logo?url=${encodeURIComponent(channel.logo)}&source=${currentSource?.key || ''}`}
+                                          src={`${processImageUrl(channel.logo)}`}
                                           alt={channel.name}
                                           className='w-full h-full rounded object-contain'
                                           loading='lazy'
@@ -2618,7 +2623,7 @@ function LivePageClient() {
                                   <div className='w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0 overflow-hidden'>
                                     {channel.logo ? (
                                       <img
-                                        src={`/api/proxy/logo?url=${encodeURIComponent(channel.logo)}&source=${currentSource?.key || ''}`}
+                                        src={`${processImageUrl(channel.logo)}`}
                                         alt={channel.name}
                                         className='w-full h-full rounded object-contain'
                                         loading='lazy'
@@ -2962,8 +2967,8 @@ function LivePageClient() {
                       <img
                         src={
                           epgData?.logo
-                            ? `/api/proxy/logo?url=${encodeURIComponent(epgData.logo)}&source=${currentSource?.key || ''}`
-                            : `/api/proxy/logo?url=${encodeURIComponent(currentChannel.logo)}&source=${currentSource?.key || ''}`
+                            ? `${processImageUrl(epgData.logo)}`
+                            : `${processImageUrl(currentChannel.logo)}`
                         }
                         alt={currentChannel.name}
                         className='w-full h-full rounded object-contain'

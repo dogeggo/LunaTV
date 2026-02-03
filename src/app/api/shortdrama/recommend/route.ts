@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
 
-    const result = await getRecommendedShortDramas(categoryNum, pageSize);
+    const result = await getRecommendedShortDramas(pageSize);
     // 测试1小时HTTP缓存策略
     const response = NextResponse.json(result);
     // 1小时 = 3600秒
