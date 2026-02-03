@@ -106,7 +106,7 @@ export default function ShortDramaPage() {
           if (!searchQuery) {
             return;
           }
-          result = await searchShortDramas(searchQuery, pageNum, 20);
+          result = await searchShortDramas(searchQuery, pageNum);
         } else {
           result = await getShortDramaList(selectedCategory, pageNum, 20);
         }
@@ -153,8 +153,11 @@ export default function ShortDramaPage() {
   }, [page, loadDramas]);
 
   // 处理搜索
-  const handleSearch = useCallback((rawQuery: string) => {
+  const handleSearch = useCallback((rawQuery: string, clearResults = false) => {
     const normalized = rawQuery.trim();
+    if (clearResults) {
+      setDramas([]);
+    }
     setSearchInput(normalized);
     setSearchQuery(normalized);
     setIsSearchMode(!!normalized);
@@ -194,7 +197,9 @@ export default function ShortDramaPage() {
     );
   }
 
-  const showSkeletons = loading && (isInitialLoad || page > 1);
+  const showSkeletons = loading && !isSearchMode && (isInitialLoad || page > 1);
+  const isSearching = loading && isSearchMode;
+  const isLoadingMore = loading && page > 1;
   const skeletonCount = 12;
 
   return (
@@ -220,21 +225,70 @@ export default function ShortDramaPage() {
                 placeholder='搜索短剧名称...'
                 className='w-full rounded-xl border border-gray-200 bg-white/80 pl-11 pr-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent focus:bg-white shadow-sm hover:shadow-md focus:shadow-lg dark:bg-gray-800/80 dark:text-white dark:placeholder-gray-500 dark:border-gray-700 dark:focus:bg-gray-800 dark:focus:ring-purple-500 transition-all duration-300'
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  setSearchInput(nextValue);
+                  if (
+                    nextValue.trim() === '' &&
+                    (isSearchMode || searchQuery)
+                  ) {
+                    handleSearch('');
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    handleSearch(searchInput);
+                    handleSearch(searchInput, searchInput.trim() !== '');
                   }
                 }}
               />
             </div>
-            {loading && isSearchMode && (
-              <div className='mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
-                <span className='inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-purple-500 dark:border-gray-600 dark:border-t-purple-400'></span>
-                正在搜索中...
-              </div>
-            )}
           </div>
+
+          {/* 搜索加载态：使用加载中样式 */}
+          {isSearching && (
+            <div className='flex justify-center mt-4 mb-2'>
+              <div className='relative px-6 py-3 rounded-2xl bg-linear-to-r from-purple-50 via-pink-50 to-rose-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-rose-900/20 border border-purple-200/50 dark:border-purple-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+                {/* 动画背景 */}
+                <div className='absolute inset-0 bg-linear-to-r from-purple-400/10 via-pink-400/10 to-rose-400/10 animate-pulse'></div>
+
+                {/* 内容 */}
+                <div className='relative flex items-center gap-3'>
+                  {/* 旋转圈 */}
+                  <div className='relative'>
+                    <div className='animate-spin rounded-full h-6 w-6 border-[3px] border-purple-200 dark:border-purple-800'></div>
+                    <div className='absolute inset-0 animate-spin rounded-full h-6 w-6 border-[3px] border-transparent border-t-purple-500 dark:border-t-purple-400'></div>
+                  </div>
+
+                  {/* 文字和点动画 */}
+                  <div className='flex items-center gap-1'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      搜索中
+                    </span>
+                    <span className='flex gap-0.5'>
+                      <span
+                        className='animate-bounce'
+                        style={{ animationDelay: '0ms' }}
+                      >
+                        .
+                      </span>
+                      <span
+                        className='animate-bounce'
+                        style={{ animationDelay: '150ms' }}
+                      >
+                        .
+                      </span>
+                      <span
+                        className='animate-bounce'
+                        style={{ animationDelay: '300ms' }}
+                      >
+                        .
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 分类筛选 */}
           {!isSearchMode && categories.length > 0 && (
@@ -311,15 +365,47 @@ export default function ShortDramaPage() {
               ))}
           </div>
 
-          {/* 加载状态 - 只在首次加载或加载更多时显示骨架屏 */}
-          {showSkeletons && (
-            <div className='mt-8'>
-              <div className='flex justify-center mb-6'>
-                <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200/50 dark:border-purple-700/50 shadow-md'>
-                  <div className='animate-spin rounded-full h-5 w-5 border-2 border-purple-300 border-t-purple-600 dark:border-purple-700 dark:border-t-purple-400'></div>
-                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                    加载更多短剧...
-                  </span>
+          {/* 下拉加载更多提示 - 参考豆瓣页面样式 */}
+          {isLoadingMore && hasMore && (
+            <div className='flex justify-center mt-8 py-6'>
+              <div className='relative px-8 py-4 rounded-2xl bg-linear-to-r from-purple-50 via-pink-50 to-rose-50 dark:from-purple-900/20 dark:via-pink-900/20 dark:to-rose-900/20 border border-purple-200/50 dark:border-purple-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+                {/* 动画背景 */}
+                <div className='absolute inset-0 bg-linear-to-r from-purple-400/10 via-pink-400/10 to-rose-400/10 animate-pulse'></div>
+
+                {/* 内容 */}
+                <div className='relative flex items-center gap-3'>
+                  {/* 旋转圈 */}
+                  <div className='relative'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-purple-200 dark:border-purple-800'></div>
+                    <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-purple-500 dark:border-t-purple-400'></div>
+                  </div>
+
+                  {/* 文字和点动画 */}
+                  <div className='flex items-center gap-1'>
+                    <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                      加载中
+                    </span>
+                    <span className='flex gap-0.5'>
+                      <span
+                        className='animate-bounce'
+                        style={{ animationDelay: '0ms' }}
+                      >
+                        .
+                      </span>
+                      <span
+                        className='animate-bounce'
+                        style={{ animationDelay: '150ms' }}
+                      >
+                        .
+                      </span>
+                      <span
+                        className='animate-bounce'
+                        style={{ animationDelay: '300ms' }}
+                      >
+                        .
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

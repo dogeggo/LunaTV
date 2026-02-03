@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const query = searchParams.get('query');
     const page = searchParams.get('page');
-    const size = searchParams.get('size');
 
     if (!query) {
       return NextResponse.json(
@@ -22,13 +21,12 @@ export async function GET(request: NextRequest) {
     }
 
     const pageNum = page ? parseInt(page) : 1;
-    const pageSize = size ? parseInt(size) : 20;
 
-    if (isNaN(pageNum) || isNaN(pageSize)) {
+    if (isNaN(pageNum)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
 
-    const result = await searchShortDramas(query, pageNum, pageSize);
+    const result = await searchShortDramas(query, pageNum);
 
     // 设置与网页端一致的缓存策略（搜索结果: 1小时）
     const response = NextResponse.json(result);

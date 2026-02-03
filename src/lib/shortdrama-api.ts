@@ -29,6 +29,7 @@ const getSearchUrls = async () => {
     // 服务端使用外部API的完整路径
     return urls;
   }
+  return [];
 };
 
 export interface ShortDramaDetailOptions {
@@ -37,6 +38,16 @@ export interface ShortDramaDetailOptions {
   episode: number;
   name?: string;
 }
+
+const getEpisodeCount = (item: any) => {
+  const total = item?.vod_total;
+  if (total > 0) return total;
+
+  const serial = item?.vod_serial;
+  if (serial > 0) return serial;
+
+  return 1;
+};
 
 // 获取短剧分类列表
 export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
@@ -173,7 +184,7 @@ async function fetchFromShortDramaSource(size: number) {
     cover: item.vod_pic || '',
     update_time: item.vod_time || new Date().toISOString(),
     score: parseFloat(item.vod_score) || 0,
-    episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+    episode_count: getEpisodeCount(item),
     description: item.vod_content || item.vod_blurb || '',
     author: item.vod_actor || '',
     backdrop: item.vod_pic_slide || item.vod_pic || '',
@@ -278,7 +289,7 @@ async function fetchListFromSource(page: number, size: number) {
     cover: item.vod_pic || '',
     update_time: item.vod_time || new Date().toISOString(),
     score: parseFloat(item.vod_score) || 0,
-    episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+    episode_count: getEpisodeCount(item),
     description: item.vod_content || item.vod_blurb || '',
     author: item.vod_actor || '',
     backdrop: item.vod_pic_slide || item.vod_pic || '',
@@ -295,16 +306,21 @@ async function fetchListFromSource(page: number, size: number) {
 export async function searchShortDramas(
   query: string,
   page = 1,
-  size = 20,
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
   try {
     if (typeof window === 'undefined') {
       // 有配置短剧源，聚合所有源的搜索结果
       const urls = await getSearchUrls();
+      if (urls.length == 0) {
+        return {
+          list: [],
+          hasMore: false,
+        };
+      }
       const results = await Promise.allSettled(
         urls
           .map((url) => url.trim())
-          .map((url) => searchFromSource(url, query, page, size)),
+          .map((url) => searchFromSource(url, query, page)),
       );
 
       // 合并所有成功的结果
@@ -330,12 +346,12 @@ export async function searchShortDramas(
       );
 
       return {
-        list: uniqueItems.slice(0, size),
+        list: uniqueItems,
         hasMore,
       };
     } else {
       // 使用内部 API 代理
-      const apiUrl = `${await getApiBase()}/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`;
+      const apiUrl = `${await getApiBase()}/search?query=${encodeURIComponent(query)}&page=${page}`;
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -349,12 +365,7 @@ export async function searchShortDramas(
   }
 }
 
-async function searchFromSource(
-  url: string,
-  query: string,
-  page: number,
-  size: number,
-) {
+async function searchFromSource(url: string, query: string, page: number) {
   // Step 1: 获取分类列表，找到"短剧"分类的ID
   const listUrl = `${url}?ac=list`;
 
@@ -382,7 +393,6 @@ async function searchFromSource(
     console.log(`该源没有短剧分类`);
     return { list: [], hasMore: false };
   }
-  console.log('=====================', url, query);
   const categoryId = shortDramaCategory.type_id;
 
   // Step 2: 搜索该分类下的短剧
@@ -407,15 +417,14 @@ async function searchFromSource(
   const shortDramaItems = items.filter(
     (item: any) => item.type_id === categoryId,
   );
-  const limitedItems = shortDramaItems.slice(0, size);
 
-  const list = limitedItems.map((item: any) => ({
+  const list = shortDramaItems.map((item: any) => ({
     id: item.vod_id,
     name: item.vod_name,
     cover: item.vod_pic || '',
     update_time: item.vod_time || new Date().toISOString(),
     score: parseFloat(item.vod_score) || 0,
-    episode_count: parseInt(item.vod_remarks?.replace(/[^\d]/g, '') || '1'),
+    episode_count: getEpisodeCount(item),
     description: item.vod_content || item.vod_blurb || '',
     author: item.vod_actor || '',
     backdrop: item.vod_pic_slide || item.vod_pic || '',
