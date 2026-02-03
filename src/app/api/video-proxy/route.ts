@@ -4,6 +4,7 @@ import path from 'path';
 import stream from 'stream';
 import { promisify } from 'util';
 
+import { getCacheTime } from '@/lib/config';
 import { fetchTrailerWithRetry } from '@/lib/douban-api';
 import {
   fetchDoubanWithAntiScraping,
@@ -40,10 +41,6 @@ export async function GET(request: Request) {
 
   if (isCarousel) {
     videoUrl = null;
-  }
-
-  // 仅轮播视频：如果没有 url 但有 id，尝试获取 url
-  if (doubanId && isCarousel) {
     try {
       videoUrl = (await fetchTrailerWithRetry(doubanId)).trailerUrl;
     } catch (e) {
@@ -64,10 +61,6 @@ export async function GET(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
   }
-
-  // 创建 AbortController 用于超时控制
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
 
   try {
     // 构建请求头
@@ -146,6 +139,10 @@ export async function GET(request: Request) {
       fetchHeaders['If-Modified-Since'] = ifModifiedSince;
     }
 
+    // 创建 AbortController 用于超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
     const videoResponse = await fetch(videoUrl, {
       signal: controller.signal,
       headers: fetchHeaders,
@@ -158,15 +155,13 @@ export async function GET(request: Request) {
       const headers = new Headers();
       const etag = videoResponse.headers.get('etag');
       const lastModified = videoResponse.headers.get('last-modified');
-
       if (etag) headers.set('ETag', etag);
       if (lastModified) headers.set('Last-Modified', lastModified);
-
-      if (isCarousel) {
-        headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
-      } else {
-        headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-      }
+      const cacheTime = await getCacheTime();
+      headers.set(
+        'Cache-Control',
+        `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+      );
       headers.set('Access-Control-Allow-Origin', '*');
 
       return new Response(null, {
@@ -214,12 +209,11 @@ export async function GET(request: Request) {
     if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
     if (etag) headers.set('ETag', etag);
     if (lastModified) headers.set('Last-Modified', lastModified);
-
-    if (isCarousel) {
-      headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
-    } else {
-      headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-    }
+    const cacheTime = await getCacheTime();
+    headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+    );
     // 添加 CORS 支持
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
@@ -234,7 +228,6 @@ export async function GET(request: Request) {
       headers,
     });
   } catch (error: any) {
-    clearTimeout(timeoutId);
     // 错误类型判断
     if (error.name === 'AbortError') {
       return NextResponse.json(
@@ -263,9 +256,6 @@ export async function HEAD(request: Request) {
 
   if (isCarousel) {
     videoUrl = null;
-  }
-
-  if (doubanId && isCarousel) {
     try {
       videoUrl = (await fetchTrailerWithRetry(doubanId)).trailerUrl;
     } catch (e) {
@@ -297,7 +287,11 @@ export async function HEAD(request: Request) {
         headers.set('ETag', etag);
         headers.set('Last-Modified', mtime);
         headers.set('Access-Control-Allow-Origin', '*');
-        headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+        const cacheTime = await getCacheTime();
+        headers.set(
+          'Cache-Control',
+          `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+        );
         headers.set('X-Cache-Status', 'HIT');
 
         return new NextResponse(null, { status: 200, headers });
@@ -350,13 +344,12 @@ export async function HEAD(request: Request) {
     if (acceptRanges) headers.set('Accept-Ranges', acceptRanges);
     if (etag) headers.set('ETag', etag);
     if (lastModified) headers.set('Last-Modified', lastModified);
-
     headers.set('Access-Control-Allow-Origin', '*');
-    if (isCarousel) {
-      headers.set('Cache-Control', 'public, max-age=604800, s-maxage=604800');
-    } else {
-      headers.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-    }
+    const cacheTime = await getCacheTime();
+    headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+    );
     return new NextResponse(null, {
       status: videoResponse.status,
       headers,

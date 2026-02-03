@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
 import { getShortDramaList } from '@/lib/shortdrama-api';
 
 // 强制动态路由，禁用所有缓存
@@ -29,13 +30,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
     const result = await getShortDramaList(pageNum, pageSize);
-    // 设置与网页端一致的缓存策略（lists: 2小时）
+
     const response = NextResponse.json(result);
 
-    console.log('🕐 [LIST] 设置2小时HTTP缓存 - 与网页端lists缓存一致');
-
-    // 2小时 = 7200秒（与网页端SHORTDRAMA_CACHE_EXPIRE.lists一致）
-    const cacheTime = 7200;
+    const cacheTime =
+      pageNum === 1
+        ? SHORTDRAMA_CACHE_EXPIRE.lists * 2
+        : SHORTDRAMA_CACHE_EXPIRE.lists;
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
