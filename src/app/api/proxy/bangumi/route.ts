@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const cacheKey = 'bangumi:' + path;
+  const cacheKey = 'bangumi-' + path;
 
   const cacheTime = await getCacheTime();
 
@@ -42,10 +42,6 @@ export async function GET(request: NextRequest) {
     const response = await fetch(apiUrl, {
       headers: {
         Accept: 'application/json',
-      },
-      next: {
-        // 缓存5分钟
-        revalidate: 300,
       },
     });
 
