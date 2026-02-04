@@ -10,6 +10,8 @@ import {
 } from './cache';
 import { ShortDramaCategory, ShortDramaItem } from './types';
 
+const shortDramaCategoryIdCache = new Map<string, number>();
+
 const getApiBase = async () => {
   if (typeof window !== 'undefined') {
     return '/api/shortdrama';
@@ -47,6 +49,45 @@ const getEpisodeCount = (item: any) => {
   if (serial > 0) return serial;
 
   return 1;
+};
+
+const getShortDramaCategoryId = async (baseUrl: string) => {
+  const cached = shortDramaCategoryIdCache.get(baseUrl);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const listUrl = `${baseUrl}?ac=list`;
+
+  const listResponse = await fetch(listUrl, {
+    headers: {
+      'User-Agent': DEFAULT_USER_AGENT,
+      Accept: 'application/json',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!listResponse.ok) {
+    throw new Error(`HTTP error! status: ${listResponse.status}`);
+  }
+
+  const listData = await listResponse.json();
+  const categories = listData.class || [];
+
+  // 查找"短剧"分类（只要包含"短剧"两个字即可）
+  const shortDramaCategory = categories.find(
+    (cat: any) => cat.type_name && cat.type_name.includes('短剧'),
+  );
+
+  if (!shortDramaCategory) {
+    console.log(`该源没有短剧分类`);
+    return null;
+  }
+
+  const categoryId = shortDramaCategory.type_id;
+  shortDramaCategoryIdCache.set(baseUrl, categoryId);
+
+  return categoryId;
 };
 
 // 获取短剧分类列表
@@ -130,37 +171,14 @@ export async function getRecommendedShortDramas(
 // 从单个短剧源获取数据
 async function fetchFromShortDramaSource(size: number) {
   // Step 1: 获取分类列表，找到"短剧"分类的ID
-  const listUrl = `${await getApiBase()}?ac=list`;
-
-  const listResponse = await fetch(listUrl, {
-    headers: {
-      'User-Agent': DEFAULT_USER_AGENT,
-      Accept: 'application/json',
-    },
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!listResponse.ok) {
-    throw new Error(`HTTP error! status: ${listResponse.status}`);
-  }
-
-  const listData = await listResponse.json();
-  const categories = listData.class || [];
-
-  // 查找"短剧"分类（只要包含"短剧"两个字即可）
-  const shortDramaCategory = categories.find(
-    (cat: any) => cat.type_name && cat.type_name.includes('短剧'),
-  );
-
-  if (!shortDramaCategory) {
-    console.log(`该源没有短剧分类`);
+  const apiBase = await getApiBase();
+  const categoryId = await getShortDramaCategoryId(apiBase);
+  if (categoryId == null) {
     return [];
   }
 
-  const categoryId = shortDramaCategory.type_id;
-
   // Step 2: 获取该分类的短剧列表
-  const apiUrl = `${await getApiBase()}?ac=detail&t=${categoryId}&pg=1`;
+  const apiUrl = `${apiBase}?ac=detail&t=${categoryId}&pg=1`;
 
   const response = await fetch(apiUrl, {
     headers: {
@@ -234,37 +252,14 @@ export async function getShortDramaList(
 // 从单个短剧源获取数据（通过分类名称查找）
 async function fetchListFromSource(page: number, size: number) {
   // Step 1: 获取分类列表，找到"短剧"分类的ID
-  const listUrl = `${await getApiBase()}?ac=list`;
-
-  const listResponse = await fetch(listUrl, {
-    headers: {
-      'User-Agent': DEFAULT_USER_AGENT,
-      Accept: 'application/json',
-    },
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!listResponse.ok) {
-    throw new Error(`HTTP error! status: ${listResponse.status}`);
-  }
-
-  const listData = await listResponse.json();
-  const categories = listData.class || [];
-
-  // 查找"短剧"分类（只要包含"短剧"两个字即可）
-  const shortDramaCategory = categories.find(
-    (cat: any) => cat.type_name && cat.type_name.includes('短剧'),
-  );
-
-  if (!shortDramaCategory) {
-    console.log(`该源没有短剧分类`);
+  const apiBase = await getApiBase();
+  const categoryId = await getShortDramaCategoryId(apiBase);
+  if (categoryId == null) {
     return { list: [], hasMore: false };
   }
 
-  const categoryId = shortDramaCategory.type_id;
-
   // Step 2: 获取该分类的短剧列表
-  const apiUrl = `${await getApiBase()}?ac=detail&t=${categoryId}&pg=${page}`;
+  const apiUrl = `${apiBase}?ac=detail&t=${categoryId}&pg=${page}`;
 
   const response = await fetch(apiUrl, {
     headers: {
@@ -367,33 +362,10 @@ export async function searchShortDramas(
 
 async function searchFromSource(url: string, query: string, page: number) {
   // Step 1: 获取分类列表，找到"短剧"分类的ID
-  const listUrl = `${url}?ac=list`;
-
-  const listResponse = await fetch(listUrl, {
-    headers: {
-      'User-Agent': DEFAULT_USER_AGENT,
-      Accept: 'application/json',
-    },
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!listResponse.ok) {
-    throw new Error(`HTTP error! status: ${listResponse.status}`);
-  }
-
-  const listData = await listResponse.json();
-  const categories = listData.class || [];
-
-  // 查找"短剧"分类（只要包含"短剧"两个字即可）
-  const shortDramaCategory = categories.find(
-    (cat: any) => cat.type_name && cat.type_name.includes('短剧'),
-  );
-
-  if (!shortDramaCategory) {
-    console.log(`该源没有短剧分类`);
+  const categoryId = await getShortDramaCategoryId(url);
+  if (categoryId == null) {
     return { list: [], hasMore: false };
   }
-  const categoryId = shortDramaCategory.type_id;
 
   // Step 2: 搜索该分类下的短剧
   const apiUrl = `${url}?ac=detail&wd=${encodeURIComponent(query)}&pg=${page}`;

@@ -12,7 +12,7 @@ import {
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 const pipeline = promisify(stream.pipeline);
-const CACHE_DIR = path.join(process.cwd(), 'cache', 'image');
+const CACHE_DIR = path.resolve('/app/cache/image');
 
 // Ensure cache directory exists
 try {

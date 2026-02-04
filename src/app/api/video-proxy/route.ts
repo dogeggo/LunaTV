@@ -13,7 +13,7 @@ import {
 import { DEFAULT_USER_AGENT } from '@/lib/user-agent';
 
 const pipeline = promisify(stream.pipeline);
-const CACHE_DIR = path.join(process.cwd(), 'cache', 'video');
+const CACHE_DIR = path.resolve('/app/cache/video');
 const MAX_CACHE_BYTES = 10 * 1024 * 1024;
 const downloadingFiles = new Set<string>();
 
