@@ -153,7 +153,6 @@ export async function searchTMDBMovie(
     });
     const cached = await getCache(cacheKey);
     if (cached) {
-      console.log(`TMDB电影搜索缓存命中: ${title}`);
       return cached;
     }
 
@@ -210,7 +209,6 @@ export async function searchTMDBTV(
     });
     const cached = await getCache(cacheKey);
     if (cached) {
-      console.log(`TMDB电视剧搜索缓存命中: ${title}`);
       return cached;
     }
 
@@ -302,7 +300,6 @@ export async function searchTMDBPerson(
   });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB演员搜索缓存命中: ${query}`);
     return cached;
   }
 
@@ -328,7 +325,6 @@ export async function getTMDBPersonMovies(
   const cacheKey = getTMDBCacheKey('movie_credits', { personId });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB演员电影作品缓存命中: ${personId}`);
     return cached;
   }
 
@@ -353,7 +349,6 @@ export async function getTMDBPersonTVShows(
   const cacheKey = getTMDBCacheKey('tv_credits', { personId });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`TMDB演员电视剧作品缓存命中: ${personId}`);
     return cached;
   }
 
@@ -392,7 +387,6 @@ export async function getTMDBMovieDetails(movieId: number): Promise<{
     const cacheKey = getTMDBCacheKey('movie_details', { movieId });
     const cached = await getCache(cacheKey);
     if (cached) {
-      console.log(`TMDB电影详情缓存命中: ${movieId}`);
       return cached;
     }
 
@@ -444,7 +438,6 @@ export async function getTMDBTVDetails(tvId: number): Promise<{
     const cacheKey = getTMDBCacheKey('tv_details', { tvId });
     const cached = await getCache(cacheKey);
     if (cached) {
-      console.log(`TMDB电视剧详情缓存命中: ${tvId}`);
       return cached;
     }
 
@@ -508,7 +501,6 @@ export async function searchTMDBActorWorks(
 
     const cached = await getCache(cacheKey);
     if (cached) {
-      console.log(`✅ [TMDB] 缓存命中: ${actorName}/${type}`);
       return cached;
     }
     console.log(`❌ [TMDB] 缓存未命中，开始搜索...`);

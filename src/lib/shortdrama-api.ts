@@ -99,8 +99,9 @@ export async function getRecommendedShortDramas(
     if (cached) {
       return cached;
     }
+    let result: ShortDramaItem[];
     if (typeof window === 'undefined') {
-      return await fetchFromShortDramaSource(size);
+      result = await fetchFromShortDramaSource(size);
     } else {
       // 使用内部 API 代理
       const params = new URLSearchParams();
@@ -113,15 +114,13 @@ export async function getRecommendedShortDramas(
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
-      const result = await response.json();
-
-      // 只缓存非空结果，避免缓存错误/空数据
-      if (Array.isArray(result) && result.length > 0) {
-        await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.recommends);
-      }
-      return result;
+      result = await response.json();
     }
+    // 只缓存非空结果，避免缓存错误/空数据
+    if (Array.isArray(result) && result.length > 0) {
+      await setCache(cacheKey, result, SHORTDRAMA_CACHE_EXPIRE.recommends);
+    }
+    return result;
   } catch (error) {
     console.error('获取推荐短剧失败:', error);
     return [];
@@ -205,8 +204,9 @@ export async function getShortDramaList(
     if (cached) {
       return cached;
     }
+    let result: { list: []; hasMore: boolean };
     if (typeof window === 'undefined') {
-      return fetchListFromSource(page, size);
+      result = await fetchListFromSource(page, size);
     } else {
       // 使用内部 API 代理
       const apiUrl = `${await getApiBase()}/list?categoryId=${category}&page=${page}&size=${size}`;
@@ -214,17 +214,17 @@ export async function getShortDramaList(
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const result = await response.json();
-      // 只缓存非空结果，避免缓存错误/空数据
-      if (result.list && Array.isArray(result.list) && result.list.length > 0) {
-        const cacheTime =
-          page === 1
-            ? SHORTDRAMA_CACHE_EXPIRE.lists * 2
-            : SHORTDRAMA_CACHE_EXPIRE.lists;
-        await setCache(cacheKey, result, cacheTime);
-      }
-      return result;
+      result = await response.json();
     }
+    // 只缓存非空结果，避免缓存错误/空数据
+    if (result.list && Array.isArray(result.list) && result.list.length > 0) {
+      const cacheTime =
+        page === 1
+          ? SHORTDRAMA_CACHE_EXPIRE.lists * 2
+          : SHORTDRAMA_CACHE_EXPIRE.lists;
+      await setCache(cacheKey, result, cacheTime);
+    }
+    return result;
   } catch (error) {
     console.error('获取短剧列表失败:', error);
     return { list: [], hasMore: false };

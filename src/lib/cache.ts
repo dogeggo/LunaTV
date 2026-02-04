@@ -18,8 +18,7 @@ export const SHORTDRAMA_CACHE_EXPIRE = {
   lists: 2 * 60 * 60, // 列表2小时（更新频繁）
   categories: 4 * 60 * 60, // 分类4小时（很少变化）
   recommends: 1 * 60 * 60, // 推荐1小时（经常更新）
-  episodes: 24 * 60 * 60, // 集数24小时（基本不变）
-  parse: 30 * 60, // 解析结果30分钟（URL会过期）
+  search: 1 * 60 * 60, // 集数24小时（基本不变）
 };
 
 // TMDB数据缓存配置（秒）
@@ -276,7 +275,9 @@ export async function getCache(key: string): Promise<any | null> {
     // 如果在服务端，直接使用 DB
     if (typeof window === 'undefined') {
       const { db } = await import('@/lib/db');
-      return await db.getCache(key);
+      var cached = await db.getCache(key);
+      if (cached) console.log(`✅ 缓存命中: key = ${key}`);
+      return cached;
     }
 
     // 兜底：从localStorage获取（兼容性）
@@ -285,6 +286,7 @@ export async function getCache(key: string): Promise<any | null> {
       if (localCached) {
         const { data, expire } = JSON.parse(localCached);
         if (Date.now() <= expire) {
+          console.log(`✅ 缓存命中: key = ${key}`);
           return data;
         }
         localStorage.removeItem(key);
@@ -308,6 +310,7 @@ export async function setCache(
     if (typeof window === 'undefined') {
       const { db } = await import('@/lib/db');
       await db.setCache(key, data, expireSeconds);
+      console.log(`✅ 写入缓存成功: key = ${key}, expire = ${expireSeconds}`);
       return;
     }
 
@@ -320,6 +323,7 @@ export async function setCache(
           created: Date.now(),
         };
         localStorage.setItem(key, JSON.stringify(cacheData));
+        console.log(`✅ 写入缓存成功: key = ${key}, expire = ${expireSeconds}`);
       } catch (_e) {
         // localStorage可能满了，忽略错误
       }

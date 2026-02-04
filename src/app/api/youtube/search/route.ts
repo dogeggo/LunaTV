@@ -197,13 +197,10 @@ export async function GET(request: NextRequest) {
     // 缓存key包含功能状态、演示模式、最大结果数、内容类型、排序，确保配置变化时缓存隔离
     const cacheKey = `youtube-search-${youtubeConfig.enabled}-${youtubeConfig.enableDemo}-${maxResults}-${encodeURIComponent(query)}-${contentType}-${order}-${enabledRegionsStr}-${enabledCategoriesStr}`;
 
-    console.log(`🔍 检查YouTube搜索缓存: ${cacheKey}`);
-
     // 服务端直接调用数据库（不用ClientCache，避免HTTP循环调用）
     try {
       const cached = await getCache(cacheKey);
       if (cached) {
-        console.log(`✅ YouTube搜索缓存命中(数据库): "${query}"`);
         return NextResponse.json({
           ...cached,
           fromCache: true,
@@ -211,8 +208,6 @@ export async function GET(request: NextRequest) {
           cacheTimestamp: new Date().toISOString(),
         });
       }
-
-      console.log(`❌ YouTube搜索缓存未命中: "${query}"`);
     } catch (cacheError) {
       console.warn('YouTube搜索缓存读取失败:', cacheError);
       // 缓存失败不影响主流程，继续执行
@@ -269,9 +264,6 @@ export async function GET(request: NextRequest) {
       // 服务端直接保存到数据库（不用ClientCache，避免HTTP循环调用）
       try {
         await setCache(cacheKey, responseData, YOUTUBE_CACHE_EXPIRE.search);
-        console.log(
-          `💾 YouTube搜索演示结果已缓存(数据库): "${query}" - ${responseData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_EXPIRE.search}s`,
-        );
       } catch (cacheError) {
         console.warn('YouTube搜索缓存保存失败:', cacheError);
       }
@@ -365,9 +357,6 @@ export async function GET(request: NextRequest) {
     // 服务端直接保存到数据库（不用ClientCache，避免HTTP循环调用）
     try {
       await setCache(cacheKey, responseData, YOUTUBE_CACHE_EXPIRE.search);
-      console.log(
-        `💾 YouTube搜索API结果已缓存(数据库): "${query}" - ${responseData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_EXPIRE.search}s`,
-      );
     } catch (cacheError) {
       console.warn('YouTube搜索缓存保存失败:', cacheError);
     }
@@ -404,9 +393,6 @@ export async function GET(request: NextRequest) {
         fallbackCacheKey,
         fallbackData,
         YOUTUBE_CACHE_EXPIRE.search_fallback,
-      );
-      console.log(
-        `💾 YouTube搜索备用结果已缓存(数据库): "${query}" - ${fallbackData.videos.length} 个结果, TTL: ${YOUTUBE_CACHE_EXPIRE.search_fallback}s`,
       );
     } catch (cacheError) {
       console.warn('YouTube搜索备用缓存保存失败:', cacheError);

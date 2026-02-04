@@ -165,7 +165,6 @@ export async function getDoubanCategories(
   });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`豆瓣分类缓存命中: ${kind}/${category}/${type}`);
     return cached;
   }
   let result: DoubanResult;
@@ -199,7 +198,6 @@ export async function getDoubanCategories(
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.categories);
-    console.log(`豆瓣分类已缓存: ${kind}/${category}/${type}`);
   }
   return result;
 }
@@ -225,7 +223,6 @@ export async function getDoubanList(
   });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`豆瓣列表缓存命中: ${type}/${tag}/${pageStart}`);
     return cached;
   }
   let result: DoubanResult;
@@ -255,7 +252,6 @@ export async function getDoubanList(
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.lists);
-    console.log(`豆瓣列表已缓存: ${type}/${tag}/${pageStart}`);
   }
   return result;
 }
@@ -304,7 +300,6 @@ export async function getDoubanRecommends(
   });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`豆瓣推荐缓存命中: ${kind}/${category || 'all'}`);
     return cached;
   }
   let result: DoubanResult;
@@ -373,7 +368,6 @@ export async function getDoubanRecommends(
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.recommends);
-    console.log(`豆瓣推荐已缓存: ${kind}/${category || 'all'}`);
   }
   return result;
 }
@@ -386,7 +380,6 @@ export async function getDoubanDetails(id: string): Promise<DoubanResult> {
   const cacheKey = getDouBanCacheKey('details', { id });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`豆瓣详情缓存命中(有简介): ${id}`);
     return cached;
   }
   try {
@@ -411,7 +404,6 @@ export async function getDoubanDetails(id: string): Promise<DoubanResult> {
     if (result.code === 200) {
       const cacheKey = getDouBanCacheKey('details', { id });
       await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.details);
-      console.log(`豆瓣详情已缓存: ${id}`);
     }
     return result;
   } catch (error) {
@@ -505,7 +497,6 @@ export async function getDoubanComments(
   const cacheKey = getDouBanCacheKey('comments', { id, start, limit, sort });
   const cached = await getCache(cacheKey);
   if (cached && cached.data?.comments?.length > 0) {
-    console.log(`豆瓣短评缓存命中: ${id}/${start}`);
     return cached;
   }
   let result: DoubanCommentsResult;
@@ -553,7 +544,6 @@ export async function getDoubanComments(
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.comments);
-    console.log(`豆瓣短评已缓存 cacheKey = `, cacheKey);
   }
   return result;
 }
@@ -587,7 +577,6 @@ export async function getDoubanActorMovies(
   });
   const cached = await getCache(cacheKey);
   if (cached) {
-    console.log(`豆瓣演员搜索缓存命中: ${actorName}/${type}`);
     return cached;
   }
 
@@ -678,10 +667,6 @@ export async function getDoubanActorMovies(
 
     // 保存到缓存
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.lists);
-    console.log(
-      `豆瓣演员搜索已缓存: ${actorName}/${type}，找到 ${list.length} 个结果`,
-    );
-
     return result;
   } catch (error) {
     console.error(`搜索演员 ${actorName} 失败:`, error);
@@ -701,7 +686,6 @@ export async function getExtractPlatformUrls(
   const cacheKey = getDouBanCacheKey('comments', { doubanId });
   const cached = await getCache(cacheKey);
   if (cached && cached.data?.platform_link?.length > 0) {
-    console.log(`豆瓣平台链接命中: ${doubanId}`);
     return cached;
   }
   try {

@@ -912,7 +912,6 @@ function PlayPageClient() {
     // 优先从统一存储获取
     let cached = await getCache(cacheKey);
     if (cached) {
-      console.log(`Bangumi详情缓存命中: ${bangumiId}`);
       return cached;
     }
     try {
@@ -932,7 +931,6 @@ function PlayPageClient() {
           JSON.stringify(cacheData),
           DOUBAN_CACHE_EXPIRE.details,
         );
-        console.log(`Bangumi详情已缓存: ${bangumiId}`);
         return bangumiData;
       }
     } catch (error) {
@@ -1221,7 +1219,6 @@ function PlayPageClient() {
       // 优先从统一存储获取
       let cached = await getCache(cacheKey);
       if (cached) {
-        console.log(`网盘搜索缓存命中: ${query.trim()}`);
         setNetdiskResults(cached.data.merged_by_type || {});
         setNetdiskTotal(cached.data.total || 0);
         return;
@@ -1268,7 +1265,6 @@ function PlayPageClient() {
       const cached = await getCache(cacheKey);
 
       if (cached) {
-        console.log(`演员作品缓存命中: ${celebrityName}`);
         setCelebrityWorks(cached);
         setLoadingCelebrityWorks(false);
         return;

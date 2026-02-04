@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
 import { searchShortDramas } from '@/lib/shortdrama-api';
 
 // 强制动态路由，禁用所有缓存
@@ -25,16 +26,11 @@ export async function GET(request: NextRequest) {
     if (isNaN(pageNum)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
-
     const result = await searchShortDramas(query, pageNum);
-
     // 设置与网页端一致的缓存策略（搜索结果: 1小时）
     const response = NextResponse.json(result);
-
-    console.log('🕐 [SEARCH] 设置1小时HTTP缓存 - 与网页端搜索缓存一致');
-
     // 1小时 = 3600秒（搜索结果更新频繁，短期缓存）
-    const cacheTime = 3600;
+    const cacheTime = SHORTDRAMA_CACHE_EXPIRE.search;
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
