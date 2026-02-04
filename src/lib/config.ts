@@ -40,15 +40,15 @@ interface ConfigFileStruct {
 
 export const API_CONFIG = {
   search: {
-    path: '?ac=videolist&wd=',
-    pagePath: '?ac=videolist&wd={query}&pg={page}',
+    path: '?ac=detail&wd=',
+    pagePath: '?ac=detail&wd={query}&pg={page}',
     headers: {
       'User-Agent': DEFAULT_USER_AGENT,
       Accept: 'application/json',
     },
   },
   detail: {
-    path: '?ac=videolist&ids=',
+    path: '?ac=detail&ids=',
     headers: {
       'User-Agent': DEFAULT_USER_AGENT,
       Accept: 'application/json',

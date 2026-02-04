@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const categoryId = searchParams.get('categoryId');
     const page = searchParams.get('page');
-    const size = searchParams.get('size');
 
     if (!categoryId) {
       return NextResponse.json(
@@ -24,12 +23,11 @@ export async function GET(request: NextRequest) {
 
     const category = parseInt(categoryId);
     const pageNum = page ? parseInt(page) : 1;
-    const pageSize = size ? parseInt(size) : 20;
 
-    if (isNaN(category) || isNaN(pageNum) || isNaN(pageSize)) {
+    if (isNaN(category) || isNaN(pageNum)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
-    const result = await getShortDramaList(pageNum, pageSize);
+    const result = await getShortDramaList(category, pageNum);
 
     const response = NextResponse.json(result);
 

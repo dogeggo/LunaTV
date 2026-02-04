@@ -11,16 +11,11 @@ export const fetchCache = 'force-no-store';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    const category = searchParams.get('category');
     const size = searchParams.get('size');
-
-    const categoryNum = category ? parseInt(category) : undefined;
-    const pageSize = size ? parseInt(size) : 10;
-
-    if ((category && isNaN(categoryNum!)) || isNaN(pageSize)) {
+    const pageSize = size ? parseInt(size) : 15;
+    if (isNaN(pageSize)) {
       return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
-
     const result = await getRecommendedShortDramas(pageSize);
     // 测试1小时HTTP缓存策略
     const response = NextResponse.json(result);

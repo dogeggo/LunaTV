@@ -108,7 +108,7 @@ export default function ShortDramaPage() {
           }
           result = await searchShortDramas(searchQuery, pageNum);
         } else {
-          result = await getShortDramaList(selectedCategory, pageNum, 20);
+          result = await getShortDramaList(selectedCategory, pageNum);
         }
 
         if (reset) {

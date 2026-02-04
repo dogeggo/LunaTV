@@ -129,10 +129,9 @@ export async function getShortDramaCategories(): Promise<ShortDramaCategory[]> {
 
 // 获取推荐短剧列表
 export async function getRecommendedShortDramas(
-  category?: number,
-  size = 10,
+  size = 15,
 ): Promise<ShortDramaItem[]> {
-  const cacheKey = getShortdramaCacheKey('recommends', { category, size });
+  const cacheKey = getShortdramaCacheKey('recommends', { size });
 
   try {
     // 检查缓存
@@ -146,7 +145,6 @@ export async function getRecommendedShortDramas(
     } else {
       // 使用内部 API 代理
       const params = new URLSearchParams();
-      if (category) params.append('category', category.toString());
       params.append('size', size.toString());
       const apiUrl = `${await getApiBase()}/recommend?${params.toString()}`;
 
@@ -213,9 +211,8 @@ async function fetchFromShortDramaSource(size: number) {
 export async function getShortDramaList(
   category: number,
   page = 1,
-  size = 20,
 ): Promise<{ list: ShortDramaItem[]; hasMore: boolean }> {
-  const cacheKey = getShortdramaCacheKey('lists', { category, page, size });
+  const cacheKey = getShortdramaCacheKey('lists', { category, page });
   try {
     // 检查缓存
     const cached = await getCache(cacheKey);
@@ -224,10 +221,10 @@ export async function getShortDramaList(
     }
     let result: { list: []; hasMore: boolean };
     if (typeof window === 'undefined') {
-      result = await fetchListFromSource(page, size);
+      result = await fetchListFromSource(page);
     } else {
       // 使用内部 API 代理
-      const apiUrl = `${await getApiBase()}/list?categoryId=${category}&page=${page}&size=${size}`;
+      const apiUrl = `${await getApiBase()}/list?categoryId=${category}&page=${page}`;
       const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -250,7 +247,7 @@ export async function getShortDramaList(
 }
 
 // 从单个短剧源获取数据（通过分类名称查找）
-async function fetchListFromSource(page: number, size: number) {
+async function fetchListFromSource(page: number) {
   // Step 1: 获取分类列表，找到"短剧"分类的ID
   const apiBase = await getApiBase();
   const categoryId = await getShortDramaCategoryId(apiBase);
@@ -276,9 +273,7 @@ async function fetchListFromSource(page: number, size: number) {
   const data = await response.json();
   const items = data.list || [];
 
-  const limitedItems = items.slice(0, size);
-
-  const list = limitedItems.map((item: any) => ({
+  const list = items.map((item: any) => ({
     id: item.vod_id,
     name: item.vod_name,
     cover: item.vod_pic || '',
