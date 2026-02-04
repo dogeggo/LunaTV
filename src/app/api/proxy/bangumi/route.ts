@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getCache, setCache } from '@/lib/cache';
+import { getCacheTime } from '@/lib/config';
 import { processImageUrl } from '@/lib/utils';
 
 /**
@@ -19,6 +21,19 @@ export async function GET(request: NextRequest) {
       { error: 'Missing path parameter' },
       { status: 400 },
     );
+  }
+
+  const cacheKey = 'bangumi:' + path;
+
+  const cacheTime = await getCacheTime();
+
+  const cached = await getCache(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
+      },
+    });
   }
 
   try {
@@ -77,13 +92,11 @@ export async function GET(request: NextRequest) {
 
       return obj;
     };
-
     const processedData = processImages(data);
-
-    // 返回数据，并设置 CORS 头允许前端访问
+    await setCache(cacheKey, processedData, cacheTime);
     return NextResponse.json(processedData, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,
       },
     });
   } catch (error) {
