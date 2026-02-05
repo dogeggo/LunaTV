@@ -45,12 +45,7 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
-    let results = await searchFromApi(
-      targetSite,
-      query,
-      undefined,
-      authInfo.username,
-    );
+    let results = await searchFromApi(targetSite, query, authInfo.username);
     results = results.filter((r) => r.title === query);
     const cacheTime = await getCacheTime();
     if (results.length === 0) {

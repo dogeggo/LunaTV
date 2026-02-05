@@ -939,258 +939,6 @@ function PlayPageClient() {
     return null;
   };
 
-  /**
-   * 生成搜索查询的多种变体，提高搜索命中率
-   * @param originalQuery 原始查询
-   * @returns 按优先级排序的搜索变体数组
-   */
-  const generateSearchVariants = (originalQuery: string): string[] => {
-    const variants: string[] = [];
-    const trimmed = originalQuery.trim();
-
-    // 1. 原始查询（最高优先级）
-    variants.push(trimmed);
-
-    // 2. 处理中文标点符号变体
-    const chinesePunctuationVariants =
-      generateChinesePunctuationVariants(trimmed);
-    chinesePunctuationVariants.forEach((variant) => {
-      if (!variants.includes(variant)) {
-        variants.push(variant);
-      }
-    });
-
-    // 3. 添加数字变体处理（处理"第X季" <-> "X" 的转换）
-    const numberVariants = generateNumberVariants(trimmed);
-    numberVariants.forEach((variant) => {
-      if (!variants.includes(variant)) {
-        variants.push(variant);
-      }
-    });
-
-    // 如果包含空格，生成额外变体
-    if (trimmed.includes(' ')) {
-      // 4. 去除所有空格
-      const noSpaces = trimmed.replace(/\s+/g, '');
-      if (noSpaces !== trimmed) {
-        variants.push(noSpaces);
-      }
-
-      // 5. 标准化空格（多个空格合并为一个）
-      const normalizedSpaces = trimmed.replace(/\s+/g, ' ');
-      if (
-        normalizedSpaces !== trimmed &&
-        !variants.includes(normalizedSpaces)
-      ) {
-        variants.push(normalizedSpaces);
-      }
-
-      // 6. 提取关键词组合（针对"中餐厅 第九季"这种情况）
-      const keywords = trimmed.split(/\s+/);
-      if (keywords.length >= 2) {
-        // 主要关键词 + 季/集等后缀
-        const mainKeyword = keywords[0];
-        const lastKeyword = keywords[keywords.length - 1];
-
-        // 如果最后一个词包含"第"、"季"、"集"等，尝试组合
-        if (/第|季|集|部|篇|章/.test(lastKeyword)) {
-          const combined = mainKeyword + lastKeyword;
-          if (!variants.includes(combined)) {
-            variants.push(combined);
-          }
-        }
-
-        // 7. 空格变冒号的变体（重要！针对"死神来了 血脉诅咒" -> "死神来了：血脉诅咒"）
-        const withColon = trimmed.replace(/\s+/g, '：');
-        if (!variants.includes(withColon)) {
-          variants.push(withColon);
-        }
-
-        // 8. 空格变英文冒号的变体
-        const withEnglishColon = trimmed.replace(/\s+/g, ':');
-        if (!variants.includes(withEnglishColon)) {
-          variants.push(withEnglishColon);
-        }
-
-        // 仅使用主关键词搜索（过滤无意义的词）
-        const meaninglessWords = [
-          'the',
-          'a',
-          'an',
-          'and',
-          'or',
-          'of',
-          'in',
-          'on',
-          'at',
-          'to',
-          'for',
-          'with',
-          'by',
-        ];
-        if (
-          !variants.includes(mainKeyword) &&
-          !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
-          mainKeyword.length > 2
-        ) {
-          variants.push(mainKeyword);
-        }
-      }
-    }
-
-    // 去重并返回
-    return Array.from(new Set(variants));
-  };
-
-  /**
-   * 生成数字变体的搜索变体（处理"第X季" <-> "X"的转换）
-   * 优化：只生成最有可能匹配的前2-3个变体
-   * @param query 原始查询
-   * @returns 数字变体数组（按优先级排序）
-   */
-  const generateNumberVariants = (query: string): string[] => {
-    const variants: string[] = [];
-
-    // 中文数字到阿拉伯数字的映射
-    const chineseNumbers: { [key: string]: string } = {
-      一: '1',
-      二: '2',
-      三: '3',
-      四: '4',
-      五: '5',
-      六: '6',
-      七: '7',
-      八: '8',
-      九: '9',
-      十: '10',
-    };
-
-    // 1. 处理"第X季/部/集"格式（最常见的情况）
-    const seasonPattern = /第([一二三四五六七八九十\d]+)(季|部|集|期)/;
-    const match = seasonPattern.exec(query);
-
-    if (match) {
-      const fullMatch = match[0];
-      const number = match[1];
-      const suffix = match[2];
-      const arabicNumber = chineseNumbers[number] || number;
-      const base = query.replace(fullMatch, '').trim();
-
-      if (base) {
-        // 只生成最常见的格式：无空格，如"一拳超人3"
-        // 不生成"一拳超人 3"和"一拳超人S3"等变体，避免匹配太多不相关结果
-        variants.push(`${base}${arabicNumber}`);
-      }
-    }
-
-    // 2. 处理末尾纯数字（如"牧神记3"）
-    const endNumberMatch = query.match(/^(.+?)\s*(\d+)$/);
-    if (endNumberMatch) {
-      const base = endNumberMatch[1].trim();
-      const number = endNumberMatch[2];
-      const chineseNum = [
-        '',
-        '一',
-        '二',
-        '三',
-        '四',
-        '五',
-        '六',
-        '七',
-        '八',
-        '九',
-        '十',
-      ][parseInt(number)];
-
-      if (chineseNum && parseInt(number) <= 10) {
-        // 只生成无空格带"第X季"的变体，如"牧神记第三季"
-        variants.push(`${base}第${chineseNum}季`);
-      }
-    }
-
-    // 限制返回前1个最有可能的变体
-    return variants.slice(0, 1);
-  };
-
-  // 移除数字变体生成函数（优化性能，依赖相关性评分处理）
-
-  /**
-   * 生成中文标点符号的搜索变体
-   * @param query 原始查询
-   * @returns 标点符号变体数组
-   */
-  const generateChinesePunctuationVariants = (query: string): string[] => {
-    const variants: string[] = [];
-
-    // 检查是否包含中文标点符号
-    const chinesePunctuation = /[：；，。！？、""''（）【】《》]/;
-    if (!chinesePunctuation.test(query)) {
-      return variants;
-    }
-
-    // 中文冒号变体 (针对"死神来了：血脉诅咒"这种情况)
-    if (query.includes('：')) {
-      // 优先级1: 替换为空格 (最可能匹配，如"死神来了 血脉诅咒" 能匹配到 "死神来了6：血脉诅咒")
-      const withSpace = query.replace(/：/g, ' ');
-      variants.push(withSpace);
-
-      // 优先级2: 完全去除冒号
-      const noColon = query.replace(/：/g, '');
-      variants.push(noColon);
-
-      // 优先级3: 替换为英文冒号
-      const englishColon = query.replace(/：/g, ':');
-      variants.push(englishColon);
-
-      // 优先级4: 提取冒号前的主标题 (降低优先级，避免匹配到错误的系列)
-      const beforeColon = query.split('：')[0].trim();
-      if (beforeColon && beforeColon !== query) {
-        variants.push(beforeColon);
-      }
-
-      // 优先级5: 提取冒号后的副标题
-      const afterColon = query.split('：')[1]?.trim();
-      if (afterColon) {
-        variants.push(afterColon);
-      }
-    }
-
-    // 其他中文标点符号处理
-    let cleanedQuery = query;
-
-    // 替换中文标点为对应英文标点
-    cleanedQuery = cleanedQuery.replace(/；/g, ';');
-    cleanedQuery = cleanedQuery.replace(/，/g, ',');
-    cleanedQuery = cleanedQuery.replace(/。/g, '.');
-    cleanedQuery = cleanedQuery.replace(/！/g, '!');
-    cleanedQuery = cleanedQuery.replace(/？/g, '?');
-    cleanedQuery = cleanedQuery.replace(/"/g, '"');
-    cleanedQuery = cleanedQuery.replace(/"/g, '"');
-    cleanedQuery = cleanedQuery.replace(/'/g, "'");
-    cleanedQuery = cleanedQuery.replace(/'/g, "'");
-    cleanedQuery = cleanedQuery.replace(/（/g, '(');
-    cleanedQuery = cleanedQuery.replace(/）/g, ')');
-    cleanedQuery = cleanedQuery.replace(/【/g, '[');
-    cleanedQuery = cleanedQuery.replace(/】/g, ']');
-    cleanedQuery = cleanedQuery.replace(/《/g, '<');
-    cleanedQuery = cleanedQuery.replace(/》/g, '>');
-
-    if (cleanedQuery !== query) {
-      variants.push(cleanedQuery);
-    }
-
-    // 完全去除所有标点符号
-    const noPunctuation = query.replace(
-      /[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>]/g,
-      '',
-    );
-    if (noPunctuation !== query && noPunctuation.trim()) {
-      variants.push(noPunctuation);
-    }
-
-    return variants;
-  };
-
   // 检查是否包含查询中的所有关键词（与downstream评分逻辑保持一致）
   const checkAllKeywordsMatch = (
     queryTitle: string,
@@ -2664,212 +2412,70 @@ function PlayPageClient() {
   // 进入页面时直接获取全部源信息
   useEffect(() => {
     const fetchSourcesData = async (query: string): Promise<SearchResult[]> => {
-      // 使用智能搜索变体获取全部源信息
       try {
-        const searchVariants = generateSearchVariants(query.trim());
         const allResults: SearchResult[] = [];
         let bestResults: SearchResult[] = [];
-        // 依次尝试每个搜索变体，采用早期退出策略
-        for (const variant of searchVariants) {
-          const response = await fetch(
-            `/api/search?q=${encodeURIComponent(variant)}`,
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}`,
+        );
+        if (!response.ok) {
+          setSourceSearchError('未找到匹配结果');
+          setAvailableSources([]);
+          return [];
+        }
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+          allResults.push(...data.results);
+          // 移除早期退出策略，让downstream的相关性评分发挥作用
+          // 处理搜索结果，使用智能模糊匹配（与downstream评分逻辑保持一致）
+          const filteredResults = data.results.filter(
+            (result: SearchResult) => {
+              // 如果有 douban_id，优先使用 douban_id 精确匹配
+              if (
+                videoDoubanIdRef.current &&
+                videoDoubanIdRef.current > 0 &&
+                result.douban_id
+              ) {
+                return result.douban_id === videoDoubanIdRef.current;
+              }
+              const queryTitle = videoTitleRef.current
+                .replaceAll(' ', '')
+                .toLowerCase();
+              const resultTitle = result.title
+                .replaceAll(' ', '')
+                .toLowerCase();
+
+              // 智能标题匹配：支持数字变体和标点符号变化
+              // 优先使用精确包含匹配，避免短标题（如"玫瑰"）匹配到包含该字的其他电影（如"玫瑰的故事"）
+              const titleMatch =
+                resultTitle.includes(queryTitle) ||
+                queryTitle.includes(resultTitle) ||
+                // 移除数字和标点后匹配（针对"死神来了：血脉诅咒" vs "死神来了6：血脉诅咒"）
+                resultTitle.replace(/\d+|[：:]/g, '') ===
+                  queryTitle.replace(/\d+|[：:]/g, '') ||
+                // 通用关键词匹配：仅当查询标题较长时（4个字符以上）才使用关键词匹配
+                // 避免短标题（如"玫瑰"2字）被拆分匹配
+                (queryTitle.length > 4 &&
+                  checkAllKeywordsMatch(queryTitle, resultTitle));
+
+              const yearMatch = videoYearRef.current
+                ? result.year.toLowerCase() ===
+                  videoYearRef.current.toLowerCase()
+                : true;
+              const typeMatch = searchType
+                ? (searchType === 'tv' && result.episodes.length > 1) ||
+                  (searchType === 'movie' && result.episodes.length === 1)
+                : true;
+              return titleMatch && yearMatch && typeMatch;
+            },
           );
-          if (!response.ok) {
-            console.warn(`搜索变体 "${variant}" 失败:`, response.statusText);
-            continue;
-          }
-          const data = await response.json();
-
-          if (data.results && data.results.length > 0) {
-            allResults.push(...data.results);
-            // 移除早期退出策略，让downstream的相关性评分发挥作用
-            // 处理搜索结果，使用智能模糊匹配（与downstream评分逻辑保持一致）
-            const filteredResults = data.results.filter(
-              (result: SearchResult) => {
-                // 如果有 douban_id，优先使用 douban_id 精确匹配
-                if (
-                  videoDoubanIdRef.current &&
-                  videoDoubanIdRef.current > 0 &&
-                  result.douban_id
-                ) {
-                  return result.douban_id === videoDoubanIdRef.current;
-                }
-                const queryTitle = videoTitleRef.current
-                  .replaceAll(' ', '')
-                  .toLowerCase();
-                const resultTitle = result.title
-                  .replaceAll(' ', '')
-                  .toLowerCase();
-
-                // 智能标题匹配：支持数字变体和标点符号变化
-                // 优先使用精确包含匹配，避免短标题（如"玫瑰"）匹配到包含该字的其他电影（如"玫瑰的故事"）
-                const titleMatch =
-                  resultTitle.includes(queryTitle) ||
-                  queryTitle.includes(resultTitle) ||
-                  // 移除数字和标点后匹配（针对"死神来了：血脉诅咒" vs "死神来了6：血脉诅咒"）
-                  resultTitle.replace(/\d+|[：:]/g, '') ===
-                    queryTitle.replace(/\d+|[：:]/g, '') ||
-                  // 通用关键词匹配：仅当查询标题较长时（4个字符以上）才使用关键词匹配
-                  // 避免短标题（如"玫瑰"2字）被拆分匹配
-                  (queryTitle.length > 4 &&
-                    checkAllKeywordsMatch(queryTitle, resultTitle));
-
-                const yearMatch = videoYearRef.current
-                  ? result.year.toLowerCase() ===
-                    videoYearRef.current.toLowerCase()
-                  : true;
-                const typeMatch = searchType
-                  ? (searchType === 'tv' && result.episodes.length > 1) ||
-                    (searchType === 'movie' && result.episodes.length === 1)
-                  : true;
-                return titleMatch && yearMatch && typeMatch;
-              },
-            );
-            if (filteredResults.length > 0) {
-              console.log(
-                `变体 "${variant}" 找到 ${filteredResults.length} 个精确匹配结果`,
-              );
-              bestResults = filteredResults;
-              break; // 找到精确匹配就停止
-            }
+          if (filteredResults.length > 0) {
+            bestResults = filteredResults;
           }
         }
-
         // 智能匹配：英文标题严格匹配，中文标题宽松匹配
         let finalResults = bestResults;
-
-        // 如果没有精确匹配，根据语言类型进行不同策略的匹配
-        if (bestResults.length === 0) {
-          const queryTitle = videoTitleRef.current.toLowerCase().trim();
-          const allCandidates = allResults;
-
-          // 检测查询主要语言（英文 vs 中文）
-          const englishChars = (queryTitle.match(/[a-z\s]/g) || []).length;
-          const chineseChars = (queryTitle.match(/[\u4e00-\u9fff]/g) || [])
-            .length;
-          const isEnglishQuery = englishChars > chineseChars;
-
-          console.log(
-            `搜索语言检测: ${isEnglishQuery ? '英文' : '中文'} - "${queryTitle}"`,
-          );
-
-          let relevantMatches;
-
-          if (isEnglishQuery) {
-            // 英文查询：使用词汇匹配策略，避免不相关结果
-            console.log('使用英文词汇匹配策略');
-
-            // 提取有效英文词汇（过滤停用词）
-            const queryWords = queryTitle
-              .toLowerCase()
-              .replace(/[^\w\s]/g, ' ')
-              .split(/\s+/)
-              .filter(
-                (word) =>
-                  word.length > 2 &&
-                  ![
-                    'the',
-                    'a',
-                    'an',
-                    'and',
-                    'or',
-                    'of',
-                    'in',
-                    'on',
-                    'at',
-                    'to',
-                    'for',
-                    'with',
-                    'by',
-                  ].includes(word),
-              );
-
-            console.log('英文关键词:', queryWords);
-
-            relevantMatches = allCandidates.filter((result) => {
-              const title = result.title.toLowerCase();
-              const titleWords = title
-                .replace(/[^\w\s]/g, ' ')
-                .split(/\s+/)
-                .filter((word) => word.length > 1);
-
-              // 计算词汇匹配度：标题必须包含至少50%的查询关键词
-              const matchedWords = queryWords.filter((queryWord) =>
-                titleWords.some(
-                  (titleWord) =>
-                    titleWord.includes(queryWord) ||
-                    queryWord.includes(titleWord) ||
-                    // 允许部分相似（如gumball vs gum）
-                    (queryWord.length > 4 &&
-                      titleWord.length > 4 &&
-                      queryWord.substring(0, 4) === titleWord.substring(0, 4)),
-                ),
-              );
-
-              const wordMatchRatio = matchedWords.length / queryWords.length;
-              if (wordMatchRatio >= 0.5) {
-                console.log(
-                  `英文词汇匹配 (${matchedWords.length}/${queryWords.length}): "${result.title}" - 匹配词: [${matchedWords.join(', ')}]`,
-                );
-                return true;
-              }
-              return false;
-            });
-          } else {
-            // 中文查询：宽松匹配，保持现有行为
-            console.log('使用中文宽松匹配策略');
-            relevantMatches = allCandidates.filter((result) => {
-              const title = result.title.toLowerCase();
-              const normalizedQuery = queryTitle.replace(
-                /[^\w\u4e00-\u9fff]/g,
-                '',
-              );
-              const normalizedTitle = title.replace(/[^\w\u4e00-\u9fff]/g, '');
-
-              // 包含匹配或50%相似度
-              if (
-                normalizedTitle.includes(normalizedQuery) ||
-                normalizedQuery.includes(normalizedTitle)
-              ) {
-                console.log(`中文包含匹配: "${result.title}"`);
-                return true;
-              }
-
-              const commonChars = Array.from(normalizedQuery).filter((char) =>
-                normalizedTitle.includes(char),
-              ).length;
-              const similarity = commonChars / normalizedQuery.length;
-              if (similarity >= 0.5) {
-                console.log(
-                  `中文相似匹配 (${(similarity * 100).toFixed(1)}%): "${result.title}"`,
-                );
-                return true;
-              }
-              return false;
-            });
-          }
-
-          console.log(
-            `匹配结果: ${relevantMatches.length}/${allCandidates.length}`,
-          );
-
-          // 如果有匹配结果，直接返回（去重）
-          if (relevantMatches.length > 0) {
-            finalResults = Array.from(
-              new Map(
-                relevantMatches.map((item) => [
-                  `${item.source}-${item.id}`,
-                  item,
-                ]),
-              ).values(),
-            ) as SearchResult[];
-            console.log(`找到 ${finalResults.length} 个唯一匹配结果`);
-          } else {
-            console.log('没有找到合理的匹配，返回空结果');
-            finalResults = [];
-          }
-        }
-
         console.log(`智能搜索完成，最终返回 ${finalResults.length} 个结果`);
         const normalized = normalizeSources(finalResults);
         setAvailableSources(normalized);
@@ -2925,22 +2531,22 @@ function PlayPageClient() {
                 console.error('⚠️ ArtPlayer 预加载失败:', error);
                 // 预加载失败不影响后续流程，initPlayer 时会重新尝试
               });
-      let sourcesInfo: SearchResult[] = [];
+      let searchResult: SearchResult[] = [];
       // 其他情况先搜索所有视频源
-      sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+      searchResult = await fetchSourcesData(searchTitle || videoTitle);
 
       if (
         currentSource &&
         currentId &&
-        !sourcesInfo.some(
+        !searchResult.some(
           (source) =>
             source.source === currentSource && source.id === currentId,
         )
       ) {
-        sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+        searchResult = await fetchSourceDetail(currentSource, currentId);
       }
-      sourcesInfo = normalizeSources(sourcesInfo);
-      if (sourcesInfo.length === 0) {
+      searchResult = normalizeSources(searchResult);
+      if (searchResult.length === 0) {
         setError('未找到匹配结果');
         setLoading(false);
         return;
@@ -2949,13 +2555,15 @@ function PlayPageClient() {
       let detailData: SearchResult;
       // 指定源和id则优先使用指定源
       if (currentSource && currentId) {
-        const target = sourcesInfo.find(
+        const target = searchResult.find(
           (source) =>
             source.source === currentSource && source.id === currentId,
         );
-        detailData = target ? target : await lightweightPreference(sourcesInfo);
+        detailData = target
+          ? target
+          : await lightweightPreference(searchResult);
       } else {
-        detailData = await lightweightPreference(sourcesInfo);
+        detailData = await lightweightPreference(searchResult);
       }
 
       const shouldPrefer =
@@ -2971,7 +2579,7 @@ function PlayPageClient() {
       // 优先保留URL参数中的豆瓣ID，如果URL中没有则使用详情数据中的
       setVideoDoubanId(videoDoubanIdRef.current || detailData.douban_id || 0);
       setDetail(detailData);
-      setPendingPreferSources(shouldPrefer ? sourcesInfo : null);
+      setPendingPreferSources(shouldPrefer ? searchResult : null);
       if (currentEpisodeIndex >= detailData.episodes.length) {
         setCurrentEpisodeIndex(0);
       }

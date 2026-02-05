@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getAvailableApiSites, getCacheTime } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
-import { generateSearchVariants } from '@/lib/downstream';
 import { SearchResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -33,16 +32,12 @@ export async function GET(request: NextRequest) {
       },
     );
   }
-
   const apiSites = await getAvailableApiSites(authInfo.username);
-
-  // 优化：预计算搜索变体，智能生成（普通查询1个，需要变体的2个）
-  const searchVariants = generateSearchVariants(query);
 
   // 添加超时控制和错误处理，避免慢接口拖累整体响应
   const searchPromises = apiSites.map((site) =>
     Promise.race([
-      searchFromApi(site, query, searchVariants, authInfo.username), // 传入预计算的变体
+      searchFromApi(site, query, authInfo.username),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(`${site.name} timeout`)), 15000),
       ),
@@ -59,6 +54,9 @@ export async function GET(request: NextRequest) {
       // no cache if empty
       return NextResponse.json({ results: [] }, { status: 200 });
     }
+    console.log(
+      `搜索视频完成. username = ${authInfo.username}, length = ${flattenedResults.length}, query = ${query}`,
+    );
     const cacheTime = await getCacheTime();
     return NextResponse.json(
       { results: flattenedResults },

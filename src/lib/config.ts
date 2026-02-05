@@ -41,7 +41,7 @@ interface ConfigFileStruct {
 export const API_CONFIG = {
   search: {
     path: '?ac=detail&wd=',
-    pagePath: '?ac=detail&wd={query}&pg={page}',
+    pagePath: '?ac=detail&wd=query&pg=page',
     headers: {
       'User-Agent': DEFAULT_USER_AGENT,
       Accept: 'application/json',

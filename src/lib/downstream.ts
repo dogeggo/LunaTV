@@ -150,127 +150,61 @@ async function searchWithCache(
 export async function searchFromApi(
   apiSite: ApiSite,
   query: string,
-  precomputedVariants?: string[], // 新增：预计算的变体
   username?: string,
 ): Promise<SearchResult[]> {
   try {
     const apiBaseUrl = apiSite.api;
-
     // 智能搜索：使用预计算的变体（最多2个，由 generateSearchVariants 智能生成）
-    const searchVariants = precomputedVariants || generateSearchVariants(query);
-
-    // 🚀 并行搜索所有变体（关键优化：不再串行等待）
-    const variantPromises = searchVariants.map(async (variant, index) => {
-      const apiUrl =
-        apiBaseUrl + API_CONFIG.search.path + encodeURIComponent(variant);
-
-      try {
-        const result = await searchWithCache(apiSite, variant, 1, apiUrl, 8000);
-        return {
-          variant,
-          index,
-          results: result.results,
-          pageCount: result.pageCount,
-        };
-      } catch (error) {
-        console.log(`[ERROR] 变体 "${variant}" 搜索失败:`, error);
-        return { variant, index, results: [], pageCount: undefined };
-      }
-    });
-
-    // 等待所有变体搜索完成
-    const variantResults = await Promise.all(variantPromises);
-
-    // 合并结果并去重
-    const seenIds = new Set<string>();
-    let results: SearchResult[] = [];
-    let pageCountFromFirst = 0;
-
-    // 按原始顺序处理结果（保持优先级）
-    variantResults.sort((a, b) => a.index - b.index);
-
-    for (const {
-      variant,
-      index,
-      results: variantData,
-      pageCount,
-    } of variantResults) {
-      if (variantData.length > 0) {
-        // 记录第一个变体的页数
-        if (index === 0 && pageCount) {
-          pageCountFromFirst = pageCount;
-        }
-        // 去重添加结果
-        variantData.forEach((result) => {
-          const uniqueKey = `${result.source}_${result.id}`;
-          if (!seenIds.has(uniqueKey)) {
-            seenIds.add(uniqueKey);
-            results.push(result);
-          }
-        });
-      }
-    }
-
-    // 如果没有任何结果，返回空数组
-    if (results.length === 0) {
-      return [];
-    }
-
-    // 使用原始查询进行后续分页
-    query = searchVariants[0];
-
-    // 获取总页数
-    const pageCount = pageCountFromFirst || 1;
-    if (pageCount <= 1) {
-      return results;
-    }
+    const searchVariants = generateSearchVariants(query);
+    let searchResults: SearchResult[] = [];
 
     const config = await loadConfig();
     const MAX_SEARCH_PAGES: number = config.SiteConfig.SearchDownstreamMaxPage;
-    // 确定需要获取的额外页数
-    const pagesToFetch = Math.min(pageCount - 1, MAX_SEARCH_PAGES - 1);
-
-    // 如果有额外页数，获取更多页的结果
-    if (pagesToFetch > 0) {
-      const additionalPagePromises = [];
-      const encodedQuery = encodeURIComponent(query);
-
-      for (let page = 2; page <= pagesToFetch + 1; page++) {
-        const pageUrl =
+    const additionalPagePromises = [];
+    for (let page = 1; page <= MAX_SEARCH_PAGES; page++) {
+      for (let query of searchVariants) {
+        const encodedQuery = encodeURIComponent(query);
+        const apiUrl =
           apiBaseUrl +
           API_CONFIG.search.pagePath
-            .replace('{query}', encodedQuery)
-            .replace('{page}', page.toString());
-
+            .replace('query', encodedQuery)
+            .replace('page', page.toString());
         const pagePromise = (async () => {
           // 使用新的缓存搜索函数处理分页
           const pageResult = await searchWithCache(
             apiSite,
             query,
             page,
-            pageUrl,
+            apiUrl,
             8000,
           );
           return pageResult.results;
         })();
-
         additionalPagePromises.push(pagePromise);
       }
-
-      // 等待所有额外页的结果
-      const additionalResults = await Promise.all(additionalPagePromises);
-
-      // 合并所有页的结果
-      additionalResults.forEach((pageResults) => {
-        if (pageResults.length > 0) {
-          results.push(...pageResults);
-        }
-      });
     }
+    // 等待所有额外页的结果
+    const additionalResults = await Promise.all(additionalPagePromises);
+    // 合并所有页的结果
+    additionalResults.forEach((pageResults) => {
+      if (pageResults.length > 0) {
+        searchResults.push(...pageResults);
+      }
+    });
+    const seenIds = new Set<string>();
+    let finalResults: SearchResult[] = [];
+    // 去重添加结果
+    searchResults.forEach((result) => {
+      const uniqueKey = `${result.source}_${result.id}`;
+      if (!seenIds.has(uniqueKey)) {
+        seenIds.add(uniqueKey);
+        finalResults.push(result);
+      }
+    });
     if (username) {
       const showAdultContent = await getShowAdultContent(username);
       if (!showAdultContent) {
-        results = results.filter((result) => {
+        finalResults = finalResults.filter((result) => {
           const typeName = result.type_name || '';
           const title = result.title || '';
           return !yellowWords.some(
@@ -279,7 +213,7 @@ export async function searchFromApi(
         });
       }
     }
-    return results;
+    return finalResults;
   } catch (_error) {
     return [];
   }

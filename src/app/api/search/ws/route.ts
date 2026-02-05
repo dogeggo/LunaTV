@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
         try {
           // 添加超时控制
           const searchPromise = Promise.race([
-            searchFromApi(site, query, undefined, authInfo.username),
+            searchFromApi(site, query, authInfo.username),
             new Promise((_, reject) =>
               setTimeout(
                 () => reject(new Error(`${site.name} timeout`)),
