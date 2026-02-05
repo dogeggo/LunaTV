@@ -95,8 +95,6 @@ export async function GET(request: NextRequest) {
       userStats.lastLoginTime ||
       userStats.lastLoginDate ||
       0;
-    const loginDays =
-      firstLoginTime > 0 ? calculateRegistrationDays(firstLoginTime) : 0;
 
     console.log('注册天数计算:', {
       userCreatedAt,
@@ -104,7 +102,6 @@ export async function GET(request: NextRequest) {
       registrationDays,
       firstLoginTime: firstLoginTime,
       firstLoginTimeDate: firstLoginTime ? new Date(firstLoginTime) : null,
-      loginDays,
       calculationSource: firstLoginTime > 0 ? '基于登入时间' : '无登入记录',
     });
 
@@ -117,8 +114,6 @@ export async function GET(request: NextRequest) {
       lastUpdateTime: userStats.lastUpdateTime ?? Date.now(),
       // 注册天数计算（基于真实的用户创建时间）
       registrationDays,
-      // 登录天数计算（基于登入时间）
-      loginDays,
       // 确保包含登入次数
       loginCount: userStats.loginCount ?? 0,
       // 确保包含登入时间（兼容已有字段）
@@ -174,7 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { watchTime, movieKey, timestamp, isRecalculation } = body;
+    const { watchTime, movieKey, timestamp } = body;
 
     if (typeof watchTime !== 'number' || !movieKey || !timestamp) {
       return NextResponse.json(
@@ -189,9 +184,7 @@ export async function POST(request: NextRequest) {
     // 构建更新后的统计数据
     const updatedStats = {
       ...currentStats,
-      totalWatchTime: isRecalculation
-        ? watchTime
-        : currentStats.totalWatchTime + watchTime,
+      totalWatchTime: currentStats.totalWatchTime + watchTime,
       lastUpdateTime: timestamp,
       // 更新首次观看时间（如果还没有设置）
       firstWatchDate: currentStats.firstWatchDate || timestamp,

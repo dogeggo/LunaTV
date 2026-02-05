@@ -272,7 +272,7 @@ const PlayStatsPage: React.FC = () => {
       const data = await response.json();
       console.log('用户个人统计数据获取成功:', data);
       console.log('个人统计中的注册天数:', data.registrationDays);
-      console.log('个人统计中的登录天数:', data.loginDays);
+      console.log('个人统计中的登录次数:', data.loginCount);
       setUserStats(data);
     } catch (err) {
       console.error('获取用户个人统计数据失败:', err);
@@ -1439,10 +1439,10 @@ const PlayStatsPage: React.FC = () => {
                 </div>
                 <div className='p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800'>
                   <div className='text-2xl font-bold text-orange-800 dark:text-orange-300'>
-                    {userStats.loginDays || 0}
+                    {userStats.loginCount || 0}
                   </div>
                   <div className='text-sm text-orange-600 dark:text-orange-400'>
-                    登录天数
+                    登录次数
                   </div>
                 </div>
                 <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
@@ -1488,11 +1488,6 @@ const PlayStatsPage: React.FC = () => {
                         </div>
                         <div className='text-sm text-red-600 dark:text-red-400 leading-relaxed'>
                           {loginDisplay.level.description}
-                        </div>
-                        <div className='text-xs text-red-500/70 dark:text-red-400/70'>
-                          {loginCount === 0
-                            ? '尚未登录'
-                            : `已登录 ${loginDisplay.displayCount} 次`}
                         </div>
                       </div>
                     );
@@ -2147,10 +2142,10 @@ const PlayStatsPage: React.FC = () => {
             </div>
             <div className='p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800'>
               <div className='text-2xl font-bold text-orange-800 dark:text-orange-300'>
-                {userStats.loginDays || 0}
+                {userStats.loginCount || 0}
               </div>
               <div className='text-sm text-orange-600 dark:text-orange-400'>
-                登录天数
+                登录次数
               </div>
             </div>
             <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
@@ -2196,11 +2191,6 @@ const PlayStatsPage: React.FC = () => {
                     </div>
                     <div className='text-sm text-red-600 dark:text-red-400 leading-relaxed'>
                       {loginDisplay.level.description}
-                    </div>
-                    <div className='text-xs text-red-500/70 dark:text-red-400/70'>
-                      {loginCount === 0
-                        ? '尚未登录'
-                        : `已登录 ${loginDisplay.displayCount} 次`}
                     </div>
                   </div>
                 );
