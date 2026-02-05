@@ -340,11 +340,11 @@ export async function GET(request: NextRequest) {
 
     if (username) {
       // 从新版本获取用户信息
-      const userInfoV2 = await db.getUserInfoV2(username);
-      if (userInfoV2) {
-        userRole = userInfoV2.role;
+      const userInfo = await db.getUserInfo(username);
+      if (userInfo) {
+        userRole = userInfo.role;
         // 检查用户是否被封禁
-        if (userInfoV2.banned) {
+        if (userInfo.banned) {
           return NextResponse.redirect(
             new URL('/login?error=' + encodeURIComponent('用户被封禁'), origin),
           );

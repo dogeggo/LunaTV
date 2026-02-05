@@ -269,53 +269,23 @@ export abstract class BaseRedisStorage implements IStorage {
     );
   }
 
-  // ---------- 用户注册 / 登录 ----------
-  private userPwdKey(user: string) {
-    return `u:${user}:pwd`;
-  }
-
-  async registerUser(userName: string, password: string): Promise<void> {
-    // 简单存储明文密码，生产环境应加密
-    await this.withRetry(() =>
-      this.client.set(this.userPwdKey(userName), password),
-    );
-  }
-
-  async verifyUser(userName: string, password: string): Promise<boolean> {
-    const stored = await this.withRetry(() =>
-      this.client.get(this.userPwdKey(userName)),
-    );
-    if (stored === null) return false;
-    // 确保比较时都是字符串类型
-    return ensureString(stored) === password;
-  }
-
-  // 检查用户是否存在
-  async checkUserExist(userName: string): Promise<boolean> {
-    // 使用 EXISTS 判断 key 是否存在
-    const exists = await this.withRetry(() =>
-      this.client.exists(this.userPwdKey(userName)),
-    );
-    return exists === 1;
-  }
-
   // 修改用户密码
   async changePassword(userName: string, newPassword: string): Promise<void> {
-    // 简单存储明文密码，生产环境应加密
+    const hashedPassword = await this.hashPassword(newPassword);
     await this.withRetry(() =>
-      this.client.set(this.userPwdKey(userName), newPassword),
+      this.client.hSet(this.userInfoKey(userName), 'password', hashedPassword),
     );
   }
 
   // 删除用户及其所有数据
   async deleteUser(userName: string): Promise<void> {
     // 删除用户密码 (V1)
-    await this.withRetry(() => this.client.del(this.userPwdKey(userName)));
+    await this.withRetry(() => this.client.del(`u:${userName}:pwd`));
 
     // 获取 OIDC 信息以便后续清理 (需要在删除用户信息前获取)
     let oidcSub: string | undefined;
     try {
-      const userInfo = await this.getUserInfoV2(userName);
+      const userInfo = await this.getUserInfo(userName);
       oidcSub = userInfo?.oidcSub;
     } catch (e) {
       // 忽略错误
@@ -387,14 +357,14 @@ export abstract class BaseRedisStorage implements IStorage {
   }
 
   // 创建新用户（新版本）
-  async createUserV2(
+  async createUser(
     userName: string,
     password: string,
     role: 'owner' | 'admin' | 'user' = 'user',
     tags?: string[],
     oidcSub?: string,
     enabledApis?: string[],
-  ): Promise<void> {
+  ): Promise<Record<string, string>> {
     const hashedPassword = await this.hashPassword(password);
     const createdAt = Date.now();
 
@@ -433,10 +403,11 @@ export abstract class BaseRedisStorage implements IStorage {
         value: userName,
       }),
     );
+    return userInfo;
   }
 
   // 验证用户密码（新版本）
-  async verifyUserV2(userName: string, password: string): Promise<boolean> {
+  async verifyUser(userName: string, password: string): Promise<boolean> {
     const userInfo = await this.withRetry(() =>
       this.client.hGetAll(this.userInfoKey(userName)),
     );
@@ -450,7 +421,7 @@ export abstract class BaseRedisStorage implements IStorage {
   }
 
   // 获取用户信息（新版本）
-  async getUserInfoV2(userName: string): Promise<{
+  async getUserInfo(userName: string): Promise<{
     username: string;
     role: 'owner' | 'admin' | 'user';
     banned: boolean;
@@ -528,7 +499,7 @@ export abstract class BaseRedisStorage implements IStorage {
   }
 
   // 检查用户是否存在（新版本）
-  async checkUserExistV2(userName: string): Promise<boolean> {
+  async checkUserExist(userName: string): Promise<boolean> {
     const exists = await this.withRetry(() =>
       this.client.exists(this.userInfoKey(userName)),
     );
@@ -581,15 +552,6 @@ export abstract class BaseRedisStorage implements IStorage {
 
   // ---------- 获取全部用户 ----------
   async getAllUsers(): Promise<string[]> {
-    // 获取 V1 用户（u:*:pwd）
-    const v1Keys = await this.withRetry(() => this.client.keys('u:*:pwd'));
-    const v1Users = v1Keys
-      .map((k) => {
-        const match = k.match(/^u:(.+?):pwd$/);
-        return match ? ensureString(match[1]) : undefined;
-      })
-      .filter((u): u is string => typeof u === 'string');
-
     // 获取 V2 用户（u:*:info）
     const v2Keys = await this.withRetry(() => this.client.keys('u:*:info'));
     const v2Users = v2Keys
@@ -600,7 +562,7 @@ export abstract class BaseRedisStorage implements IStorage {
       .filter((u): u is string => typeof u === 'string');
 
     // 合并并去重（V2 优先，因为可能同时存在 V1 和 V2）
-    const allUsers = new Set([...v2Users, ...v1Users]);
+    const allUsers = new Set([...v2Users]);
     return Array.from(allUsers);
   }
 

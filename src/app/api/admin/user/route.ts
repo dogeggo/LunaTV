@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
+import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -135,27 +136,41 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // 使用 V1 注册用户
-        await db.registerUser(targetUsername!, targetPassword);
-
         // 获取用户组信息
         const { userGroup } = body as { userGroup?: string };
 
-        // 更新配置
-        const newUser: any = {
-          username: targetUsername!,
-          role: 'user',
-          createdAt: Date.now(),
-        };
+        const defaultTags =
+          userGroup && userGroup.trim() ? [userGroup] : undefined;
 
-        // 如果指定了用户组，添加到tags中
-        if (userGroup && userGroup.trim()) {
-          newUser.tags = [userGroup];
+        // V2 注册（支持 tags）
+        await db.createUser(
+          targetUsername!,
+          targetPassword,
+          'user',
+          defaultTags, // 默认分组
+          undefined, // oidcSub
+          undefined, // enabledApis
+        );
+
+        const createdUser = await db.getUserInfo(targetUsername!);
+        if (!createdUser) {
+          return NextResponse.json({ error: '创建用户失败' }, { status: 500 });
         }
 
+        const newUser = {
+          username: createdUser.username,
+          role: createdUser.role,
+          banned: createdUser.banned,
+          enabledApis: createdUser.enabledApis,
+          tags: createdUser.tags,
+          createdAt: createdUser.createdAt,
+          oidcSub: createdUser.oidcSub,
+          tvboxToken: generateToken(),
+        };
+
         adminConfig.UserConfig.Users.push(newUser);
-        targetEntry =
-          adminConfig.UserConfig.Users[adminConfig.UserConfig.Users.length - 1];
+        await db.saveAdminConfig(adminConfig);
+        targetEntry = newUser;
         break;
       }
       case 'ban': {

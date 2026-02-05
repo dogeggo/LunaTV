@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { NextRequest, NextResponse } from 'next/server';
 
+import { AdminConfig } from '@/lib/admin.types';
 import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { generateToken } from '@/lib/utils';
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     const { username, password, confirmPassword } = await req.json();
 
     // 先检查配置中是否允许注册（在验证输入之前）
-    let config: any;
+    let config: AdminConfig;
     try {
       config = await loadConfig();
       const allowRegister = config.UserConfig?.AllowRegister !== false; // 默认允许注册
@@ -142,43 +143,42 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-
       // 获取默认用户组
       const defaultTags =
         config.SiteConfig.DefaultUserTags &&
         config.SiteConfig.DefaultUserTags.length > 0
           ? config.SiteConfig.DefaultUserTags
           : undefined;
-
-      // 如果有默认用户组，使用 V2 注册；否则使用 V1 注册（保持兼容性）
-      if (defaultTags) {
-        // V2 注册（支持 tags）
-        await db.createUserV2(
-          username,
-          password,
-          'user',
-          defaultTags, // 默认分组
-          undefined, // oidcSub
-          undefined, // enabledApis
-        );
-      } else {
-        // V1 注册（无 tags，保持现有行为）
-        await db.registerUser(username, password);
-      }
-
-      config = await loadConfig();
-      const user = config.UserConfig.Users.find(
-        (u: { username: string }) => u.username === username,
+      // V2 注册（支持 tags）
+      await db.createUser(
+        username,
+        password,
+        'user',
+        defaultTags, // 默认分组
+        undefined, // oidcSub
+        undefined, // enabledApis
       );
-      if (user) {
-        user.tvboxToken = generateToken();
-        await db.saveAdminConfig(config);
-      }
 
+      const createdUser = await db.getUserInfo(username);
+      if (!createdUser) {
+        return NextResponse.json({ error: '创建用户失败' }, { status: 500 });
+      }
+      const newUser = {
+        username: createdUser.username,
+        role: createdUser.role,
+        banned: createdUser.banned,
+        enabledApis: createdUser.enabledApis,
+        tags: createdUser.tags,
+        createdAt: createdUser.createdAt,
+        oidcSub: createdUser.oidcSub,
+        tvboxToken: generateToken(),
+      };
+      config.UserConfig.Users.push(newUser);
+      await db.saveAdminConfig(config);
       // 验证用户是否成功创建并包含tags（调试用）
       try {
         console.log('=== 调试：验证用户创建 ===');
-        const verifyUser = await db.getUserInfoV2(username);
+        const verifyUser = await db.getUserInfo(username);
         console.log('数据库中的用户信息:', verifyUser);
       } catch (debugErr) {
         console.error('调试日志失败:', debugErr);

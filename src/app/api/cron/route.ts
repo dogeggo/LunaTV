@@ -7,7 +7,6 @@ import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
-import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
@@ -98,30 +97,7 @@ async function cronJob() {
     console.error('❌ 播放记录和收藏刷新失败:', err);
   }
 
-  // try {
-  //   console.log('📊 设置用户TvBox Token...');
-  //   const count = await setUserTvBoxToken();
-  //   console.log('✅ 设置用户TvBox Token完成. sum = ', count);
-  // } catch (err) {
-  //   console.error('❌ 设置用户TvBox Token失败:', err);
-  // }
-
   console.log('🎉 定时任务执行完成');
-}
-
-async function setUserTvBoxToken() {
-  const config = await loadConfig();
-  const users = config.UserConfig.Users;
-  let count = 0;
-  for (const user of users) {
-    if (user.tvboxToken) {
-      continue;
-    }
-    user.tvboxToken = generateToken();
-    count++;
-  }
-  await db.saveAdminConfig(config);
-  return count;
 }
 
 async function refreshAllLiveChannels() {
@@ -567,24 +543,6 @@ async function optimizeActiveUserLevels() {
 
         // 为所有用户记录等级信息
         if (userStats.loginCount > 0) {
-          const optimizedStats = {
-            ...userStats,
-            userLevel: {
-              level: userLevel.level,
-              name: userLevel.name,
-              icon: userLevel.icon,
-              description: userLevel.description,
-              displayTitle: `${userLevel.icon} ${userLevel.name}`,
-            },
-            displayLoginCount:
-              userStats.loginCount > 10000
-                ? '10000+'
-                : userStats.loginCount > 1000
-                  ? `${Math.floor(userStats.loginCount / 1000)}k+`
-                  : userStats.loginCount.toString(),
-            lastLevelUpdate: new Date().toISOString(),
-          };
-
           // 注意：这里我们只计算等级信息用于日志显示，不保存到数据库
           // 等级信息会在前端动态计算，确保数据一致性
           optimizedCount++;

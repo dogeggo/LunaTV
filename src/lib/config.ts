@@ -375,16 +375,16 @@ export async function configSelfCheck(
 
         try {
           // 从数据库V2获取用户信息（OIDC/新版用户）
-          const userInfoV2 = await db.getUserInfoV2(username);
-          if (userInfoV2) {
-            createdAt = userInfoV2.createdAt || Date.now();
-            oidcSub = userInfoV2.oidcSub;
-            tags = userInfoV2.tags;
-            role = userInfoV2.role || role;
-            banned = userInfoV2.banned || false;
-            enabledApis = userInfoV2.enabledApis;
+          const userInfo = await db.getUserInfo(username);
+          if (userInfo) {
+            createdAt = userInfo.createdAt || Date.now();
+            oidcSub = userInfo.oidcSub;
+            tags = userInfo.tags;
+            role = userInfo.role || role;
+            banned = userInfo.banned || false;
+            enabledApis = userInfo.enabledApis;
           }
-          console.warn(`获取用户 ${username} 信息成功:`, userInfoV2);
+          console.warn(`获取用户 ${username} 信息成功:`, userInfo);
         } catch (err) {
           console.warn(`获取用户 ${username} 信息失败:`, err);
         }

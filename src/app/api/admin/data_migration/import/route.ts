@@ -95,23 +95,19 @@ export async function POST(req: NextRequest) {
     const userData = importData.data.userData;
     for (const username in userData) {
       const user = userData[username];
-
       // 优先使用 V2 用户信息创建用户
-      if (user.userInfoV2) {
-        console.log(`创建 V2 用户: ${username}`, user.userInfoV2);
-        await db.createUserV2(
-          username,
-          user.userInfoV2.password || user.password || '', // 优先使用V2加密密码
-          user.userInfoV2.role || 'user',
-          user.userInfoV2.tags,
-          user.userInfoV2.oidcSub, // 恢复 OIDC 绑定
-          user.userInfoV2.enabledApis,
-        );
-      } else if (user.password) {
-        // 兼容旧版本备份（V1用户）
-        console.log(`创建 V1 用户: ${username}`);
-        await db.registerUser(username, user.password);
+      if (user.userInfo) {
+        continue;
       }
+      console.log(`创建 V2 用户: ${username}`, user.userInfo);
+      await db.createUser(
+        username,
+        user.userInfo.password || user.password || '', // 优先使用V2加密密码
+        user.userInfo.role || 'user',
+        user.userInfo.tags,
+        user.userInfo.oidcSub, // 恢复 OIDC 绑定
+        user.userInfo.enabledApis,
+      );
     }
 
     // 步骤2：导入管理员配置并进行自检查

@@ -1,6 +1,5 @@
 import { AdminConfig } from './admin.types';
 import { KvrocksStorage } from './kvrocks.db';
-import { MemoryStorage } from './memory.db';
 import { RedisStorage } from './redis.db';
 import {
   ContentStat,
@@ -11,7 +10,6 @@ import {
   PlayStatsResult,
   UserPlayStat,
 } from './types';
-import { UpstashRedisStorage } from './upstash.db';
 
 // storage type 常量: 'localstorage' | 'redis' | 'upstash'，默认 'localstorage'
 const STORAGE_TYPE =
@@ -27,13 +25,13 @@ function createStorage(): IStorage {
   switch (STORAGE_TYPE) {
     case 'redis':
       return new RedisStorage();
-    case 'upstash':
-      return new UpstashRedisStorage();
+    // case 'upstash':
+    //   return new UpstashRedisStorage();
     case 'kvrocks':
       return new KvrocksStorage();
     case 'localstorage':
     default:
-      return new MemoryStorage();
+      return null;
   }
 }
 
@@ -139,61 +137,39 @@ export class DbManager {
     return favorite !== null;
   }
 
-  // ---------- 用户相关 ----------
-  async registerUser(userName: string, password: string): Promise<void> {
-    await this.storage.registerUser(userName, password);
-  }
-
-  async verifyUser(userName: string, password: string): Promise<boolean> {
-    return this.storage.verifyUser(userName, password);
-  }
-
-  // 检查用户是否已存在
-  async checkUserExist(userName: string): Promise<boolean> {
-    return this.storage.checkUserExist(userName);
-  }
-
   async changePassword(userName: string, newPassword: string): Promise<void> {
     await this.storage.changePassword(userName, newPassword);
   }
 
-  async deleteUser(userName: string): Promise<void> {
-    await this.storage.deleteUser(userName);
-  }
-
   // ---------- 用户相关（新版本 V2，支持 OIDC） ----------
-  async createUserV2(
+  async createUser(
     userName: string,
     password: string,
     role: 'owner' | 'admin' | 'user' = 'user',
     tags?: string[],
     oidcSub?: string,
     enabledApis?: string[],
-  ): Promise<void> {
-    if (typeof (this.storage as any).createUserV2 === 'function') {
-      await (this.storage as any).createUserV2(
-        userName,
-        password,
-        role,
-        tags,
-        oidcSub,
-        enabledApis,
-      );
-    }
+  ): Promise<Record<string, string>> {
+    return await this.storage.createUser(
+      userName,
+      password,
+      role,
+      tags,
+      oidcSub,
+      enabledApis,
+    );
   }
 
-  async verifyUserV2(userName: string, password: string): Promise<boolean> {
-    if (typeof (this.storage as any).verifyUserV2 === 'function') {
-      return (this.storage as any).verifyUserV2(userName, password);
-    }
-    return false;
+  async deleteUser(userName: string): Promise<void> {
+    await this.storage.deleteUser(userName);
   }
 
-  async checkUserExistV2(userName: string): Promise<boolean> {
-    if (typeof (this.storage as any).checkUserExistV2 === 'function') {
-      return (this.storage as any).checkUserExistV2(userName);
-    }
-    return false;
+  async verifyUser(userName: string, password: string): Promise<boolean> {
+    return this.storage.verifyUser(userName, password);
+  }
+
+  async checkUserExist(userName: string): Promise<boolean> {
+    return this.storage.checkUserExist(userName);
   }
 
   async getUserByOidcSub(oidcSub: string): Promise<string | null> {
@@ -203,7 +179,7 @@ export class DbManager {
     return null;
   }
 
-  async getUserInfoV2(userName: string): Promise<{
+  async getUserInfo(userName: string): Promise<{
     username: string;
     role: 'owner' | 'admin' | 'user';
     tags?: string[];
@@ -212,10 +188,7 @@ export class DbManager {
     createdAt?: number;
     oidcSub?: string;
   } | null> {
-    if (typeof (this.storage as any).getUserInfoV2 === 'function') {
-      return (this.storage as any).getUserInfoV2(userName);
-    }
-    return null;
+    return this.storage.getUserInfo(userName);
   }
 
   // ---------- 搜索历史 ----------
@@ -465,13 +438,6 @@ export class DbManager {
         loginTime,
         isFirstLogin,
       );
-    }
-  }
-
-  // 删除 V1 用户密码数据（用于 V1→V2 迁移）
-  async deleteV1Password(userName: string): Promise<void> {
-    if (typeof (this.storage as any).client !== 'undefined') {
-      await (this.storage as any).client.del(`u:${userName}:pwd`);
     }
   }
 

@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户名是否已存在（优先使用新版本）
-    let userExists = await db.checkUserExistV2(username);
+    let userExists = await db.checkUserExist(username);
     if (!userExists) {
       // 回退到旧版本检查
       userExists = await db.checkUserExist(username);
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
           : undefined;
 
       // 使用 V2 注册用户（带 oidcSub 绑定）
-      await db.createUserV2(
+      await db.createUser(
         username,
         randomPassword,
         'user',

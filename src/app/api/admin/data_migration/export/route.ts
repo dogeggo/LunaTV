@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
         // 跳过片头片尾配置
         skipConfigs: await db.getAllSkipConfigs(username),
         // V2用户信息（包含 oidcSub, role, tags, enabledApis 等）
-        userInfoV2: await db.getUserInfoV2(username),
+        userInfo: await db.getUserInfo(username),
         // 登录统计（loginCount, firstLoginTime, lastLoginTime）
         loginStats: await getUserLoginStats(username),
         // 用户密码（V1兼容，通过验证空密码来检查用户是否存在，然后获取密码）

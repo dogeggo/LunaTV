@@ -6,6 +6,7 @@ import {
   getTelegramToken,
   verifyAndConsumeTelegramToken,
 } from '@/lib/telegram-tokens';
+import { generateToken } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -259,16 +260,38 @@ export async function GET(request: Request) {
           initialPassword,
         );
 
-        console.log(`[Verify ${requestId}] Calling db.registerUser...`);
-        await db.registerUser(username, initialPassword);
-        console.log(`[Verify ${requestId}] User registered successfully`);
-
-        // 验证用户是否真的被创建
-        const verifyExists = await db.checkUserExist(username);
-        console.log(
-          `[Verify ${requestId}] Verification - user exists after registration:`,
-          verifyExists,
+        // 获取默认用户组
+        const defaultTags =
+          config.SiteConfig.DefaultUserTags &&
+          config.SiteConfig.DefaultUserTags.length > 0
+            ? config.SiteConfig.DefaultUserTags
+            : undefined;
+        // V2 注册（支持 tags）
+        await db.createUser(
+          username,
+          initialPassword,
+          'user',
+          defaultTags, // 默认分组
+          undefined, // oidcSub
+          undefined, // enabledApis
         );
+
+        const createdUser = await db.getUserInfo(username);
+        if (!createdUser) {
+          return NextResponse.json({ error: '创建用户失败' }, { status: 500 });
+        }
+        const newUser = {
+          username: createdUser.username,
+          role: createdUser.role,
+          banned: createdUser.banned,
+          enabledApis: createdUser.enabledApis,
+          tags: createdUser.tags,
+          createdAt: createdUser.createdAt,
+          oidcSub: createdUser.oidcSub,
+          tvboxToken: generateToken(),
+        };
+        config.UserConfig.Users.push(newUser);
+        await db.saveAdminConfig(config);
 
         // 清除配置缓存，强制下次getConfig()时重新从数据库读取最新用户列表
         console.log(
