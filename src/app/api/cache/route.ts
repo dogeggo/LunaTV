@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     if (!key) {
       return NextResponse.json({ error: 'Key is required' }, { status: 400 });
     }
-    // 现在可以安全地调用 getCache，Upstash 的 getCache 已经修复
     const data = await getCache(key);
     return NextResponse.json({ data });
   } catch (error) {

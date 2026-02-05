@@ -16,18 +16,14 @@ function getStorageType(): string {
   return process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
 }
 
-// 获取Redis兼容存储实例（支持KVRocks、Upstash、Redis）
+// 获取Redis兼容存储实例（支持KVRocks、Redis）
 function getRedisStorage(): any {
   try {
     // 安全地访问存储实例
     const storage = (db as any).storage;
 
     // 检查是否有Redis相关的方法
-    if (
-      storage &&
-      (typeof storage.client?.keys === 'function' || // 标准Redis客户端
-        typeof storage.keys === 'function') // Upstash客户端
-    ) {
+    if (storage && typeof storage.client?.keys === 'function') {
       return storage;
     }
 
@@ -41,7 +37,7 @@ function getRedisStorage(): any {
 
 // 数据库缓存统计和管理模块
 export class DatabaseCacheManager {
-  // 获取Redis兼容数据库中的缓存统计（支持KVRocks、Upstash、Redis）
+  // 获取Redis兼容数据库中的缓存统计（支持KVRocks、Redis）
   static async getKVRocksCacheStats() {
     const storageType = getStorageType();
     console.log('🔍 开始获取Redis存储实例...');
@@ -77,30 +73,7 @@ export class DatabaseCacheManager {
 
       console.log(`🔍 当前存储类型: ${storageType}`);
 
-      if (storageType === 'upstash') {
-        // Upstash Redis - 尝试不同的调用方式
-        console.log('🔍 使用Upstash Redis方式获取键...');
-
-        try {
-          if (typeof storage.withRetry === 'function' && storage.client?.keys) {
-            // 方式1：使用 withRetry
-            allCacheKeys = await storage.withRetry(() =>
-              storage.client.keys('cache:*'),
-            );
-          } else if (storage.client?.keys) {
-            // 方式2：直接调用 client.keys
-            console.log('🔍 withRetry不可用，直接调用client.keys');
-            allCacheKeys = await storage.client.keys('cache:*');
-          } else {
-            console.warn('❌ Upstash存储没有可用的keys方法');
-            console.log('🔍 可用方法:', Object.getOwnPropertyNames(storage));
-            return null;
-          }
-        } catch (error) {
-          console.error('❌ Upstash键获取失败:', error);
-          return null;
-        }
-      } else if (storageType === 'kvrocks' || storageType === 'redis') {
+      if (storageType === 'kvrocks' || storageType === 'redis') {
         // KVRocks/标准Redis (带重试机制) - 保持不变
         console.log('🔍 使用KVRocks/标准Redis方式获取键...');
         if (typeof storage.withRetry === 'function' && storage.client?.keys) {
@@ -130,46 +103,7 @@ export class DatabaseCacheManager {
       // 批量获取所有缓存数据 - 支持不同的Redis客户端
       let values: any[] = [];
 
-      if (storageType === 'upstash') {
-        // Upstash Redis - 尝试不同的调用方式
-        try {
-          if (typeof storage.withRetry === 'function' && storage.client?.mget) {
-            // 方式1：使用 withRetry
-            values = (await storage.withRetry(() =>
-              storage.client.mget(allCacheKeys),
-            )) as any[];
-          } else if (storage.client?.mget) {
-            // 方式2：直接调用 client.mget
-            console.log('🔍 withRetry不可用，直接调用client.mget');
-            values = (await storage.client.mget(allCacheKeys)) as any[];
-          } else {
-            console.warn('Upstash没有client.mget方法，使用逐个获取');
-            // 回退：逐个获取
-            for (const key of allCacheKeys) {
-              try {
-                let value = null;
-                if (
-                  typeof storage.withRetry === 'function' &&
-                  storage.client?.get
-                ) {
-                  value = await storage.withRetry(() =>
-                    storage.client.get(key),
-                  );
-                } else if (storage.client?.get) {
-                  value = await storage.client.get(key);
-                }
-                values.push(value);
-              } catch (error) {
-                console.warn(`获取缓存键 ${key} 失败:`, error);
-                values.push(null);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('❌ Upstash批量获取失败:', error);
-          return null;
-        }
-      } else if (storageType === 'kvrocks' || storageType === 'redis') {
+      if (storageType === 'kvrocks' || storageType === 'redis') {
         // KVRocks/标准Redis (带重试机制) - 保持不变
         if (typeof storage.withRetry === 'function' && storage.client?.mGet) {
           values = await storage.withRetry(() =>
@@ -275,18 +209,18 @@ export class DatabaseCacheManager {
     }
   }
 
-  // 获取缓存统计信息（支持KVRocks/Upstash/Redis，localStorage作为备用）
+  // 获取缓存统计信息（支持KVRocks/Redis，localStorage作为备用）
   static async getSimpleCacheStats() {
     console.log('📊 开始获取缓存统计信息...');
 
-    // 从 Redis兼容数据库 获取统计（支持KVRocks、Upstash、Redis）
+    // 从 Redis兼容数据库 获取统计（支持KVRocks、Redis）
     const redisStats = await DatabaseCacheManager.getKVRocksCacheStats();
     if (redisStats) {
       return {
         ...redisStats,
         timestamp: new Date().toISOString(),
         source: 'redis-database',
-        note: '数据来源：Redis兼容数据库（KVRocks/Upstash/Redis）',
+        note: '数据来源：Redis兼容数据库（KVRocks/Redis）',
         formattedSizes: {
           douban: formatBytes(redisStats.douban.size),
           shortdrama: formatBytes(redisStats.shortdrama.size),

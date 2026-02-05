@@ -17,7 +17,7 @@ function getBaseUrl(request: NextRequest): string {
   return `${protocol}://${host}`;
 }
 
-// 生产环境使用Redis/Upstash/Kvrocks的频率限制
+// 生产环境使用Redis/Kvrocks的频率限制
 async function checkRateLimit(
   ip: string,
   limit = 60,

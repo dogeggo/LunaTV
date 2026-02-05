@@ -46,18 +46,7 @@ export class CalendarCacheManager {
 
       console.log(`💾 保存日历数据到数据库缓存，大小: ${sizeKB} KB`);
 
-      if (storageType === 'upstash') {
-        // Upstash Redis
-        if (storage.client?.set) {
-          await storage.client.set(CALENDAR_DATA_KEY, dataStr);
-          await storage.client.set(CALENDAR_TIME_KEY, timestamp);
-        } else if (storage.set) {
-          await storage.set(CALENDAR_DATA_KEY, dataStr);
-          await storage.set(CALENDAR_TIME_KEY, timestamp);
-        } else {
-          throw new Error('Upstash存储没有可用的set方法');
-        }
-      } else if (storageType === 'kvrocks' || storageType === 'redis') {
+      if (storageType === 'kvrocks' || storageType === 'redis') {
         // KVRocks/标准Redis
         if (storage.withRetry && storage.client?.set) {
           await storage.withRetry(() =>
@@ -103,18 +92,7 @@ export class CalendarCacheManager {
       let dataStr: string | null = null;
       let timeStr: string | null = null;
 
-      if (storageType === 'upstash') {
-        // Upstash Redis
-        if (storage.client?.get) {
-          dataStr = await storage.client.get(CALENDAR_DATA_KEY);
-          timeStr = await storage.client.get(CALENDAR_TIME_KEY);
-        } else if (storage.get) {
-          dataStr = await storage.get(CALENDAR_DATA_KEY);
-          timeStr = await storage.get(CALENDAR_TIME_KEY);
-        } else {
-          throw new Error('Upstash存储没有可用的get方法');
-        }
-      } else if (storageType === 'kvrocks' || storageType === 'redis') {
+      if (storageType === 'kvrocks' || storageType === 'redis') {
         // KVRocks/标准Redis
         if (storage.withRetry && storage.client?.get) {
           dataStr = await storage.withRetry(() =>
@@ -147,25 +125,7 @@ export class CalendarCacheManager {
         await this.clearCalendarData(); // 清理过期数据
         return null;
       }
-
-      // 🔧 修复：Upstash 可能返回对象而不是字符串
-      let data;
-      if (storageType === 'upstash') {
-        // Upstash 特殊处理：可能返回对象或字符串
-        if (typeof dataStr === 'string') {
-          data = JSON.parse(dataStr);
-        } else if (typeof dataStr === 'object' && dataStr !== null) {
-          // Upstash 已经返回了对象，直接使用
-          data = dataStr;
-        } else {
-          console.warn('⚠️ Upstash 返回的数据格式不正确:', typeof dataStr);
-          return null;
-        }
-      } else {
-        // KVRocks/Redis 正常处理：总是返回字符串
-        data = JSON.parse(dataStr);
-      }
-
+      let data = JSON.parse(dataStr);
       console.log(
         `✅ 从数据库读取日历缓存，缓存年龄: ${Math.round(age / 1000 / 60)} 分钟`,
       );
@@ -192,15 +152,7 @@ export class CalendarCacheManager {
     }
 
     try {
-      if (storageType === 'upstash') {
-        if (storage.client?.del) {
-          await storage.client.del(CALENDAR_DATA_KEY);
-          await storage.client.del(CALENDAR_TIME_KEY);
-        } else if (storage.del) {
-          await storage.del(CALENDAR_DATA_KEY);
-          await storage.del(CALENDAR_TIME_KEY);
-        }
-      } else if (storageType === 'kvrocks' || storageType === 'redis') {
+      if (storageType === 'kvrocks' || storageType === 'redis') {
         if (storage.withRetry && storage.client?.del) {
           await storage.withRetry(() => storage.client.del(CALENDAR_DATA_KEY));
           await storage.withRetry(() => storage.client.del(CALENDAR_TIME_KEY));
@@ -232,13 +184,7 @@ export class CalendarCacheManager {
     try {
       let timeStr: string | null = null;
 
-      if (storageType === 'upstash') {
-        if (storage.client?.get) {
-          timeStr = await storage.client.get(CALENDAR_TIME_KEY);
-        } else if (storage.get) {
-          timeStr = await storage.get(CALENDAR_TIME_KEY);
-        }
-      } else if (storageType === 'kvrocks' || storageType === 'redis') {
+      if (storageType === 'kvrocks' || storageType === 'redis') {
         if (storage.withRetry && storage.client?.get) {
           timeStr = await storage.withRetry(() =>
             storage.client.get(CALENDAR_TIME_KEY),

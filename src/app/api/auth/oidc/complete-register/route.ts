@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
       const response = NextResponse.json({
         ok: true,
         message: '注册成功',
-        needDelay: storageType === 'upstash', // Upstash 需要延迟等待数据同步
+        needDelay: false,
       });
       const cookieValue = await generateAuthCookie(username, 'user');
       const expires = new Date();

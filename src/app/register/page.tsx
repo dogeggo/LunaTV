@@ -116,20 +116,7 @@ function RegisterPageClient() {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        // 显示成功消息，稍等一下再跳转
-        setError(null);
-        setSuccess('注册成功！正在跳转...');
-
-        // Upstash 需要额外延迟等待数据同步
-        const delay = data.needDelay ? 2500 : 1500;
-
-        setTimeout(() => {
-          const redirect = searchParams.get('redirect') || '/';
-          router.replace(redirect);
-        }, delay);
-      } else {
+      if (!res.ok) {
         const data = await res.json();
         setError(data.error ?? '注册失败');
       }

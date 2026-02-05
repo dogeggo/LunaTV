@@ -156,16 +156,9 @@ async function getUserLoginStats(username: string): Promise<{
     if (storage && typeof storage.client?.get === 'function') {
       const loginStatsKey = `user_login_stats:${username}`;
       const statsData = await storage.client.get(loginStatsKey);
-
       if (statsData) {
-        // 处理不同存储类型的返回格式
-        if (typeof statsData === 'string') {
-          // KVRocks/Redis 返回字符串
-          return JSON.parse(statsData);
-        } else {
-          // Upstash 返回对象
-          return statsData as any;
-        }
+        // KVRocks/Redis 返回字符串
+        return JSON.parse(statsData);
       }
     }
     return null;

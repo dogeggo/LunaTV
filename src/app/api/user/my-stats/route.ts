@@ -47,9 +47,8 @@ export async function GET(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          error: '当前存储类型不支持播放统计功能，请使用 Redis 或 Kvrocks',
+          supportedTypes: ['redis', 'kvrocks'],
         },
         { status: 400 },
       );
@@ -151,9 +150,8 @@ export async function POST(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          error: '当前存储类型不支持播放统计功能，请使用 Redis 或 Kvrocks',
+          supportedTypes: ['redis', 'kvrocks'],
         },
         { status: 400 },
       );
@@ -235,9 +233,8 @@ export async function PUT(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          error: '当前存储类型不支持播放统计功能，请使用 Redis 或 Kvrocks',
+          supportedTypes: ['redis', 'kvrocks'],
         },
         { status: 400 },
       );
@@ -336,9 +333,8 @@ export async function DELETE(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          error: '当前存储类型不支持播放统计功能，请使用 Redis 或 Kvrocks',
+          supportedTypes: ['redis', 'kvrocks'],
         },
         { status: 400 },
       );

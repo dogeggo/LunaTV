@@ -13,7 +13,6 @@ const STORAGE_TYPE =
   (process.env.NEXT_PUBLIC_STORAGE_TYPE as
     | 'localstorage'
     | 'redis'
-    | 'upstash'
     | 'kvrocks'
     | undefined) || 'localstorage';
 
@@ -184,13 +183,10 @@ export async function POST(req: NextRequest) {
         console.error('调试日志失败:', debugErr);
       }
 
-      // 注册成功后自动登录
-      const storageType =
-        process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
       const response = NextResponse.json({
         ok: true,
         message: '注册成功，已自动登录',
-        needDelay: storageType === 'upstash', // Upstash 需要延迟等待数据同步
+        needDelay: false,
       });
 
       const cookieValue = await generateAuthCookie(

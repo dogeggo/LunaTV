@@ -737,7 +737,7 @@ const PlayStatsPage: React.FC = () => {
                 <p className='text-yellow-700 dark:text-yellow-400 mt-1'>
                   当前使用本地存储模式（localStorage），不支持统计功能。
                   <br />
-                  如需使用此功能，请配置 Redis 或 Upstash 数据库存储。
+                  如需使用此功能，请配置 Redis 数据库存储。
                 </p>
               </div>
             </div>

@@ -55,15 +55,7 @@ export default function OIDCRegisterPage() {
         body: JSON.stringify({ username }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        // Upstash 需要额外延迟等待数据同步
-        const delay = data.needDelay ? 1500 : 0;
-
-        setTimeout(() => {
-          router.replace('/');
-        }, delay);
-      } else {
+      if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error || '注册失败');
       }

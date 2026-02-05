@@ -11,12 +11,11 @@ import {
   UserPlayStat,
 } from './types';
 
-// storage type 常量: 'localstorage' | 'redis' | 'upstash'，默认 'localstorage'
+// storage type 常量: 'localstorage' | 'redis' 默认 'localstorage'
 const STORAGE_TYPE =
   (process.env.NEXT_PUBLIC_STORAGE_TYPE as
     | 'localstorage'
     | 'redis'
-    | 'upstash'
     | 'kvrocks'
     | undefined) || 'localstorage';
 
@@ -25,8 +24,6 @@ function createStorage(): IStorage {
   switch (STORAGE_TYPE) {
     case 'redis':
       return new RedisStorage();
-    // case 'upstash':
-    //   return new UpstashRedisStorage();
     case 'kvrocks':
       return new KvrocksStorage();
     case 'localstorage':
