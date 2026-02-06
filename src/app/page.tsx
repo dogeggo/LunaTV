@@ -33,7 +33,12 @@ import {
 } from '@/lib/db.client';
 import { getDoubanCategories, getDoubanDetails } from '@/lib/douban-api';
 import { getRecommendedShortDramas } from '@/lib/shortdrama-api';
-import { ReleaseCalendarItem, ShortDramaItem } from '@/lib/types';
+import {
+  Favorite,
+  PlayRecord,
+  ReleaseCalendarItem,
+  ShortDramaItem,
+} from '@/lib/types';
 import { DoubanMovieDetail } from '@/lib/types';
 
 import ArtPlayerPreloader from '@/components/ArtPlayerPreloader';
@@ -753,18 +758,18 @@ function HomeClient() {
     // 监听收藏更新事件
     const unsubscribeFavorites = subscribeToDataUpdates(
       'favoritesUpdated',
-      () => {
-        // 刷新收藏数据缓存
-        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      (newFavorites: Record<string, Favorite>) => {
+        // 直接使用事件数据更新缓存，避免立即请求拿到旧数据
+        queryClient.setQueryData(['favorites'], newFavorites);
       },
     );
 
     // 监听播放记录更新事件
     const unsubscribePlayRecords = subscribeToDataUpdates(
       'playRecordsUpdated',
-      () => {
-        // 刷新播放记录缓存
-        queryClient.invalidateQueries({ queryKey: ['playRecords'] });
+      (newRecords: Record<string, PlayRecord>) => {
+        // 直接使用事件数据更新缓存，避免立即请求拿到旧数据
+        queryClient.setQueryData(['playRecords'], newRecords);
       },
     );
 

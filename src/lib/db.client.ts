@@ -1029,9 +1029,9 @@ export async function savePlayRecord(
       // 只在更新集数时才需要同步（上面的 if 块已处理）
 
       // 异步更新用户统计数据（不阻塞主流程）
-      updateUserStats(record).catch((err) => {
-        console.warn('更新用户统计数据失败:', err);
-      });
+      // updateUserStats(record).catch((err) => {
+      //   console.warn('更新用户统计数据失败:', err);
+      // });
     } catch (err) {
       await handleDatabaseOperationFailure('playRecords', err);
       throw err;
@@ -1056,9 +1056,9 @@ export async function savePlayRecord(
     );
 
     // 异步更新用户统计数据（不阻塞主流程）
-    updateUserStats(record).catch((err) => {
-      console.warn('更新用户统计数据失败:', err);
-    });
+    // updateUserStats(record).catch((err) => {
+    //   console.warn('更新用户统计数据失败:', err);
+    // });
   } catch (err) {
     console.error('保存播放记录失败:', err);
     throw err;
