@@ -41,7 +41,6 @@ import {
 } from '@/lib/types';
 import { DoubanMovieDetail } from '@/lib/types';
 
-import ArtPlayerPreloader from '@/components/ArtPlayerPreloader';
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ContinueWatching from '@/components/ContinueWatching';
@@ -801,8 +800,6 @@ function HomeClient() {
 
   return (
     <PageLayout>
-      {/* 预加载播放器模块 */}
-      <ArtPlayerPreloader />
       {/* Telegram 新用户欢迎弹窗 */}
       {/* <TelegramWelcomeModal /> */}
 
