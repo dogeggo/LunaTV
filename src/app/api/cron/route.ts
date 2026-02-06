@@ -89,13 +89,13 @@ async function cronJob() {
     console.error('❌ 直播频道刷新失败:', err);
   }
 
-  try {
-    console.log('📊 刷新播放记录和收藏...');
-    await refreshRecordAndFavorites();
-    console.log('✅ 播放记录和收藏刷新完成');
-  } catch (err) {
-    console.error('❌ 播放记录和收藏刷新失败:', err);
-  }
+  // try {
+  //   console.log('📊 刷新播放记录和收藏...');
+  //   await refreshRecordAndFavorites();
+  //   console.log('✅ 播放记录和收藏刷新完成');
+  // } catch (err) {
+  //   console.error('❌ 播放记录和收藏刷新失败:', err);
+  // }
 
   console.log('🎉 定时任务执行完成');
 }
