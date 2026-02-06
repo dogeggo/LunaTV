@@ -472,28 +472,12 @@ function PlayPageClient() {
   // 搜索所需信息
   const [searchTitle] = useState(searchParams.get('stitle') || '');
   const [searchType] = useState(searchParams.get('stype') || '');
-
-  // 是否需要优选
-  const [needPrefer, setNeedPrefer] = useState(
-    searchParams.get('prefer') === 'true',
-  );
-  const needPreferRef = useRef(needPrefer);
   // 集数相关
   const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(() => {
     // 从 URL 读取初始集数
     const indexParam = searchParams.get('index');
     return indexParam ? parseInt(indexParam, 10) : 0;
   });
-
-  // 监听 URL index 参数变化
-  useEffect(() => {
-    const indexParam = searchParams.get('index');
-    const newIndex = indexParam ? parseInt(indexParam, 10) : 0;
-    if (newIndex !== currentEpisodeIndex) {
-      console.log('[PlayPage] URL index changed, updating episode:', newIndex);
-      setCurrentEpisodeIndex(newIndex);
-    }
-  }, [searchParams]);
 
   // 重新加载触发器（用于触发 initAll 重新执行）
   const [reloadTrigger, setReloadTrigger] = useState(0);
@@ -517,25 +501,18 @@ function PlayPageClient() {
         '[PlayPage] URL source/id changed with reload flag, reloading:',
         { newSource, newId, newIndex, newTime },
       );
-
       // 标记此reload已处理
       reloadFlagRef.current = reloadFlag;
-
       // 重置所有相关状态（但保留 detail，让 initAll 重新加载后再更新）
       setCurrentSource(newSource);
       setCurrentId(newId);
-      setCurrentEpisodeIndex(newIndex);
-      // 不清空 detail，避免触发 videoUrl 清空导致黑屏
-      // setDetail(null);
       setError(null);
       setLoading(true);
-      setNeedPrefer(false);
       setPlayerReady(false);
-
       // 触发重新加载（通过更新 reloadTrigger 来触发 initAll 重新执行）
       setReloadTrigger((prev) => prev + 1);
     }
-  }, [searchParams, currentSource, currentId]);
+  }, [currentEpisodeIndex, currentSource, currentId]);
 
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
@@ -554,7 +531,6 @@ function PlayPageClient() {
     blockAdEnabledRef.current = blockAdEnabled;
     customAdFilterCodeRef.current = customAdFilterCode;
     externalDanmuEnabledRef.current = externalDanmuEnabled;
-    needPreferRef.current = needPrefer;
     currentSourceRef.current = currentSource;
     currentIdRef.current = currentId;
     detailRef.current = detail;
@@ -567,7 +543,6 @@ function PlayPageClient() {
     blockAdEnabled,
     customAdFilterCode,
     externalDanmuEnabled,
-    needPrefer,
     currentSource,
     currentId,
     detail,
@@ -2053,26 +2028,6 @@ function PlayPageClient() {
     return filteredLines.join('\n');
   }
 
-  const formatTime = (seconds: number): string => {
-    if (seconds === 0) return '00:00';
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-
-    if (hours === 0) {
-      // 不到一小时，格式为 00:00
-      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds
-        .toString()
-        .padStart(2, '0')}`;
-    } else {
-      // 超过一小时，格式为 00:00:00
-      return `${hours.toString().padStart(2, '0')}:${minutes
-        .toString()
-        .padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-  };
-
   class CustomHlsJsLoader extends Hls.DefaultConfig.loader {
     constructor(config: any) {
       super(config);
@@ -2536,10 +2491,9 @@ function PlayPageClient() {
                 console.error('⚠️ ArtPlayer 预加载失败:', error);
                 // 预加载失败不影响后续流程，initPlayer 时会重新尝试
               });
-      let searchResult: SearchResult[] = [];
-      // 其他情况先搜索所有视频源
-      searchResult = await fetchSourcesData(searchTitle || videoTitle);
-
+      let searchResult: SearchResult[] = await fetchSourcesData(
+        searchTitle || videoTitle,
+      );
       if (
         currentSource &&
         currentId &&
@@ -2571,11 +2525,6 @@ function PlayPageClient() {
         detailData = await lightweightPreference(searchResult);
       }
 
-      const shouldPrefer =
-        (!currentSource || !currentId || needPreferRef.current) &&
-        optimizationEnabled;
-
-      setNeedPrefer(false);
       setCurrentSource(detailData.source);
       setCurrentId(detailData.id);
       setVideoYear(detailData.year);
@@ -2584,9 +2533,9 @@ function PlayPageClient() {
       // 优先保留URL参数中的豆瓣ID，如果URL中没有则使用详情数据中的
       setVideoDoubanId(videoDoubanIdRef.current || detailData.douban_id || 0);
       setDetail(detailData);
-      setPendingPreferSources(shouldPrefer ? searchResult : null);
+      setPendingPreferSources(searchResult);
       if (currentEpisodeIndex >= detailData.episodes.length) {
-        setCurrentEpisodeIndex(0);
+        setCurrentEpisodeIndex((prev) => (prev === 0 ? prev : 0));
       }
 
       // 规范URL参数
@@ -2675,12 +2624,9 @@ function PlayPageClient() {
         if (record) {
           const targetIndex = record.index - 1;
           const targetTime = record.play_time;
-
-          // 更新当前选集索引
-          if (targetIndex !== currentEpisodeIndex) {
-            setCurrentEpisodeIndex(targetIndex);
-          }
-
+          setCurrentEpisodeIndex((prev) =>
+            prev === targetIndex ? prev : targetIndex,
+          );
           // 保存待恢复的播放进度，待播放器就绪后跳转
           resumeTimeRef.current = targetTime;
         }
@@ -2830,9 +2776,9 @@ function PlayPageClient() {
 
       // 🔥 只有当集数确实改变时才调用 setCurrentEpisodeIndex
       // 这样可以避免触发不必要的 useEffect 和集数切换逻辑
-      if (targetIndex !== currentEpisodeIndex) {
-        setCurrentEpisodeIndex(targetIndex);
-      }
+      setCurrentEpisodeIndex((prev) =>
+        prev === targetIndex ? prev : targetIndex,
+      );
 
       // 🚀 换源完成后，优化弹幕加载流程
       setTimeout(async () => {
@@ -3001,8 +2947,9 @@ function PlayPageClient() {
       } catch (err) {
         console.warn('更新URL参数失败:', err);
       }
-
-      setCurrentEpisodeIndex(episodeNumber);
+      setCurrentEpisodeIndex((prev) =>
+        prev === episodeNumber ? prev : episodeNumber,
+      );
     }
   };
 
@@ -3013,7 +2960,7 @@ function PlayPageClient() {
       if (artPlayerRef.current && !artPlayerRef.current.paused) {
         saveCurrentPlayProgress();
       }
-      setCurrentEpisodeIndex(idx - 1);
+      setCurrentEpisodeIndex((prev) => (prev === idx - 1 ? prev : idx - 1));
     }
   };
 
@@ -3030,7 +2977,7 @@ function PlayPageClient() {
 
       // 🔑 标记通过 SkipController 触发了下一集
       isSkipControllerTriggeredRef.current = true;
-      setCurrentEpisodeIndex(idx + 1);
+      setCurrentEpisodeIndex((prev) => (prev === idx + 1 ? prev : idx + 1));
     }
   };
 
@@ -5277,7 +5224,9 @@ function PlayPageClient() {
           if (d && d.episodes && idx < d.episodes.length - 1) {
             videoEndedHandledRef.current = true;
             setTimeout(() => {
-              setCurrentEpisodeIndex(idx + 1);
+              setCurrentEpisodeIndex((prev) =>
+                prev === idx + 1 ? prev : idx + 1,
+              );
             }, 1000);
           }
         });
@@ -6229,8 +6178,8 @@ function PlayPageClient() {
                             // TMDB作品不传douban_id，仅传title搜索
                             const playUrl =
                               work.source === 'tmdb'
-                                ? `/play?title=${encodeURIComponent(work.title)}&prefer=true`
-                                : `/play?title=${encodeURIComponent(work.title)}&douban_id=${work.id}&prefer=true`;
+                                ? `/play?title=${encodeURIComponent(work.title)}`
+                                : `/play?title=${encodeURIComponent(work.title)}&douban_id=${work.id}`;
                             return (
                               <div
                                 key={work.id}
@@ -6377,7 +6326,7 @@ function PlayPageClient() {
                       </h3>
                       <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
                         {movieDetails.recommendations.map((item: any) => {
-                          const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}&prefer=true`;
+                          const playUrl = `/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}`;
                           return (
                             <div
                               key={item.id}

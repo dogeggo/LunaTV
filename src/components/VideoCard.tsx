@@ -346,14 +346,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         // 豆瓣内容 或 聚合搜索 或 即将上映 或 Bangumi番剧 - 只用标题和年份搜索
         const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${
           actualYear ? `&year=${actualYear}` : ''
-        }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+        }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
         router.push(url);
       } else if (actualSource && actualId) {
         const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
           actualTitle,
         )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${
-          isAggregate ? '&prefer=true' : ''
-        }${
           actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
         }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
         router.push(url);
@@ -397,14 +395,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         actualSource === 'bangumi'
       ) {
         // 豆瓣内容 或 聚合搜索 或 即将上映 或 Bangumi番剧 - 只用标题和年份搜索
-        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${isAggregate ? '&prefer=true' : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+        const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
         window.open(url, '_blank');
       } else if (actualSource && actualId) {
         const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
           actualTitle,
         )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${
-          isAggregate ? '&prefer=true' : ''
-        }${
           actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
         }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
         window.open(url, '_blank');
