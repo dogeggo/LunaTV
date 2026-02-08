@@ -379,12 +379,12 @@ export function generateSearchVariants(originalQuery: string): string[] {
 function generatePunctuationVariant(query: string): string | null {
   // 中文冒号 → 空格（最常见的匹配模式）
   if (query.includes('：')) {
-    return query.replace(/：/g, ' ');
+    return query.replace(/：/g, '');
   }
 
   // 英文冒号 → 空格
   if (query.includes(':')) {
-    return query.replace(/:/g, ' ');
+    return query.replace(/:/g, '');
   }
 
   // 中文书名号 → 去除

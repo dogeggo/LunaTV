@@ -2358,9 +2358,10 @@ function PlayPageClient() {
             .toLowerCase();
           const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
           const titleMatch = resultTitle === queryTitle;
-          const yearMatch = videoYearRef.current
-            ? Number(result.year) === Number(videoYearRef.current)
-            : true;
+          const vYear = Number(videoYearRef.current);
+          const rYear = Number(result.year);
+          const yearMatch =
+            Number.isNaN(vYear) || Number.isNaN(rYear) ? true : vYear === rYear;
           const typeMatch = searchType
             ? (searchType === 'tv' && result.episodes.length > 1) ||
               (searchType === 'movie' && result.episodes.length === 1) ||
@@ -2390,9 +2391,12 @@ function PlayPageClient() {
                   // 避免短标题（如"玫瑰"2字）被拆分匹配
                   (queryTitle.length > 4 &&
                     checkAllKeywordsMatch(queryTitle, resultTitle));
-                const yearMatch = videoYearRef.current
-                  ? Number(result.year) === Number(videoYearRef.current)
-                  : true;
+                const vYear = Number(videoYearRef.current);
+                const rYear = Number(result.year);
+                const yearMatch =
+                  Number.isNaN(vYear) || Number.isNaN(rYear)
+                    ? true
+                    : vYear === rYear;
                 const typeMatch = searchType
                   ? (searchType === 'tv' && result.episodes.length > 1) ||
                     (searchType === 'movie' && result.episodes.length === 1) ||
