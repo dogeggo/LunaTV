@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { SHORTDRAMA_CACHE_EXPIRE } from '@/lib/cache';
+import { SEARCH_CACHE_EXPIRE } from '@/lib/cache';
 import { searchShortDramas } from '@/lib/shortdrama-api';
 
 // 强制动态路由，禁用所有缓存
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     // 设置与网页端一致的缓存策略（搜索结果: 1小时）
     const response = NextResponse.json(result);
     // 1小时 = 3600秒（搜索结果更新频繁，短期缓存）
-    const cacheTime = SHORTDRAMA_CACHE_EXPIRE.search;
+    const cacheTime = SEARCH_CACHE_EXPIRE;
     response.headers.set(
       'Cache-Control',
       `public, max-age=${cacheTime}, s-maxage=${cacheTime}`,

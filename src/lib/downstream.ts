@@ -1,8 +1,8 @@
 ﻿// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
 import stcasc, { ChineseType } from 'switch-chinese';
 
+import { getCache, SEARCH_CACHE_EXPIRE, setCache } from '@/lib/cache';
 import { API_CONFIG, ApiSite, getShowAdultContent } from '@/lib/config';
-import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
 import { yellowWords } from '@/lib/yellow';
@@ -33,14 +33,11 @@ async function searchWithCache(
   url: string,
   timeoutMs = 8000,
 ): Promise<{ results: SearchResult[]; pageCount?: number }> {
+  const cacheKey = 'video-search-' + url;
   // 先查缓存
-  const cached = getCachedSearchPage(apiSite.key, query, page);
+  const cached = await getCache(cacheKey);
   if (cached) {
-    if (cached.status === 'ok') {
-      return { results: cached.data, pageCount: cached.pageCount };
-    } else {
-      return { results: [] };
-    }
+    return cached;
   }
 
   // 缓存未命中，发起网络请求
@@ -57,7 +54,7 @@ async function searchWithCache(
 
     if (!response.ok) {
       if (response.status === 403) {
-        setCachedSearchPage(apiSite.key, query, page, 'forbidden', []);
+        await setCache(cacheKey, [], SEARCH_CACHE_EXPIRE);
       }
       return { results: [] };
     }
@@ -125,8 +122,8 @@ async function searchWithCache(
       });
     });
     const pageCount = page === 1 ? data.pagecount || 1 : undefined;
-    // 写入缓存（成功）
-    setCachedSearchPage(apiSite.key, query, page, 'ok', results, pageCount);
+    var result = { results, pageCount };
+    await setCache(cacheKey, result, SEARCH_CACHE_EXPIRE);
     return { results, pageCount };
   } catch (error: any) {
     clearTimeout(timeoutId);
@@ -136,7 +133,7 @@ async function searchWithCache(
       error?.code === 20 ||
       error?.message?.includes('aborted');
     if (aborted) {
-      setCachedSearchPage(apiSite.key, query, page, 'timeout', []);
+      await setCache(cacheKey, [], SEARCH_CACHE_EXPIRE);
     }
     return { results: [] };
   }
@@ -151,17 +148,33 @@ export async function searchFromApi(
   try {
     const apiBaseUrl = apiSite.api;
     let searchResults: SearchResult[] = [];
-    const additionalPagePromises = [];
-    for (let page = 1; page <= maxPage; page++) {
-      for (let query of searchVariants) {
-        const encodedQuery = encodeURIComponent(query);
+    const additionalPagePromises: Promise<SearchResult[]>[] = [];
+    for (const query of searchVariants) {
+      const encodedQuery = encodeURIComponent(query);
+      const page1Url =
+        apiBaseUrl +
+        API_CONFIG.search.pagePath
+          .replace('query', encodedQuery)
+          .replace('page', '1');
+      const firstPageResult = await searchWithCache(
+        apiSite,
+        query,
+        1,
+        page1Url,
+        8000,
+      );
+      if (firstPageResult.results.length > 0) {
+        searchResults.push(...firstPageResult.results);
+      }
+      const pageCount = firstPageResult.pageCount ?? 1;
+      const totalPages = Math.min(maxPage, Math.max(1, pageCount));
+      for (let page = 2; page <= totalPages; page++) {
         const apiUrl =
           apiBaseUrl +
           API_CONFIG.search.pagePath
             .replace('query', encodedQuery)
             .replace('page', page.toString());
         const pagePromise = (async () => {
-          // 使用新的缓存搜索函数处理分页
           const pageResult = await searchWithCache(
             apiSite,
             query,
@@ -174,9 +187,7 @@ export async function searchFromApi(
         additionalPagePromises.push(pagePromise);
       }
     }
-    // 等待所有额外页的结果
     const additionalResults = await Promise.all(additionalPagePromises);
-    // 合并所有页的结果
     additionalResults.forEach((pageResults) => {
       if (pageResults.length > 0) {
         searchResults.push(...pageResults);

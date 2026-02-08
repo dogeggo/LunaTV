@@ -18,7 +18,6 @@ export const SHORTDRAMA_CACHE_EXPIRE = {
   lists: 2 * 60 * 60, // 列表2小时（更新频繁）
   categories: 4 * 60 * 60, // 分类4小时（很少变化）
   recommends: 1 * 60 * 60, // 推荐1小时（经常更新）
-  search: 1 * 60 * 60, // 集数24小时（基本不变）
 };
 
 // TMDB数据缓存配置（秒）
@@ -39,9 +38,11 @@ export const NETDISK_CACHE_EXPIRE = {
 };
 
 export const YOUTUBE_CACHE_EXPIRE = {
-  search: 60 * 60, // 搜索60分钟
+  search: 30 * 60, // 搜索60分钟
   search_fallback: 5 * 60, // 失败兜底5分钟
 };
+
+export const SEARCH_CACHE_EXPIRE: number = 1 * 60 * 60;
 
 const DEFAULT_CACHE_PREFIXES = [
   'douban-',

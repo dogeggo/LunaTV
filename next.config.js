@@ -1,10 +1,14 @@
 /** @type {import('next').NextConfig} */
 /* eslint-disable @typescript-eslint/no-var-requires */
 
+const enableStandalone =
+  process.env.NODE_ENV === 'production' &&
+  (process.platform !== 'win32' || process.env.NEXT_STANDALONE === 'true');
+
 const nextConfig = {
-  // 生产环境始终使用 standalone 模式（Vercel/Docker/Zeabur）
-  // 本地开发时（NODE_ENV !== 'production'）不使用 standalone
-  ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
+  // 生产环境默认使用 standalone 模式（Vercel/Docker/Zeabur）
+  // Windows 本地构建默认关闭，避免 symlink 权限错误，可通过 NEXT_STANDALONE=true 强制开启
+  ...(enableStandalone ? { output: 'standalone' } : {}),
 
   reactStrictMode: false,
 
