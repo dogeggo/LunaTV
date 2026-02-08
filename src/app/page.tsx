@@ -803,7 +803,7 @@ function HomeClient() {
       {/* Telegram 新用户欢迎弹窗 */}
       {/* <TelegramWelcomeModal /> */}
 
-      <div className='overflow-visible -mt-12 sm:-mt-6 sm:pd-45 sm:pb-0 md:pb-safe-bottom'>
+      <div className='overflow-visible sm:pd-45 sm:pb-0 md:pb-safe-bottom'>
         {/* 顶部 Tab 切换 - AI 按钮已移至右上角导航栏 */}
         <div className='mb-8 flex items-center justify-center'>
           <CapsuleSwitch
@@ -945,7 +945,7 @@ function HomeClient() {
                 </div>
               )}
 
-              <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+              <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] sm:gap-x-8'>
                 {(() => {
                   // 筛选
                   let filtered = favoriteItems;
@@ -1280,7 +1280,7 @@ function HomeClient() {
                         return (
                           <div
                             key={`${release.id}-${index}`}
-                            className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                            className='min-w-24 w-24 sm:min-w-45 sm:w-44'
                           >
                             <VideoCard
                               source='upcoming_release'
@@ -1334,7 +1334,7 @@ function HomeClient() {
                       hotMovies.map((movie, index) => (
                         <div
                           key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                          className='min-w-24 w-24 sm:min-w-45 sm:w-44'
                         >
                           <VideoCard
                             from='douban'
@@ -1379,7 +1379,7 @@ function HomeClient() {
                       hotTvShows.map((show, index) => (
                         <div
                           key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                          className='min-w-24 w-24 sm:min-w-45 sm:w-44'
                         >
                           <VideoCard
                             from='douban'
@@ -1424,7 +1424,7 @@ function HomeClient() {
                       todayAnimes.map((anime, index) => (
                         <div
                           key={`${anime.id}-${index}`}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                          className='min-w-24 w-24 sm:min-w-45 sm:w-44'
                         >
                           <VideoCard
                             from='douban'
@@ -1476,7 +1476,7 @@ function HomeClient() {
                       hotVarietyShows.map((show, index) => (
                         <div
                           key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                          className='min-w-24 w-24 sm:min-w-45 sm:w-44'
                         >
                           <VideoCard
                             from='douban'
@@ -1523,7 +1523,7 @@ function HomeClient() {
                           <ShortDramaCard
                             key={index}
                             drama={drama}
-                            className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
+                            className='min-w-24 w-24 sm:min-w-45 sm:w-44'
                           />
                         ))}
                   </ScrollableRow>
@@ -1535,7 +1535,7 @@ function HomeClient() {
       </div>
       {announcement && showAnnouncement && (
         <div
-          className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/70 p-4 transition-opacity duration-300 ${
+          className={`fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm dark:bg-black/70 p-4 transition-opacity duration-300 ${
             showAnnouncement ? '' : 'opacity-0 pointer-events-none'
           }`}
           onTouchStart={(e) => {
