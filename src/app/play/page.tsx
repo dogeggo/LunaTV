@@ -483,37 +483,6 @@ function PlayPageClient() {
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const reloadFlagRef = useRef<string | null>(null);
 
-  // 监听 URL source/id 参数变化
-  useEffect(() => {
-    const newSource = searchParams.get('source') || '';
-    const newId = searchParams.get('id') || '';
-    const newIndex = parseInt(searchParams.get('index') || '0');
-    const newTime = parseInt(searchParams.get('t') || '0');
-    const reloadFlag = searchParams.get('_reload');
-
-    // 如果 source 或 id 变化，且有 _reload 标记，且不是已经处理过的reload
-    if (
-      reloadFlag &&
-      reloadFlag !== reloadFlagRef.current &&
-      (newSource !== currentSource || newId !== currentId)
-    ) {
-      console.log(
-        '[PlayPage] URL source/id changed with reload flag, reloading:',
-        { newSource, newId, newIndex, newTime },
-      );
-      // 标记此reload已处理
-      reloadFlagRef.current = reloadFlag;
-      // 重置所有相关状态（但保留 detail，让 initAll 重新加载后再更新）
-      setCurrentSource(newSource);
-      setCurrentId(newId);
-      setError(null);
-      setLoading(true);
-      setPlayerReady(false);
-      // 触发重新加载（通过更新 reloadTrigger 来触发 initAll 重新执行）
-      setReloadTrigger((prev) => prev + 1);
-    }
-  }, [currentEpisodeIndex, currentSource, currentId]);
-
   // 换源相关状态
   const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
   const availableSourcesRef = useRef<SearchResult[]>([]);
@@ -2492,7 +2461,7 @@ function PlayPageClient() {
                 // 预加载失败不影响后续流程，initPlayer 时会重新尝试
               });
       let searchResult: SearchResult[] = await fetchSourcesData(
-        searchTitle || videoTitle,
+        videoTitle || searchTitle,
       );
       if (
         currentSource &&

@@ -1,12 +1,7 @@
 ﻿// 使用轻量级 switch-chinese 库（93.8KB vs opencc-js 5.6MB）
 import stcasc, { ChineseType } from 'switch-chinese';
 
-import {
-  API_CONFIG,
-  ApiSite,
-  getShowAdultContent,
-  loadConfig,
-} from '@/lib/config';
+import { API_CONFIG, ApiSite, getShowAdultContent } from '@/lib/config';
 import { getCachedSearchPage, setCachedSearchPage } from '@/lib/search-cache';
 import { SearchResult } from '@/lib/types';
 import { cleanHtmlTags } from '@/lib/utils';
@@ -149,19 +144,15 @@ async function searchWithCache(
 
 export async function searchFromApi(
   apiSite: ApiSite,
-  query: string,
+  searchVariants: string[],
+  maxPage: number,
   username?: string,
 ): Promise<SearchResult[]> {
   try {
     const apiBaseUrl = apiSite.api;
-    // 智能搜索：使用预计算的变体（最多2个，由 generateSearchVariants 智能生成）
-    const searchVariants = generateSearchVariants(query);
     let searchResults: SearchResult[] = [];
-
-    const config = await loadConfig();
-    const MAX_SEARCH_PAGES: number = config.SiteConfig.SearchDownstreamMaxPage;
     const additionalPagePromises = [];
-    for (let page = 1; page <= MAX_SEARCH_PAGES; page++) {
+    for (let page = 1; page <= maxPage; page++) {
       for (let query of searchVariants) {
         const encodedQuery = encodeURIComponent(query);
         const apiUrl =
@@ -300,33 +291,35 @@ function generateNumberVariant(query: string): string | null {
 }
 
 /**
- * 智能生成搜索变体（精简版：只生成必要的变体，避免无用搜索）
+ * 智能生成搜索变体（返回所有可用变体，避免遗漏）
  *
  * 策略：
- * - 普通查询（无特殊字符）：只返回原始查询，不生成变体
- * - 数字查询（第X季/末尾数字）：返回 [原始, 数字变体]
- * - 标点查询（中文冒号等）：返回 [原始, 标点变体]
- * - 空格查询（多词搜索）：返回 [原始, 去空格变体]
+ * - 普通查询（无特殊字符）：只返回原始查询
+ * - 数字查询（第X季/末尾数字）：追加数字变体
+ * - 标点查询（中文冒号等）：追加标点变体
+ * - 空格查询（多词搜索）：追加空格变体
+ * - 繁体输入：追加简体变体
  *
  * @param originalQuery 原始查询
- * @returns 按优先级排序的搜索变体数组（最多2个）
+ * @returns 按优先级排序的搜索变体数组（去重）
  */
 export function generateSearchVariants(originalQuery: string): string[] {
   const trimmed = originalQuery.trim();
+  const variants: string[] = [];
+  const seen = new Set<string>();
+  const addVariant = (variant?: string | null) => {
+    if (!variant) {
+      return;
+    }
+    if (!seen.has(variant)) {
+      seen.add(variant);
+      variants.push(variant);
+    }
+  };
 
-  // 1. 智能检测：数字变体（最高优先级的变体）
-  const numberVariant = generateNumberVariant(trimmed);
-  if (numberVariant) {
-    return [trimmed, numberVariant];
-  }
+  addVariant(trimmed);
 
-  // 2. 智能检测：中文标点变体（冒号等）
-  const punctuationVariant = generatePunctuationVariant(trimmed);
-  if (punctuationVariant) {
-    return [trimmed, punctuationVariant];
-  }
-
-  // 3. 智能检测：空格变体（多词搜索）
+  // 1. 智能检测：空格变体（多词搜索）
   if (trimmed.includes(' ')) {
     const keywords = trimmed.split(/\s+/);
     if (keywords.length >= 2) {
@@ -334,12 +327,25 @@ export function generateSearchVariants(originalQuery: string): string[] {
       // 如果最后一个词是季/集相关，组合主关键词
       if (/第|季|集|部|篇|章/.test(lastKeyword)) {
         const combined = keywords[0] + lastKeyword;
-        return [trimmed, combined];
+        addVariant(combined);
+      } else {
+        // 否则去除空格
+        const noSpaces = trimmed.replace(/\s+/g, '');
+        addVariant(noSpaces);
       }
-      // 否则去除空格
-      const noSpaces = trimmed.replace(/\s+/g, '');
-      return [trimmed, noSpaces];
     }
+  }
+
+  // 2. 智能检测：数字变体
+  const numberVariant = generateNumberVariant(trimmed);
+  if (numberVariant) {
+    addVariant(numberVariant);
+  }
+
+  // 3. 智能检测：中文标点变体（冒号等）
+  const punctuationVariant = generatePunctuationVariant(trimmed);
+  if (punctuationVariant) {
+    addVariant(punctuationVariant);
   }
 
   // 4. 繁体检测：如果是繁体输入，添加简体变体
@@ -347,12 +353,12 @@ export function generateSearchVariants(originalQuery: string): string[] {
   if (detectedType !== ChineseType.SIMPLIFIED) {
     const simplified = converter.simplized(trimmed);
     if (simplified !== trimmed) {
-      return [trimmed, simplified];
+      addVariant(simplified);
     }
   }
 
-  // 5. 普通查询：不需要变体，只返回原始查询
-  return [trimmed];
+  // 5. 返回去重后的所有变体（至少包含原始查询）
+  return variants;
 }
 
 /**

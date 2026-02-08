@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AdminConfig } from '@/lib/admin.types';
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getAvailableApiSites, loadConfig } from '@/lib/config';
-import { searchFromApi } from '@/lib/downstream';
+import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
 
 export const runtime = 'nodejs';
 
@@ -71,7 +71,15 @@ async function generateSuggestions(
   if (apiSites.length > 0) {
     // 取第一个可用的数据源进行搜索
     const firstSite = apiSites[0];
-    const results = await searchFromApi(firstSite, query, username);
+    const config = await loadConfig();
+    const searchVariants = generateSearchVariants(query);
+    const maxPage: number = config.SiteConfig.SearchDownstreamMaxPage;
+    const results = await searchFromApi(
+      firstSite,
+      searchVariants,
+      maxPage,
+      username,
+    );
     realKeywords = Array.from(
       new Set(
         results

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { loadConfig } from '@/lib/config';
-import { searchFromApi } from '@/lib/downstream';
+import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
 import { rankSearchResults } from '@/lib/search-ranking';
 import { yellowWords } from '@/lib/yellow';
 
@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
       `[TVBox Search Proxy] source=${sourceKey}, query="${query}", filter=${filterParam}, strict=${strictMode}`,
     );
 
+    const searchVariants = generateSearchVariants(query);
+    const maxPage: number = config.SiteConfig.SearchDownstreamMaxPage;
     // 从上游API搜索
     let results = await searchFromApi(
       {
@@ -89,7 +91,8 @@ export async function GET(request: NextRequest) {
         api: targetSource.api,
         detail: targetSource.detail,
       },
-      query,
+      searchVariants,
+      maxPage,
     );
 
     console.log(

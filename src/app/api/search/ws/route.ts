@@ -3,8 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getAvailableApiSites } from '@/lib/config';
-import { searchFromApi } from '@/lib/downstream';
+import { getAvailableApiSites, loadConfig } from '@/lib/config';
+import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
 
 export const runtime = 'nodejs';
 
@@ -71,16 +71,19 @@ export async function GET(request: NextRequest) {
       let completedSources = 0;
       const allResults: any[] = [];
 
+      const config = await loadConfig();
+      const searchVariants = generateSearchVariants(query);
+      const maxPage: number = config.SiteConfig.SearchDownstreamMaxPage;
       // 为每个源创建搜索 Promise
       const searchPromises = apiSites.map(async (site) => {
         try {
           // 添加超时控制
           const searchPromise = Promise.race([
-            searchFromApi(site, query, authInfo.username),
+            searchFromApi(site, searchVariants, maxPage, authInfo.username),
             new Promise((_, reject) =>
               setTimeout(
                 () => reject(new Error(`${site.name} timeout`)),
-                20000,
+                15000,
               ),
             ),
           ]);

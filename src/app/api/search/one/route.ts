@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getAvailableApiSites, getCacheTime } from '@/lib/config';
+import { getAvailableApiSites, getCacheTime, loadConfig } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
 
 export const runtime = 'nodejs';
@@ -45,7 +45,14 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
-    let results = await searchFromApi(targetSite, query, authInfo.username);
+    const config = await loadConfig();
+    const maxPage: number = config.SiteConfig.SearchDownstreamMaxPage;
+    let results = await searchFromApi(
+      targetSite,
+      [query],
+      maxPage,
+      authInfo.username,
+    );
     results = results.filter((r) => r.title === query);
     const cacheTime = await getCacheTime();
     if (results.length === 0) {

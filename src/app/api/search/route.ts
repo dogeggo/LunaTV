@@ -3,8 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getAvailableApiSites, getCacheTime } from '@/lib/config';
-import { searchFromApi } from '@/lib/downstream';
+import { getAvailableApiSites, getCacheTime, loadConfig } from '@/lib/config';
+import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
 import { SearchResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -33,11 +33,13 @@ export async function GET(request: NextRequest) {
     );
   }
   const apiSites = await getAvailableApiSites(authInfo.username);
-
+  const config = await loadConfig();
+  const searchVariants = generateSearchVariants(query);
+  const maxPage: number = config.SiteConfig.SearchDownstreamMaxPage;
   // 添加超时控制和错误处理，避免慢接口拖累整体响应
   const searchPromises = apiSites.map((site) =>
     Promise.race([
-      searchFromApi(site, query, authInfo.username),
+      searchFromApi(site, searchVariants, maxPage, authInfo.username),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(`${site.name} timeout`)), 15000),
       ),
@@ -51,11 +53,13 @@ export async function GET(request: NextRequest) {
     const results = await Promise.all(searchPromises);
     let flattenedResults: SearchResult[] = results.flat();
     if (flattenedResults.length === 0) {
-      // no cache if empty
+      console.log(
+        `视频搜索完成. username = ${authInfo.username}, length = ${flattenedResults.length}, query = ${query}, searchVariants = ${searchVariants}`,
+      );
       return NextResponse.json({ results: [] }, { status: 200 });
     }
     console.log(
-      `搜索视频完成. username = ${authInfo.username}, length = ${flattenedResults.length}, query = ${query}`,
+      `视频搜索完成. username = ${authInfo.username}, length = ${flattenedResults.length}, query = ${query}, searchVariants = ${searchVariants}`,
     );
     const cacheTime = await getCacheTime();
     return NextResponse.json(

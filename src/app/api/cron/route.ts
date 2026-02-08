@@ -2,9 +2,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { loadConfig, refineConfig } from '@/lib/config';
+import { getAvailableApiSites, loadConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
-import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
+import {
+  generateSearchVariants,
+  getDetailFromApi,
+  searchFromApi,
+} from '@/lib/downstream';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
 
@@ -438,126 +442,57 @@ async function cleanupInactiveUsers() {
       await db.saveAdminConfig(config);
       console.log(`✨ 清理完成，共删除 ${deletedCount} 个非活跃用户`);
     }
-    // 优化活跃用户的统计显示（等级系统）
-    await optimizeActiveUserLevels();
   } catch (err) {
     console.error('🚫 清理非活跃用户任务失败:', err);
   }
 }
 
-// 用户等级定义
-const USER_LEVELS = [
-  {
-    level: 1,
-    name: '新星观众',
-    icon: '🌟',
-    minLogins: 1,
-    maxLogins: 9,
-    description: '刚刚开启观影之旅',
-  },
-  {
-    level: 2,
-    name: '常客影迷',
-    icon: '🎬',
-    minLogins: 10,
-    maxLogins: 49,
-    description: '热爱电影的观众',
-  },
-  {
-    level: 3,
-    name: '资深观众',
-    icon: '📺',
-    minLogins: 50,
-    maxLogins: 199,
-    description: '对剧集有独特品味',
-  },
-  {
-    level: 4,
-    name: '影院达人',
-    icon: '🎭',
-    minLogins: 200,
-    maxLogins: 499,
-    description: '深度电影爱好者',
-  },
-  {
-    level: 5,
-    name: '观影专家',
-    icon: '🏆',
-    minLogins: 500,
-    maxLogins: 999,
-    description: '拥有丰富观影经验',
-  },
-  {
-    level: 6,
-    name: '传奇影神',
-    icon: '👑',
-    minLogins: 1000,
-    maxLogins: 2999,
-    description: '影视界的传奇人物',
-  },
-  {
-    level: 7,
-    name: '殿堂影帝',
-    icon: '💎',
-    minLogins: 3000,
-    maxLogins: 9999,
-    description: '影视殿堂的至尊',
-  },
-  {
-    level: 8,
-    name: '永恒之光',
-    icon: '✨',
-    minLogins: 10000,
-    maxLogins: Infinity,
-    description: '永恒闪耀的观影之光',
-  },
-];
-
-function calculateUserLevel(loginCount: number) {
-  for (const level of USER_LEVELS) {
-    if (loginCount >= level.minLogins && loginCount <= level.maxLogins) {
-      return level;
-    }
-  }
-  return USER_LEVELS[USER_LEVELS.length - 1];
+interface FetchVideoDetailOptions {
+  source: string;
+  id: string;
+  fallbackTitle?: string;
 }
 
-async function optimizeActiveUserLevels() {
-  try {
-    const config = await loadConfig();
-
-    const userNames = config.UserConfig.Users.map((u) => u.username);
-    let optimizedCount = 0;
-
-    for (const userName of userNames) {
-      try {
-        // 检查用户是否存在
-        const userExists = await db.checkUserExist(userName);
-        if (!userExists) continue;
-
-        const userStats = await db.getUserPlayStat(userName);
-        if (!userStats || !userStats.loginCount) continue;
-
-        // 计算用户等级（所有用户都有等级）
-        const userLevel = calculateUserLevel(userStats.loginCount);
-
-        // 为所有用户记录等级信息
-        if (userStats.loginCount > 0) {
-          // 注意：这里我们只计算等级信息用于日志显示，不保存到数据库
-          // 等级信息会在前端动态计算，确保数据一致性
-          optimizedCount++;
-
-          console.log(
-            `🎯 用户等级: ${userName} -> ${userLevel.icon} ${userLevel.name} (登录${userStats.loginCount}次)`,
-          );
-        }
-      } catch (err) {
-        console.error(`❌ 优化用户等级失败 (${userName}):`, err);
-      }
-    }
-
-    console.log(`✅ 等级优化完成，共优化 ${optimizedCount} 个用户`);
-  } catch (err) {
-    console.error('🚫 等级优化任务失败:', err);
+/**
+ * 根据 source 与 id 获取视频详情。
+ * 1. 若传入 fallbackTitle，则先调用 /api/search 搜索精确匹配。
+ * 2. 若搜索未命中或未提供 fallbackTitle，则直接调用 /api/detail。
+ */
+export async function fetchVideoDetail({
+  source,
+  id,
+  fallbackTitle = '',
+}: FetchVideoDetailOptions): Promise<SearchResult> {
+  // 优先通过搜索接口查找精确匹配
+  const apiSites = await getAvailableApiSites();
+  const apiSite = apiSites.find((site) => site.key === source);
+  if (!apiSite) {
+    throw new Error('无效的API来源');
   }
+  if (fallbackTitle) {
+    try {
+      const config = await loadConfig();
+      const searchVariants = generateSearchVariants(fallbackTitle.trim());
+      const maxPage: number = config.SiteConfig.SearchDownstreamMaxPage;
+      const searchData = await searchFromApi(apiSite, searchVariants, maxPage);
+      const exactMatch = searchData.find(
+        (item: SearchResult) =>
+          item.source.toString() === source.toString() &&
+          item.id.toString() === id.toString(),
+      );
+      if (exactMatch) {
+        return exactMatch;
+      }
+    } catch (_error) {
+      // do nothing
+    }
+  }
+
+  // 调用 /api/detail 接口
+  const detail = await getDetailFromApi(apiSite, id);
+  if (!detail) {
+    throw new Error('获取视频详情失败');
+  }
+
+  return detail;
 }
