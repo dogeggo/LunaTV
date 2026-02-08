@@ -4478,10 +4478,9 @@ function PlayPageClient() {
               z-index: 2147483647 !important; /* 使用最大z-index确保在全屏模式下也能显示在最顶层 */
               /* 确保面板可以接收点击事件 */
               pointer-events: auto !important;
-              /* 添加一些基础样式确保可见性 */
-              background: rgba(0, 0, 0, 0.8);
-              border-radius: 6px;
-              backdrop-filter: blur(10px);
+              /* 避免与插件内层背景叠加导致双层黑底 */
+              background: transparent !important;
+              backdrop-filter: none !important;
             }
             
             /* 全屏模式下的特殊优化 */
