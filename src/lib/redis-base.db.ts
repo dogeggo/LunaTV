@@ -759,34 +759,7 @@ export abstract class BaseRedisStorage implements IStorage {
       const cacheKey = this.cacheKey(key);
       const val = await this.withRetry(() => this.client.get(cacheKey));
 
-      // 如果 key 不存在，检查 TTL（调试用）
-      if (!val && process.env.NODE_ENV === 'development') {
-        const ttl = await this.withRetry(() => this.client.ttl(cacheKey));
-        if (ttl === -2) {
-          console.log(
-            `${this.config.clientName} getCache: Key ${key} does not exist (TTL: -2)`,
-          );
-        } else if (ttl === -1) {
-          console.warn(
-            `${this.config.clientName} getCache: Key ${key} exists but has no expiration (TTL: -1)`,
-          );
-        } else if (ttl > 0) {
-          console.warn(
-            `${this.config.clientName} getCache: Key ${key} exists with TTL ${ttl}s but returned null value`,
-          );
-        }
-        return null;
-      }
-
       if (!val) return null;
-
-      // 调试：显示剩余 TTL
-      if (process.env.NODE_ENV === 'development') {
-        const ttl = await this.withRetry(() => this.client.ttl(cacheKey));
-        console.log(
-          `${this.config.clientName} getCache: key=${key}, remaining TTL=${ttl}s`,
-        );
-      }
 
       // 智能处理返回值：兼容不同Redis客户端的行为
       if (typeof val === 'string') {
@@ -850,29 +823,8 @@ export abstract class BaseRedisStorage implements IStorage {
             `${this.config.clientName} TTL rounded from ${expireSeconds} to ${ttl} seconds`,
           );
         }
-
-        console.log(
-          `${this.config.clientName} setCache with TTL: key=${key}, ttl=${ttl}s`,
-        );
         await this.withRetry(() => this.client.setEx(cacheKey, ttl, value));
-
-        // 验证是否成功设置（可选，仅在调试模式下）
-        if (process.env.NODE_ENV === 'development') {
-          const setTtl = await this.withRetry(() => this.client.ttl(cacheKey));
-          console.log(
-            `${this.config.clientName} Verified TTL for ${key}: ${setTtl}s (expected: ${ttl}s)`,
-          );
-
-          if (setTtl < 0) {
-            console.warn(
-              `${this.config.clientName} WARNING: TTL not set correctly for ${key}. Got: ${setTtl}`,
-            );
-          }
-        }
       } else {
-        console.log(
-          `${this.config.clientName} setCache without TTL: key=${key}`,
-        );
         await this.withRetry(() => this.client.set(cacheKey, value));
       }
     } catch (error) {
@@ -900,19 +852,6 @@ export abstract class BaseRedisStorage implements IStorage {
         `Cleared ${keys.length} cache entries with pattern: ${pattern}`,
       );
     }
-  }
-
-  // ---------- 播放统计相关 ----------
-  private playStatsKey() {
-    return 'global:play_stats';
-  }
-
-  private userStatsKey(userName: string) {
-    return `u:${userName}:stats`;
-  }
-
-  private contentStatsKey(source: string, id: string) {
-    return `content:stats:${source}+${id}`;
   }
 
   // 获取全站播放统计
