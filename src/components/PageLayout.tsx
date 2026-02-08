@@ -37,7 +37,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
         </div>
 
         {/* Main Content - 移动端44px顶部 + 底部导航栏空间,桌面端64px */}
-        <main className='w-full min-h-screen pt-0 md:pt-10 pb-32 md:pb-0'>
+        <main className='w-full min-h-screen pt-0 md:pt-10 pb-24 md:pb-0'>
           <div className='w-full max-w-640 mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20'>
             {children}
           </div>
