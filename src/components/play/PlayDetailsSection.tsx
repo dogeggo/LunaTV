@@ -616,7 +616,7 @@ const PlayDetailsSection = ({
       {/* 封面展示 */}
       <div className='hidden md:block md:col-span-1 md:order-first'>
         <div className='pl-0 py-4 pr-6'>
-          <div className='group relative bg-gray-300 dark:bg-gray-700 aspect-[2/3] flex items-center justify-center rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]'>
+          <div className='group relative bg-gray-300 dark:bg-gray-700 aspect-2/3 flex items-center justify-center rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]'>
             {videoCover || bangumiDetails?.images?.large ? (
               <>
                 {/* 渐变光泽动画层 */}

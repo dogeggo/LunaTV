@@ -277,7 +277,9 @@ export async function getCache(key: string): Promise<any | null> {
     if (typeof window === 'undefined') {
       const { db } = await import('@/lib/db');
       var cached = await db.getCache(key);
-      if (cached) console.log(`✅ 缓存命中: key = ${key}`);
+      if (!key.startsWith('video-search') && cached) {
+        console.log(`✅ 缓存命中: key = ${key}`);
+      }
       return cached;
     }
 
@@ -287,7 +289,9 @@ export async function getCache(key: string): Promise<any | null> {
       if (localCached) {
         const { data, expire } = JSON.parse(localCached);
         if (Date.now() <= expire) {
-          console.log(`✅ 缓存命中: key = ${key}`);
+          if (!key.startsWith('video-search') && cached) {
+            console.log(`✅ 缓存命中: key = ${key}`);
+          }
           return data;
         }
         localStorage.removeItem(key);
@@ -311,7 +315,9 @@ export async function setCache(
     if (typeof window === 'undefined') {
       const { db } = await import('@/lib/db');
       await db.setCache(key, data, expireSeconds);
-      console.log(`✅ 写入缓存成功: key = ${key}, expire = ${expireSeconds}`);
+      if (!key.startsWith('video-search')) {
+        console.log(`✅ 写入缓存成功: key = ${key}, expire = ${expireSeconds}`);
+      }
       return;
     }
 
@@ -324,7 +330,11 @@ export async function setCache(
           created: Date.now(),
         };
         localStorage.setItem(key, JSON.stringify(cacheData));
-        console.log(`✅ 写入缓存成功: key = ${key}, expire = ${expireSeconds}`);
+        if (!key.startsWith('video-search')) {
+          console.log(
+            `✅ 写入缓存成功: key = ${key}, expire = ${expireSeconds}`,
+          );
+        }
       } catch (_e) {
         // localStorage可能满了，忽略错误
       }

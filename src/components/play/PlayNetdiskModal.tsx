@@ -192,7 +192,7 @@ const PlayNetdiskModal = ({
               aria-label='返回顶部'
             >
               <svg
-                className='w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-y-[-2px] transition-transform'
+                className='w-5 h-5 sm:w-6 sm:h-6 group-hover:-translate-y-0.5 transition-transform'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'

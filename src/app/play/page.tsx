@@ -5480,7 +5480,7 @@ function PlayPageClient() {
   return (
     <>
       <PageLayout activePath='/play'>
-        <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
+        <div className='flex flex-col gap-3 py-4 px-5 lg:px-12 2xl:px-20'>
           <PlayHeader
             title={videoTitle}
             totalEpisodes={totalEpisodes}

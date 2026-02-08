@@ -425,12 +425,6 @@ async function cleanupInactiveUsers() {
             config.UserConfig.Users.splice(userIndex, 1);
           }
           deletedCount++;
-        } else {
-          const reason =
-            lastLoginTime > 0
-              ? `最近有登入活动 (最后登入: ${new Date(lastLoginTime).toISOString()})`
-              : '无登入记录（数据异常，保留用户）';
-          console.log(`✅ 保留用户 ${user.username}: ${reason}`);
         }
       } catch (err) {
         console.error(`❌ 处理用户 ${user.username} 时出错:`, err);
