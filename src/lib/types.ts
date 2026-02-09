@@ -173,9 +173,7 @@ export interface IStorage {
   clearExpiredCache(prefix?: string): Promise<void>;
 
   // 播放统计相关
-  getPlayStats(): Promise<PlayStatsResult>;
   getUserPlayStat(userName: string): Promise<UserPlayStat>;
-  getContentStats(limit?: number): Promise<ContentStat[]>;
   updatePlayStatistics(
     userName: string,
     source: string,
@@ -425,21 +423,6 @@ export interface PlayStatsResult {
     weekly: number; // 周活跃用户数
     monthly: number; // 月活跃用户数
   };
-}
-
-// 内容热度统计数据结构
-export interface ContentStat {
-  source: string;
-  id: string;
-  title: string;
-  source_name: string;
-  cover: string;
-  year: string;
-  playCount: number; // 播放次数
-  totalWatchTime: number; // 总观看时长
-  averageWatchTime: number; // 平均观看时长
-  lastPlayed: number; // 最后播放时间
-  uniqueUsers: number; // 观看用户数
 }
 
 // 发布日历数据结构

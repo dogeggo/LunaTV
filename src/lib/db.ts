@@ -2,12 +2,10 @@ import { AdminConfig } from './admin.types';
 import { KvrocksStorage } from './kvrocks.db';
 import { RedisStorage } from './redis.db';
 import {
-  ContentStat,
   EpisodeSkipConfig,
   Favorite,
   IStorage,
   PlayRecord,
-  PlayStatsResult,
   UserPlayStat,
 } from './types';
 
@@ -351,42 +349,10 @@ export class DbManager {
     }
   }
 
-  // ---------- 播放统计相关 ----------
-  async getPlayStats(): Promise<PlayStatsResult> {
-    if (typeof (this.storage as any).getPlayStats === 'function') {
-      return (this.storage as any).getPlayStats();
-    }
-
-    // 如果存储不支持统计功能，返回默认值
-    return {
-      totalUsers: 0,
-      totalWatchTime: 0,
-      totalPlays: 0,
-      avgWatchTimePerUser: 0,
-      avgPlaysPerUser: 0,
-      userStats: [],
-      topSources: [],
-      dailyStats: [],
-      // 新增：用户注册统计
-      registrationStats: {
-        todayNewUsers: 0,
-        totalRegisteredUsers: 0,
-        registrationTrend: [],
-      },
-      // 新增：用户活跃度统计
-      activeUsers: {
-        daily: 0,
-        weekly: 0,
-        monthly: 0,
-      },
-    };
-  }
-
   async getUserPlayStat(userName: string): Promise<UserPlayStat> {
     if (typeof (this.storage as any).getUserPlayStat === 'function') {
       return (this.storage as any).getUserPlayStat(userName);
     }
-
     // 如果存储不支持统计功能，返回默认值
     return {
       username: userName,
@@ -397,15 +363,6 @@ export class DbManager {
       avgWatchTime: 0,
       mostWatchedSource: '',
     };
-  }
-
-  async getContentStats(limit = 10): Promise<ContentStat[]> {
-    if (typeof (this.storage as any).getContentStats === 'function') {
-      return (this.storage as any).getContentStats(limit);
-    }
-
-    // 如果存储不支持统计功能，返回空数组
-    return [];
   }
 
   async updatePlayStatistics(
