@@ -105,8 +105,6 @@ async function searchFromCaijiAPI(
         return await processSelectedResult(selectedResult, episode);
       }
     }
-
-    console.log('📭 所有标题变体都未找到匹配内容');
     return [];
   } catch (error) {
     console.error('❌ Caiji API搜索失败:', error);
