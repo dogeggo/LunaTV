@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getAvailableApiSites, getCacheTime, loadConfig } from '@/lib/config';
+import { SEARCH_CACHE_EXPIRE } from '@/lib/cache';
+import { getAvailableApiSites, loadConfig } from '@/lib/config';
 import { searchFromApi } from '@/lib/downstream';
 
 export const runtime = 'nodejs';
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   const resourceId = searchParams.get('resourceId');
 
   if (!query || !resourceId) {
-    const cacheTime = await getCacheTime();
+    const cacheTime = SEARCH_CACHE_EXPIRE;
     return NextResponse.json(
       { result: null, error: '缺少必要参数: q 或 resourceId' },
       {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       authInfo.username,
     );
     results = results.filter((r) => r.title === query);
-    const cacheTime = await getCacheTime();
+    const cacheTime = SEARCH_CACHE_EXPIRE;
     if (results.length === 0) {
       return NextResponse.json(
         {

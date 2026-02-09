@@ -3,7 +3,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getAvailableApiSites, getCacheTime, loadConfig } from '@/lib/config';
+import { SEARCH_CACHE_EXPIRE } from '@/lib/cache';
+import { getAvailableApiSites, loadConfig } from '@/lib/config';
 import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
 import { SearchResult } from '@/lib/types';
 
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get('q');
 
   if (!query) {
-    const cacheTime = await getCacheTime();
+    const cacheTime = SEARCH_CACHE_EXPIRE;
     return NextResponse.json(
       { results: [] },
       {
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
     console.log(
       `视频搜索完成. username = ${authInfo.username}, length = ${flattenedResults.length}, query = ${query}, searchVariants = ${searchVariants}`,
     );
-    const cacheTime = await getCacheTime();
+    const cacheTime = SEARCH_CACHE_EXPIRE;
     return NextResponse.json(
       { results: flattenedResults },
       {

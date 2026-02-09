@@ -217,7 +217,10 @@ async function processSelectedResult(
 
 // 从XML API获取弹幕数据（支持多个备用URL）
 async function fetchDanmuFromXMLAPI(videoUrl: string): Promise<DanmuItem[]> {
-  const xmlApiUrls = ['https://fc.lyz05.cn', 'https://danmu.smone.us'];
+  const xmlApiUrls = [
+    'https://danmaku.dogegg.online',
+    'https://danmu.smone.us',
+  ];
 
   // 尝试每个API URL
   for (let i = 0; i < xmlApiUrls.length; i++) {
@@ -580,11 +583,17 @@ export async function GET(request: NextRequest) {
   const year = searchParams.get('year');
   const episode = searchParams.get('episode'); // 新增集数参数
 
-  console.log('=== 弹幕API请求参数 ===');
-  console.log('豆瓣ID:', doubanId);
-  console.log('标题:', title);
-  console.log('年份:', year);
-  console.log('集数:', episode);
+  console.log(
+    '弹幕API请求参数',
+    '豆瓣ID:',
+    doubanId,
+    '标题:',
+    title,
+    '年份:',
+    year,
+    '集数:',
+    episode,
+  );
 
   if (!doubanId && !title) {
     return NextResponse.json(
@@ -608,7 +617,6 @@ export async function GET(request: NextRequest) {
 
     // 优先从豆瓣页面提取链接
     if (doubanId) {
-      console.log('🔍 优先从豆瓣页面提取链接...');
       platformUrls = await getExtractPlatformUrls(doubanId, episode);
       console.log('📝 豆瓣提取结果:', platformUrls);
     }

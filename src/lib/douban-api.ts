@@ -702,8 +702,6 @@ export async function getExtractPlatformUrls(
       }
       html = await response.text();
     }
-
-    console.log(`📄 豆瓣页面HTML长度: ${html.length}`);
     const urls: PlatformUrl[] = [];
 
     // 提取豆瓣跳转链接中的各种视频平台URL

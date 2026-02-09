@@ -28,7 +28,6 @@ interface ApiSearchItem {
  */
 async function searchWithCache(
   apiSite: ApiSite,
-  query: string,
   page: number,
   url: string,
   timeoutMs = 8000,
@@ -156,13 +155,7 @@ export async function searchFromApi(
         API_CONFIG.search.pagePath
           .replace('query', encodedQuery)
           .replace('page', '1');
-      const firstPageResult = await searchWithCache(
-        apiSite,
-        query,
-        1,
-        page1Url,
-        8000,
-      );
+      const firstPageResult = await searchWithCache(apiSite, 1, page1Url, 8000);
       if (firstPageResult.results.length > 0) {
         searchResults.push(...firstPageResult.results);
       }
@@ -175,13 +168,7 @@ export async function searchFromApi(
             .replace('query', encodedQuery)
             .replace('page', page.toString());
         const pagePromise = (async () => {
-          const pageResult = await searchWithCache(
-            apiSite,
-            query,
-            page,
-            apiUrl,
-            8000,
-          );
+          const pageResult = await searchWithCache(apiSite, page, apiUrl, 8000);
           return pageResult.results;
         })();
         additionalPagePromises.push(pagePromise);
@@ -332,31 +319,22 @@ export function generateSearchVariants(originalQuery: string): string[] {
 
   // 1. 智能检测：空格变体（多词搜索）
   if (trimmed.includes(' ')) {
-    const keywords = trimmed.split(/\s+/);
-    if (keywords.length >= 2) {
-      const lastKeyword = keywords[keywords.length - 1];
-      // 如果最后一个词是季/集相关，组合主关键词
-      if (/第|季|集|部|篇|章/.test(lastKeyword)) {
-        const combined = keywords[0] + lastKeyword;
-        addVariant(combined);
-      } else {
-        // 否则去除空格
-        const noSpaces = trimmed.replace(/\s+/g, '');
-        addVariant(noSpaces);
-      }
-    }
+    const noSpaces = trimmed.replace(/\s+/g, '');
+    addVariant(noSpaces);
   }
 
   // 2. 智能检测：数字变体
   const numberVariant = generateNumberVariant(trimmed);
   if (numberVariant) {
-    addVariant(numberVariant);
+    const noSpaces = numberVariant.replace(/\s+/g, '');
+    addVariant(noSpaces);
   }
 
   // 3. 智能检测：中文标点变体（冒号等）
   const punctuationVariant = generatePunctuationVariant(trimmed);
   if (punctuationVariant) {
-    addVariant(punctuationVariant);
+    const noSpaces = punctuationVariant.replace(/\s+/g, '');
+    addVariant(noSpaces);
   }
 
   // 4. 繁体检测：如果是繁体输入，添加简体变体
@@ -364,7 +342,8 @@ export function generateSearchVariants(originalQuery: string): string[] {
   if (detectedType !== ChineseType.SIMPLIFIED) {
     const simplified = converter.simplized(trimmed);
     if (simplified !== trimmed) {
-      addVariant(simplified);
+      const noSpaces = simplified.replace(/\s+/g, '');
+      addVariant(noSpaces);
     }
   }
 
