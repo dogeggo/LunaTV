@@ -978,14 +978,15 @@ export async function savePlayRecord(
 export async function deletePlayRecord(
   source: string,
   id: string,
-): Promise<void> {
+): Promise<PlayRecord> {
   const key = generateStorageKey(source, id);
-
+  let record: PlayRecord;
   // 数据库存储模式：乐观更新策略
   if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
     const updatedRecords = { ...cachedRecords };
+    record = updatedRecords[key];
     delete updatedRecords[key];
     cacheManager.cachePlayRecords(updatedRecords);
 
@@ -1006,29 +1007,8 @@ export async function deletePlayRecord(
       triggerGlobalError('删除播放记录失败');
       throw err;
     }
-    return;
   }
-
-  // localstorage 模式
-  if (typeof window === 'undefined') {
-    console.warn('无法在服务端删除播放记录到 localStorage');
-    return;
-  }
-
-  try {
-    const allRecords = await getAllPlayRecords();
-    delete allRecords[key];
-    localStorage.setItem(PLAY_RECORDS_KEY, JSON.stringify(allRecords));
-    window.dispatchEvent(
-      new CustomEvent('playRecordsUpdated', {
-        detail: allRecords,
-      }),
-    );
-  } catch (err) {
-    console.error('删除播放记录失败:', err);
-    triggerGlobalError('删除播放记录失败');
-    throw err;
-  }
+  return record;
 }
 
 /* ---------------- 搜索历史相关 API ---------------- */

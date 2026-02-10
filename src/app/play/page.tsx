@@ -24,7 +24,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
-import { SearchResult } from '@/lib/types';
+import { PlayRecord, SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8 } from '@/lib/utils';
 
 import DownloadEpisodeSelector from '@/components/download/DownloadEpisodeSelector';
@@ -745,14 +745,6 @@ function PlayPageClient() {
 
     return true;
   });
-
-  const lastConfirmedPlaybackRef = useRef<{
-    source: string;
-    id: string;
-  } | null>(null);
-  const pendingDeleteRecordRef = useRef<{ source: string; id: string } | null>(
-    null,
-  );
   // 上次使用的音量，默认 0.7
   const lastVolumeRef = useRef<number>(0.7);
   // 上次使用的播放速率，默认 1.0
@@ -2509,7 +2501,6 @@ function PlayPageClient() {
       if (currentEpisodeIndex >= detailData.episodes.length) {
         setCurrentEpisodeIndex((prev) => (prev === 0 ? prev : 0));
       }
-
       // 规范URL参数
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('source', detailData.source);
@@ -2570,21 +2561,6 @@ function PlayPageClient() {
     // 仅在初次挂载时检查播放记录
     const initFromHistory = async () => {
       if (!currentSource || !currentId) return;
-
-      // 🔥 关键修复：优先检查 sessionStorage 中的临时进度（换源时保存的）
-      const tempProgressKey = `temp_progress_${currentSource}_${currentId}_${currentEpisodeIndex}`;
-      const tempProgress = sessionStorage.getItem(tempProgressKey);
-
-      if (tempProgress) {
-        const savedTime = parseFloat(tempProgress);
-        if (savedTime > 1) {
-          console.log(
-            `🎯 检测到 sessionStorage 临时进度，等待播放器可播后恢复: ${savedTime.toFixed(2)}s`,
-          );
-          return; // 优先使用临时进度，不再读取历史记录
-        }
-      }
-
       try {
         const allRecords = await getAllPlayRecords();
         const key = generateStorageKey(currentSource, currentId);
@@ -2592,14 +2568,9 @@ function PlayPageClient() {
 
         if (record) {
           const targetIndex = record.index - 1;
-          const targetTime = record.play_time;
           setCurrentEpisodeIndex((prev) =>
             prev === targetIndex ? prev : targetIndex,
           );
-          if (targetTime > 1) {
-            const tempProgressKey = `temp_progress_${currentSource}_${currentId}_${targetIndex}`;
-            sessionStorage.setItem(tempProgressKey, targetTime.toString());
-          }
         }
       } catch (err) {
         console.error('读取播放记录失败:', err);
@@ -2669,30 +2640,7 @@ function PlayPageClient() {
           console.warn('清空弹幕时出错，但继续换源:', error);
         }
       }
-
-      // 记录当前播放进度（仅在同一集数切换时恢复）
-      const currentPlayTime = artPlayerRef.current?.currentTime || 0;
-      const currentTempKey = `temp_progress_${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-      const currentTempRaw = sessionStorage.getItem(currentTempKey);
-      const currentTemp = currentTempRaw ? parseFloat(currentTempRaw) : 0;
-      const progressToCarry = Math.max(currentPlayTime, currentTemp || 0);
       console.log('换源前当前播放时间:', currentPlayTime);
-
-      // 🔥 先保存当前源进度，避免换源失败时丢失
-      saveCurrentPlayProgress();
-
-      // 🔥 关键修复：将播放进度保存到 sessionStorage，防止组件重新挂载时丢失
-      // 使用临时的 key，在新组件挂载后立即读取并清除
-      if (progressToCarry > 1) {
-        const tempProgressKey = `temp_progress_${newSource}_${newId}_${currentEpisodeIndex}`;
-        const existedRaw = sessionStorage.getItem(tempProgressKey);
-        const existed = existedRaw ? parseFloat(existedRaw) : 0;
-        const nextProgress = Math.max(existed || 0, progressToCarry);
-        sessionStorage.setItem(tempProgressKey, nextProgress.toString());
-        console.log(
-          `💾 已保存临时播放进度到 sessionStorage: ${tempProgressKey} = ${nextProgress.toFixed(2)}s`,
-        );
-      }
 
       const newDetail = availableSources.find(
         (source) => source.source === newSource && source.id === newId,
@@ -2701,16 +2649,6 @@ function PlayPageClient() {
         setError('未找到匹配结果');
         return;
       }
-      const lastConfirmed = lastConfirmedPlaybackRef.current;
-      if (
-        lastConfirmed &&
-        (lastConfirmed.source !== newSource || lastConfirmed.id !== newId)
-      ) {
-        pendingDeleteRecordRef.current = lastConfirmed;
-      } else {
-        pendingDeleteRecordRef.current = null;
-      }
-
       // 🔥 换源时保持当前集数不变（除非新源集数不够）
       let targetIndex = currentEpisodeIndex;
 
@@ -2722,15 +2660,15 @@ function PlayPageClient() {
           console.log(
             `⚠️ 当前集数(${currentEpisodeIndex})超出新源范围(${newDetail.episodes.length}集)，跳转到第${targetIndex + 1}集`,
           );
-          // 🔥 集数变化时，清除保存的临时进度
-          const tempProgressKey = `temp_progress_${newSource}_${newId}_${currentEpisodeIndex}`;
-          sessionStorage.removeItem(tempProgressKey);
         } else {
           // 集数在范围内，保持不变
           console.log(`✅ 换源保持当前集数: 第${targetIndex + 1}集`);
         }
       }
-
+      const record: PlayRecord = await deletePlayRecord(
+        currentSourceRef.current,
+        currentIdRef.current,
+      );
       // 更新URL参数（不刷新页面）
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('source', newSource);
@@ -2746,14 +2684,15 @@ function PlayPageClient() {
       setVideoDoubanId(videoDoubanIdRef.current || newDetail.douban_id || 0);
       setCurrentSource(newSource);
       setCurrentId(newId);
-      setDetail(newDetail);
 
+      await saveCurrentPlayProgress(record);
+
+      setDetail(newDetail);
       // 🔥 只有当集数确实改变时才调用 setCurrentEpisodeIndex
       // 这样可以避免触发不必要的 useEffect 和集数切换逻辑
       setCurrentEpisodeIndex((prev) =>
         prev === targetIndex ? prev : targetIndex,
       );
-
       // 🚀 换源完成后，优化弹幕加载流程
       setTimeout(async () => {
         isSourceChangingRef.current = false; // 重置换源标识
@@ -2880,39 +2819,6 @@ function PlayPageClient() {
   // 处理集数切换
   const handleEpisodeChange = async (episodeNumber: number) => {
     if (episodeNumber >= 0 && episodeNumber < totalEpisodes) {
-      // 在更换集数前保存当前播放进度
-      if (artPlayerRef.current && artPlayerRef.current.paused) {
-        saveCurrentPlayProgress();
-      }
-
-      // 🔥 优化：检查目标集数是否有历史播放记录
-      try {
-        const allRecords = await getAllPlayRecords();
-        const key = generateStorageKey(
-          currentSourceRef.current,
-          currentIdRef.current,
-        );
-        const record = allRecords[key];
-        const tempProgressKey = `temp_progress_${currentSourceRef.current}_${currentIdRef.current}_${episodeNumber}`;
-
-        // 如果历史记录的集数与目标集数匹配，且有播放进度
-        if (
-          record &&
-          record.index - 1 === episodeNumber &&
-          record.play_time > 0
-        ) {
-          sessionStorage.setItem(tempProgressKey, record.play_time.toString());
-          console.log(
-            `🎯 切换到第${episodeNumber + 1}集，恢复历史进度: ${record.play_time.toFixed(2)}s`,
-          );
-        } else {
-          sessionStorage.removeItem(tempProgressKey);
-          console.log(`🔄 切换到第${episodeNumber + 1}集，从头播放`);
-        }
-      } catch (err) {
-        console.warn('读取历史记录失败:', err);
-      }
-
       // 🔥 优化：同步更新URL参数，保持URL与实际播放状态一致
       try {
         const newUrl = new URL(window.location.href);
@@ -2931,9 +2837,6 @@ function PlayPageClient() {
     const d = detailRef.current;
     const idx = currentEpisodeIndexRef.current;
     if (d && d.episodes && idx > 0) {
-      if (artPlayerRef.current && !artPlayerRef.current.paused) {
-        saveCurrentPlayProgress();
-      }
       setCurrentEpisodeIndex((prev) => (prev === idx - 1 ? prev : idx - 1));
     }
   };
@@ -2942,13 +2845,6 @@ function PlayPageClient() {
     const d = detailRef.current;
     const idx = currentEpisodeIndexRef.current;
     if (d && d.episodes && idx < d.episodes.length - 1) {
-      // 🔥 关键修复：通过 SkipController 自动跳下一集时，不保存播放进度
-      // 因为此时的播放位置是片尾，用户并没有真正看到这个位置
-      // 如果保存了片尾的进度，下次"继续观看"会从片尾开始，导致进度错误
-      // if (artPlayerRef.current && !artPlayerRef.current.paused) {
-      //   saveCurrentPlayProgress();
-      // }
-
       // 🔑 标记通过 SkipController 触发了下一集
       isSkipControllerTriggeredRef.current = true;
       setCurrentEpisodeIndex((prev) => (prev === idx + 1 ? prev : idx + 1));
@@ -3049,7 +2945,7 @@ function PlayPageClient() {
   // 播放记录相关
   // ---------------------------------------------------------------------------
   // 保存播放进度
-  const saveCurrentPlayProgress = async () => {
+  const saveCurrentPlayProgress = async (record?: PlayRecord) => {
     if (
       !artPlayerRef.current ||
       !currentSourceRef.current ||
@@ -3061,21 +2957,11 @@ function PlayPageClient() {
     }
 
     const player = artPlayerRef.current;
-    const currentTime = player.currentTime || 0;
-    const tempProgressKey = `temp_progress_${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-    const tempProgressRaw =
-      typeof window !== 'undefined'
-        ? sessionStorage.getItem(tempProgressKey)
-        : null;
-    const tempProgress = tempProgressRaw ? parseFloat(tempProgressRaw) : 0;
-    const effectiveTime = Math.max(currentTime, tempProgress || 0);
-    const duration = player.duration || 0;
-
-    // 如果播放时间太短（少于5秒）或者视频时长无效，不保存
-    if (effectiveTime < 1 || !duration) {
+    const currentTime = record?.play_time || player.currentTime || 0;
+    const duration = record?.total_time || player.duration || 0;
+    if (currentTime < 5 || !duration) {
       return;
     }
-
     try {
       // 获取现有播放记录以保持原始集数
       const existingRecord = await getAllPlayRecords()
@@ -3087,7 +2973,6 @@ function PlayPageClient() {
           return records[key];
         })
         .catch(() => null);
-
       const currentTotalEpisodes = detailRef.current?.episodes.length || 1;
 
       // 尝试从换源列表中获取更准确的 remarks（搜索接口比详情接口更可能有 remarks）
@@ -3113,7 +2998,7 @@ function PlayPageClient() {
         // - 只有当用户看了新集数时才会更新
         // 这样避免了播放器传入错误的 original_episodes（可能是更新后的值）
         original_episodes: existingRecord?.original_episodes, // 只传递已有值，不自动填充
-        play_time: Math.floor(effectiveTime),
+        play_time: Math.floor(currentTime),
         total_time: Math.floor(duration),
         save_time: Date.now(),
         search_title: searchTitle,
@@ -3127,7 +3012,7 @@ function PlayPageClient() {
         title: videoTitleRef.current,
         episode: currentEpisodeIndexRef.current + 1,
         year: detailRef.current?.year,
-        progress: `${Math.floor(effectiveTime)}/${Math.floor(duration)}`,
+        progress: `${Math.floor(currentTime)}/${Math.floor(duration)}`,
       });
     } catch (err) {
       console.error('保存播放进度失败:', err);
@@ -3897,17 +3782,6 @@ function PlayPageClient() {
                 try {
                   localStorage.setItem('enable_blockad', String(newVal));
                   if (artPlayerRef.current) {
-                    const tempProgressKey = `temp_progress_${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-                    const existedRaw = sessionStorage.getItem(tempProgressKey);
-                    const existed = existedRaw ? parseFloat(existedRaw) : 0;
-                    const currentTime = artPlayerRef.current.currentTime || 0;
-                    const nextProgress = Math.max(existed || 0, currentTime);
-                    if (nextProgress > 1) {
-                      sessionStorage.setItem(
-                        tempProgressKey,
-                        nextProgress.toString(),
-                      );
-                    }
                     if (artPlayerRef.current.video.hls) {
                       const hls = artPlayerRef.current.video.hls;
                       hls.stopLoad();
@@ -4971,7 +4845,7 @@ function PlayPageClient() {
           const remainingTime = duration - currentTime;
           const isNearEnd = duration > 0 && remainingTime < 180; // 最后3分钟
 
-          if (!isNearEnd) {
+          if (!isNearEnd && !isSourceChangingRef.current) {
             saveCurrentPlayProgress();
           }
         });
@@ -4993,57 +4867,29 @@ function PlayPageClient() {
         });
 
         // 监听视频可播放事件，这时恢复播放进度更可靠
-        artPlayerRef.current.on('video:canplay', () => {
+        artPlayerRef.current.on('video:canplay', async () => {
           // 🔥 重置 video:ended 处理标志，因为这是新视频
           videoEndedHandledRef.current = false;
-
-          // 🔥 优先从 sessionStorage 恢复切换源时保存的进度
-          const tempProgressKey = `temp_progress_${currentSourceRef.current}_${currentIdRef.current}_${currentEpisodeIndexRef.current}`;
-          const tempProgress = sessionStorage.getItem(tempProgressKey);
-          if (tempProgress) {
-            const savedTime = parseFloat(tempProgress);
-            if (savedTime > 1) {
-              try {
-                const duration = artPlayerRef.current.duration || 0;
-                const current = artPlayerRef.current.currentTime || 0;
-                let target = savedTime > current ? savedTime : current;
-                if (duration && target >= duration - 2) {
-                  target = Math.max(0, duration - 5);
-                }
-                if (target > current) {
-                  artPlayerRef.current.currentTime = target;
-                }
-                console.log('成功恢复播放进度到:', target);
-              } catch (err) {
-                console.warn('恢复播放进度失败:', err);
-              }
+          try {
+            const allRecords = await getAllPlayRecords();
+            const key = generateStorageKey(currentSource, currentId);
+            const record = allRecords[key];
+            const play_time =
+              record && record.index - 1 == currentEpisodeIndexRef.current
+                ? record.play_time
+                : 0;
+            const duration = artPlayerRef.current.duration || 0;
+            const current = artPlayerRef.current.currentTime || 0;
+            let target = play_time > current ? play_time : current;
+            if (duration && target >= duration - 2) {
+              target = Math.max(0, duration - 5);
             }
-            sessionStorage.removeItem(tempProgressKey);
-          }
-
-          // 仅在需要时使用 temp_progress 恢复进度
-          // 仅使用 temp_progress 恢复进度
-
-          if (currentSourceRef.current && currentIdRef.current) {
-            lastConfirmedPlaybackRef.current = {
-              source: currentSourceRef.current,
-              id: currentIdRef.current,
-            };
-            const pendingDelete = pendingDeleteRecordRef.current;
-            if (
-              pendingDelete &&
-              (pendingDelete.source !== currentSourceRef.current ||
-                pendingDelete.id !== currentIdRef.current)
-            ) {
-              pendingDeleteRecordRef.current = null;
-              deletePlayRecord(pendingDelete.source, pendingDelete.id)
-                .then(() => {
-                  console.log('已清除前一个播放记录');
-                })
-                .catch((err) => {
-                  console.error('清除播放记录失败:', err);
-                });
+            if (target > current) {
+              artPlayerRef.current.currentTime = target;
             }
+            console.log('成功恢复播放进度到:', target);
+          } catch (err) {
+            console.warn('恢复播放进度失败:', err);
           }
 
           // iOS设备自动播放回退机制：如果自动播放失败，尝试用户交互触发播放
@@ -5242,17 +5088,12 @@ function PlayPageClient() {
         artPlayerRef.current.on('video:timeupdate', () => {
           const currentTime = artPlayerRef.current.currentTime || 0;
           const duration = artPlayerRef.current.duration || 0;
-          const now = performance.now(); // 使用performance.now()更精确
-
           // 更新 SkipController 所需的时间信息
           setCurrentPlayTime(currentTime);
           setVideoDuration(duration);
-
           // 保存播放进度逻辑 - 优化保存间隔以减少网络开销
           const saveNow = Date.now();
-
           const interval = 30000;
-
           // 🔥 关键修复：如果当前播放位置接近视频结尾（最后3分钟），不保存进度
           // 这是为了避免自动跳过片尾时保存了片尾位置的进度，导致"继续观看"从错误位置开始
           const remainingTime = duration - currentTime;
@@ -5317,6 +5158,7 @@ function PlayPageClient() {
   // 当组件卸载时清理定时器、Wake Lock 和播放器资源
   useEffect(() => {
     return () => {
+      saveCurrentPlayProgress();
       // 清理定时器
       if (saveIntervalRef.current) {
         clearInterval(saveIntervalRef.current);
