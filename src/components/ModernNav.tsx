@@ -142,7 +142,7 @@ export default function ModernNav() {
     <>
       {/* Desktop Top Navigation */}
       <nav className='hidden md:block fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/60 backdrop-blur-2xl'>
-        <div className='max-w-[2560px] mx-auto px-6 lg:px-12 xl:px-16 2xl:px-20'>
+        <div className='max-w-640 mx-auto px-6 lg:px-12 xl:px-16 2xl:px-20'>
           <div className='flex items-center justify-between h-14 gap-6'>
             {/* Logo */}
             <FastLink href='/' className='shrink-0'>
@@ -198,7 +198,7 @@ export default function ModernNav() {
           </div>
         </div>
         {/* Bottom border line */}
-        <div className='h-px bg-gray-200/60 dark:bg-white/[0.06]' />
+        <div className='h-px bg-gray-200/60 dark:bg-white/6' />
       </nav>
 
       {/* More Menu Modal - Render outside nav to avoid z-index issues */}
@@ -290,7 +290,7 @@ export default function ModernNav() {
                 key={item.label}
                 href={item.href}
                 useTransitionNav
-                className='flex flex-col items-center justify-center min-w-[60px] flex-1 py-2 px-1 transition-all duration-200 active:scale-95'
+                className='flex flex-col items-center justify-center min-w-15 flex-1 py-2 px-1 transition-all duration-200 active:scale-95'
               >
                 <Icon
                   className={`w-6 h-6 mb-1 transition-colors duration-200 ${
@@ -299,7 +299,7 @@ export default function ModernNav() {
                 />
                 <span
                   className={`text-[10px] font-medium transition-colors duration-200 ${
-                    active ? item.color : 'text-gray-600 dark:text-gray-400'
+                    active ? item.color : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {item.label}
@@ -311,10 +311,10 @@ export default function ModernNav() {
           {/* More button */}
           <button
             onClick={() => setShowMoreMenu(true)}
-            className='flex flex-col items-center justify-center min-w-[60px] flex-1 py-2 px-1 transition-all duration-200 active:scale-95'
+            className='flex flex-col items-center justify-center min-w-15 flex-1 py-2 px-1 transition-all duration-200 active:scale-95'
           >
-            <MoreHorizontal className='w-6 h-6 mb-1 text-gray-600 dark:text-gray-400' />
-            <span className='text-[10px] font-medium text-gray-600 dark:text-gray-400'>
+            <MoreHorizontal className='w-6 h-6 mb-1 text-gray-700 dark:text-gray-300' />
+            <span className='text-[10px] font-medium text-gray-700 dark:text-gray-300'>
               更多
             </span>
           </button>

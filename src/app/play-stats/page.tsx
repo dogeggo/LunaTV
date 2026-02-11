@@ -1532,13 +1532,13 @@ const PlayStatsPage: React.FC = () => {
               {/* 即将上映卡片 */}
               {(upcomingInitialized || upcomingLoading) && (
                 <div className='mb-8'>
-                  <div className='bg-linear-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white shadow-lg'>
+                  <div className='bg-linear-to-r to-blue-500 rounded-lg p-6 dark:text-white text-black shadow-lg'>
                     <div className='flex items-center justify-between mb-4'>
                       <div>
                         <h3 className='text-lg font-bold flex items-center gap-2'>
                           📅 即将上映
                         </h3>
-                        <p className='text-purple-100 text-sm mt-1'>
+                        <p className='dark:text-white text-black text-sm mt-1'>
                           {upcomingLoading
                             ? '正在获取最新内容...'
                             : `未来两周将有 ${upcomingReleases.length} 部新内容上线`}
@@ -2235,13 +2235,13 @@ const PlayStatsPage: React.FC = () => {
           {/* 即将上映卡片 */}
           {(upcomingInitialized || upcomingLoading) && (
             <div className='mb-8'>
-              <div className='bg-linear-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white shadow-lg'>
+              <div className='bg-linear-to-r to-blue-500 rounded-lg p-6 dark:text-white text-black shadow-lg'>
                 <div className='flex items-center justify-between mb-4'>
                   <div>
                     <h3 className='text-lg font-bold flex items-center gap-2'>
                       📅 即将上映
                     </h3>
-                    <p className='text-purple-100 text-sm mt-1'>
+                    <p className='dark:text-white text-black text-sm mt-1'>
                       {upcomingLoading
                         ? '正在获取最新内容...'
                         : `未来两周将有 ${upcomingReleases.length} 部新内容上线`}

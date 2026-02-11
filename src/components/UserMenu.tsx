@@ -853,7 +853,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 菜单面板 */}
-      <div className='fixed top-14 right-4 w-56 bg-primary-50/95 dark:bg-gray-900/90 backdrop-blur-xl rounded-xl shadow-xl z-1001 border border-primary-200/50 dark:border-white/10 overflow-hidden select-none'>
+      <div className='fixed top-14 right-4 w-56 bg-primary-50/70 dark:bg-[#1a1a1a]/70 backdrop-blur-xl rounded-xl shadow-xl z-1001 border border-primary-200/50 dark:border-white/10 overflow-hidden select-none'>
         {/* 用户信息区域 */}
         <div className='px-3 py-2.5 border-b border-primary-200/50 dark:border-white/[0.06] bg-primary-50/50 dark:bg-white/[0.03]'>
           <div className='space-y-1'>
@@ -1052,7 +1052,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 设置面板 */}
-      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 flex flex-col border border-primary-200/50 dark:border-white/10'>
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-primary-50/70 dark:bg-[#1a1a1a]/70 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 flex flex-col border border-primary-200/50 dark:border-white/10'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='flex-1 p-6 overflow-y-auto'
@@ -1691,7 +1691,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 修改密码面板 */}
-      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 overflow-hidden border border-primary-200/50 dark:border-white/10'>
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-primary-50/70 dark:bg-[#1a1a1a]/70 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 overflow-hidden border border-primary-200/50 dark:border-white/10'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='h-full p-6'
@@ -1806,7 +1806,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 更新弹窗 */}
-      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 flex flex-col border border-primary-200/50 dark:border-white/10'>
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-primary-50/70 dark:bg-[#1a1a1a]/70 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 flex flex-col border border-primary-200/50 dark:border-white/10'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='flex-1 p-6 overflow-y-auto'
@@ -1941,7 +1941,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 继续观看弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-200/50 dark:border-white/10 z-1001 max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-primary-50/70 dark:bg-[#1a1a1a]/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-200/50 dark:border-white/10 z-1001 max-h-[80vh] overflow-y-auto'
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-6'>
@@ -2039,7 +2039,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 收藏弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-200/50 dark:border-white/10 z-1001 max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-primary-50/70 dark:bg-[#1a1a1a]/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-200/50 dark:border-white/10 z-1001 max-h-[80vh] overflow-y-auto'
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-6'>

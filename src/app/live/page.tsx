@@ -1829,15 +1829,9 @@ function LivePageClient() {
     loadAndInit();
   }, [Hls, videoUrl, currentChannel, loading, directPlaybackEnabled]);
 
-  // 清理播放器资源
+  // 统一的资源清理和生命周期管理
   useEffect(() => {
-    return () => {
-      cleanupPlayer();
-    };
-  }, []);
-
-  // 页面卸载时的额外清理
-  useEffect(() => {
+    // 处理页面关闭/刷新时的清理
     const handleBeforeUnload = () => {
       cleanupPlayer();
     };
@@ -1845,7 +1839,25 @@ function LivePageClient() {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
+      // 1. 移除事件监听
       window.removeEventListener('beforeunload', handleBeforeUnload);
+
+      // 2. 🚀 关键修复：在组件卸载时同步清理 HLS 实例
+      // 必须在 cleanupPlayer 之前同步执行，避免异步导致的网络请求中断问题
+      if (artPlayerRef.current?.video?.hls) {
+        try {
+          const hls = artPlayerRef.current.video.hls;
+          hls.stopLoad();
+          hls.detachMedia();
+          hls.destroy();
+          artPlayerRef.current.video.hls = null;
+          console.log('组件卸载: HLS实例已同步销毁');
+        } catch (e) {
+          console.warn('组件卸载时清理HLS出错:', e);
+        }
+      }
+
+      // 3. 销毁播放器实例
       cleanupPlayer();
     };
   }, []);

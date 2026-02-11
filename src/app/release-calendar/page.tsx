@@ -359,29 +359,6 @@ export default function ReleaseCalendarPage() {
   return (
     <PageLayout activePath='/release-calendar'>
       <div className='min-h-screen relative overflow-hidden p-6'>
-        {/* Aurora Mesh Gradient Background */}
-        <div className='absolute inset-0 -z-10'>
-          {/* Light mode: Aurora mesh gradient */}
-          <div className='absolute inset-0 bg-linear-to-br from-gray-50 via-white to-blue-50 dark:hidden'></div>
-          <div className='absolute top-0 -left-4 w-72 h-72 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob dark:hidden'></div>
-          <div className='absolute top-0 -right-4 w-72 h-72 bg-cyan-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 dark:hidden'></div>
-          <div className='absolute -bottom-8 left-20 w-72 h-72 bg-indigo-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 dark:hidden'></div>
-
-          {/* Dark mode: Deep aurora mesh gradient */}
-          <div className='hidden dark:block absolute inset-0 bg-linear-to-br from-gray-900 via-gray-900 to-slate-900'></div>
-          <div className='hidden dark:block absolute top-0 -left-4 w-72 h-72 bg-blue-900/30 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob'></div>
-          <div className='hidden dark:block absolute top-0 -right-4 w-72 h-72 bg-cyan-900/30 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-2000'></div>
-          <div className='hidden dark:block absolute -bottom-8 left-20 w-72 h-72 bg-indigo-900/30 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000'></div>
-
-          {/* Grain texture overlay */}
-          <div
-            className='absolute inset-0 opacity-[0.015] dark:opacity-[0.025]'
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='4.5' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E\")",
-            }}
-          ></div>
-        </div>
         <div className='max-w-7xl mx-auto relative'>
           {/* 页面标题 */}
           <div className='mb-8'>
