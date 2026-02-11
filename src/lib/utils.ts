@@ -8,7 +8,7 @@ import { twMerge } from 'tailwind-merge';
  * Combines clsx and tailwind-merge for optimal class handling
  *
  * @example
- * cn('px-2 py-1', condition && 'bg-blue-500')
+ * cn('px-2 py-1', condition && 'bg-primary-500')
  * cn('px-2', 'px-4') // => 'px-4' (tailwind-merge handles conflicts)
  */
 export function cn(...inputs: ClassValue[]) {

@@ -1154,7 +1154,7 @@ function SearchPageClient() {
                   }}
                   className={`shrink-0 px-4 sm:px-6 py-3 text-sm sm:text-base font-bold rounded-xl transition-all duration-300 whitespace-nowrap min-w-[110px] sm:min-w-0 ${
                     searchType === 'netdisk'
-                      ? 'bg-linear-to-br from-blue-400 via-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50 scale-105 ring-2 ring-blue-400/60 dark:ring-blue-500/80'
+                      ? 'bg-linear-to-br from-primary-400 via-primary-500 to-indigo-600 text-white shadow-lg shadow-primary-500/50 scale-105 ring-2 ring-primary-400/60 dark:ring-primary-500/80'
                       : 'bg-gray-200/60 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 border-2 border-gray-300/50 dark:border-gray-600/50 shadow-md hover:bg-gray-300/80 dark:hover:bg-gray-600/90 hover:scale-105 hover:shadow-lg active:scale-100'
                   }`}
                 >
@@ -1326,7 +1326,7 @@ function SearchPageClient() {
                           }}
                           className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
                             netdiskResourceType === 'netdisk'
-                              ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                              ? 'bg-primary-500 text-white border-primary-500 shadow-md'
                               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
                           }`}
                         >
@@ -1381,7 +1381,7 @@ function SearchPageClient() {
                       TMDB演员搜索结果
                       {tmdbActorLoading && (
                         <span className='ml-2 inline-block align-middle'>
-                          <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin'></span>
+                          <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin'></span>
                         </span>
                       )}
                     </h2>
@@ -1412,7 +1412,7 @@ function SearchPageClient() {
                             }}
                             className={`px-3 py-1 text-sm rounded-full border transition-colors ${
                               tmdbActorType === type.key
-                                ? 'bg-blue-500 text-white border-blue-500'
+                                ? 'bg-primary-500 text-white border-primary-500'
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
                             }`}
                             disabled={tmdbActorLoading}
@@ -1547,8 +1547,8 @@ function SearchPageClient() {
                   {youtubeMode === 'direct' ? (
                     /* 直接播放模式 */
                     <div className='space-y-4'>
-                      <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/20 dark:border-blue-800'>
-                        <div className='flex items-center text-blue-800 dark:text-blue-200 mb-2'>
+                      <div className='bg-primary-50 border border-primary-200 rounded-lg p-4 dark:bg-primary-900/20 dark:border-primary-800'>
+                        <div className='flex items-center text-primary-800 dark:text-primary-200 mb-2'>
                           <svg
                             className='w-5 h-5 mr-2'
                             fill='currentColor'
@@ -1564,7 +1564,7 @@ function SearchPageClient() {
                             💡 直接播放YouTube视频
                           </span>
                         </div>
-                        <p className='text-blue-700 dark:text-blue-300 text-sm'>
+                        <p className='text-primary-700 dark:text-primary-300 text-sm'>
                           粘贴任意YouTube链接，无需搜索即可直接播放视频。支持所有常见的YouTube链接格式。
                         </p>
                       </div>
@@ -1639,7 +1639,7 @@ function SearchPageClient() {
                               }}
                               className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${
                                 youtubeSortOrder === sort.key
-                                  ? 'bg-blue-500 text-white border-blue-500'
+                                  ? 'bg-primary-500 text-white border-primary-500'
                                   : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
                               }`}
                               disabled={youtubeLoading}
@@ -1752,7 +1752,7 @@ function SearchPageClient() {
                     <div className='flex items-center justify-end gap-6'>
                       {/* 虚拟化开关 */}
                       <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
-                        <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                        <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors'>
                           ⚡ 虚拟滑动
                         </span>
                         <div className='relative'>
@@ -1762,8 +1762,8 @@ function SearchPageClient() {
                             checked={useVirtualization}
                             onChange={toggleVirtualization}
                           />
-                          <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-blue-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-blue-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
-                          <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-blue-300 dark:peer-checked:shadow-blue-500/50 peer-checked:scale-105'></div>
+                          <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-primary-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-primary-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
+                          <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-primary-300 dark:peer-checked:shadow-primary-500/50 peer-checked:scale-105'></div>
                           {/* 开关内图标 */}
                           <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
                             <span className='text-[10px] peer-checked:text-white text-gray-500'>
@@ -2001,8 +2001,8 @@ function SearchPageClient() {
                   {youtubeMode === 'direct' ? (
                     /* 直接播放模式 */
                     <div className='space-y-4'>
-                      <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/20 dark:border-blue-800'>
-                        <div className='flex items-center text-blue-800 dark:text-blue-200 mb-2'>
+                      <div className='bg-primary-50 border border-primary-200 rounded-lg p-4 dark:bg-primary-900/20 dark:border-primary-800'>
+                        <div className='flex items-center text-primary-800 dark:text-primary-200 mb-2'>
                           <svg
                             className='w-5 h-5 mr-2'
                             fill='currentColor'
@@ -2018,7 +2018,7 @@ function SearchPageClient() {
                             💡 直接播放YouTube视频
                           </span>
                         </div>
-                        <p className='text-blue-700 dark:text-blue-300 text-sm'>
+                        <p className='text-primary-700 dark:text-primary-300 text-sm'>
                           粘贴任意YouTube链接，无需搜索即可直接播放视频。支持所有常见的YouTube链接格式。
                         </p>
                       </div>

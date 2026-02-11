@@ -67,7 +67,7 @@ const CapsuleSwitch: React.FC<CapsuleSwitchProps> = ({
       {/* 滑动的渐变背景指示器 */}
       {indicatorStyle.width > 0 && (
         <div
-          className='absolute top-1 bottom-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 dark:from-blue-600 dark:via-purple-600 dark:to-pink-600 rounded-full shadow-xl transition-all duration-300 ease-out'
+          className='absolute top-1 bottom-1 bg-linear-to-r from-primary-500 via-purple-500 to-pink-500 dark:from-primary-600 dark:via-purple-600 dark:to-pink-600 rounded-full shadow-xl transition-all duration-300 ease-out'
           style={{
             left: `${indicatorStyle.left}px`,
             width: `${indicatorStyle.width}px`,

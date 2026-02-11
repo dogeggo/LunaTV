@@ -775,16 +775,16 @@ export default function SourceBrowserPage() {
 
         {/* Categories and Items */}
         {activeSource && (
-          <div className='bg-linear-to-br from-white via-blue-50/20 to-white dark:from-gray-800 dark:via-blue-900/5 dark:to-gray-800 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm'>
+          <div className='bg-linear-to-br from-white via-primary-50/20 to-white dark:from-gray-800 dark:via-primary-900/5 dark:to-gray-800 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm'>
             <div className='px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between'>
               <div className='flex items-center gap-2.5 font-semibold text-gray-900 dark:text-white'>
-                <div className='w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center'>
-                  <Tv className='w-4 h-4 text-blue-600 dark:text-blue-400' />
+                <div className='w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center'>
+                  <Tv className='w-4 h-4 text-primary-600 dark:text-primary-400' />
                 </div>
                 <span>{activeSource.name} 分类</span>
               </div>
               {categories.length > 0 && (
-                <span className='text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium'>
+                <span className='text-xs px-2.5 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'>
                   {categories.length} 个分类
                 </span>
               )}
@@ -794,7 +794,7 @@ export default function SourceBrowserPage() {
                 <div className='flex flex-wrap gap-2.5'>
                   {loadingCategories ? (
                     <div className='flex items-center gap-2 text-sm text-gray-500'>
-                      <div className='w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin'></div>
+                      <div className='w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin'></div>
                       加载分类...
                     </div>
                   ) : categoryError ? (
@@ -815,15 +815,15 @@ export default function SourceBrowserPage() {
                         onClick={() => setActiveCategory(c.type_id)}
                         className={`group relative px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
                           activeCategory === c.type_id
-                            ? 'bg-linear-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-lg shadow-blue-500/30'
-                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:border-blue-300 dark:hover:border-blue-700'
+                            ? 'bg-linear-to-r from-primary-500 to-indigo-500 text-white border-transparent shadow-lg shadow-primary-500/30'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-primary-50 hover:to-indigo-50 dark:hover:from-primary-900/20 dark:hover:to-indigo-900/20 hover:border-primary-300 dark:hover:border-primary-700'
                         }`}
                         style={{
                           animation: `fadeInUp 0.3s ease-out ${index * 0.03}s both`,
                         }}
                       >
                         {activeCategory === c.type_id && (
-                          <div className='absolute inset-0 rounded-xl bg-linear-to-r from-blue-400 to-indigo-400 blur-lg opacity-50 -z-10'></div>
+                          <div className='absolute inset-0 rounded-xl bg-linear-to-r from-primary-400 to-indigo-400 blur-lg opacity-50 -z-10'></div>
                         )}
                         {c.type_name}
                       </button>
@@ -835,7 +835,7 @@ export default function SourceBrowserPage() {
               <div>
                 {loadingItems ? (
                   <div className='flex items-center gap-2 text-sm text-gray-500'>
-                    <div className='w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin'></div>
+                    <div className='w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin'></div>
                     加载内容...
                   </div>
                 ) : itemsError ? (
@@ -855,7 +855,7 @@ export default function SourceBrowserPage() {
                       {filteredAndSorted.map((item, index) => (
                         <div
                           key={item.id}
-                          className='group relative rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 bg-white dark:bg-gray-800 cursor-pointer hover:shadow-2xl hover:shadow-blue-500/20 hover:-translate-y-1'
+                          className='group relative rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-primary-400 dark:hover:border-primary-500 transition-all duration-300 bg-white dark:bg-gray-800 cursor-pointer hover:shadow-2xl hover:shadow-primary-500/20 hover:-translate-y-1'
                           onClick={() => openPreview(item)}
                           role='button'
                           tabIndex={0}
@@ -867,7 +867,7 @@ export default function SourceBrowserPage() {
                           }}
                         >
                           {/* 发光效果 */}
-                          <div className='absolute inset-0 bg-linear-to-t from-blue-500/0 via-blue-500/0 to-blue-500/0 group-hover:from-blue-500/10 group-hover:via-blue-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none z-10'></div>
+                          <div className='absolute inset-0 bg-linear-to-t from-primary-500/0 via-primary-500/0 to-primary-500/0 group-hover:from-primary-500/10 group-hover:via-primary-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none z-10'></div>
 
                           <div className='aspect-[2/3] bg-linear-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 overflow-hidden relative'>
                             {item.poster ? (
@@ -910,14 +910,14 @@ export default function SourceBrowserPage() {
 
                             {/* 分类标签 */}
                             {item.type_name && (
-                              <div className='absolute bottom-1 left-1 sm:bottom-2 sm:left-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md sm:rounded-lg bg-blue-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-medium'>
+                              <div className='absolute bottom-1 left-1 sm:bottom-2 sm:left-2 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md sm:rounded-lg bg-primary-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-medium'>
                                 {item.type_name}
                               </div>
                             )}
                           </div>
 
                           <div className='p-1.5 sm:p-3 space-y-1 sm:space-y-1.5 relative z-20'>
-                            <div className='font-medium text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug min-h-[2rem] sm:min-h-[2.5rem]'>
+                            <div className='font-medium text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors leading-snug min-h-[2rem] sm:min-h-[2.5rem]'>
                               {item.title}
                             </div>
                             {item.remarks && (
@@ -960,13 +960,13 @@ export default function SourceBrowserPage() {
             onClick={() => setPreviewOpen(false)}
           >
             <div
-              className='w-full max-w-5xl bg-linear-to-br from-white via-blue-50/20 to-white dark:from-gray-800 dark:via-blue-900/10 dark:to-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] md:max-h-[90vh] border-2 border-gray-200/50 dark:border-gray-700/50 animate-scaleIn'
+              className='w-full max-w-5xl bg-linear-to-br from-white via-primary-50/20 to-white dark:from-gray-800 dark:via-primary-900/10 dark:to-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] md:max-h-[90vh] border-2 border-gray-200/50 dark:border-gray-700/50 animate-scaleIn'
               onClick={(e) => e.stopPropagation()}
             >
               {/* 头部 */}
               <div className='relative flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm'>
                 <div className='flex items-center gap-3 flex-1 min-w-0'>
-                  <div className='w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg'>
+                  <div className='w-10 h-10 rounded-xl bg-linear-to-br from-primary-500 to-indigo-500 flex items-center justify-center shadow-lg'>
                     <Tv className='w-5 h-5 text-white' />
                   </div>
                   <div className='font-bold text-lg sm:text-xl text-gray-900 dark:text-white truncate'>
@@ -997,7 +997,7 @@ export default function SourceBrowserPage() {
               <div className='p-5 sm:p-6 overflow-auto flex-1'>
                 {previewLoading ? (
                   <div className='flex flex-col items-center justify-center py-12'>
-                    <div className='w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4'></div>
+                    <div className='w-12 h-12 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mb-4'></div>
                     <div className='text-sm text-gray-500'>加载详情...</div>
                   </div>
                 ) : previewError ? (
@@ -1079,7 +1079,7 @@ export default function SourceBrowserPage() {
                                 href={`https://movie.douban.com/subject/${d.id}/`}
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline'
+                                className='inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline'
                                 title='打开豆瓣页面'
                               >
                                 <ExternalLink className='w-3.5 h-3.5' /> 豆瓣
@@ -1292,11 +1292,11 @@ export default function SourceBrowserPage() {
                 )}
               </div>
               {/* 底部操作栏 */}
-              <div className='px-5 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-linear-to-r from-white/90 via-blue-50/50 to-white/90 dark:from-gray-800/90 dark:via-blue-900/10 dark:to-gray-800/90 backdrop-blur-md flex items-center justify-between gap-3'>
+              <div className='px-5 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-linear-to-r from-white/90 via-primary-50/50 to-white/90 dark:from-gray-800/90 dark:via-primary-900/10 dark:to-gray-800/90 backdrop-blur-md flex items-center justify-between gap-3'>
                 <div className='text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
                   {previewData?.class && (
                     <span className='inline-flex items-center gap-1.5'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-blue-500'></span>
+                      <span className='w-1.5 h-1.5 rounded-full bg-primary-500'></span>
                       {previewData.class}
                     </span>
                   )}
@@ -1312,9 +1312,9 @@ export default function SourceBrowserPage() {
                     onClick={() => {
                       if (previewItem) goPlay(previewItem);
                     }}
-                    className='group relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105'
+                    className='group relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-xl bg-linear-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white text-sm font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all duration-300 hover:scale-105'
                   >
-                    <div className='absolute inset-0 rounded-xl bg-linear-to-r from-blue-400 to-indigo-400 blur-lg opacity-0 group-hover:opacity-50 transition-opacity -z-10'></div>
+                    <div className='absolute inset-0 rounded-xl bg-linear-to-r from-primary-400 to-indigo-400 blur-lg opacity-0 group-hover:opacity-50 transition-opacity -z-10'></div>
                     <svg
                       className='w-4 h-4'
                       fill='currentColor'

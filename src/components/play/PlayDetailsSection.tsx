@@ -204,9 +204,9 @@ const PlayDetailsSection = ({
                         .map((tag: any, index: number) => (
                           <span
                             key={index}
-                            className='relative group bg-linear-to-r from-blue-500/90 to-indigo-500/90 dark:from-blue-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'
+                            className='relative group bg-linear-to-r from-primary-500/90 to-indigo-500/90 dark:from-primary-600/90 dark:to-indigo-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105'
                           >
-                            <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                            <span className='absolute inset-0 bg-linear-to-r from-primary-400 to-indigo-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
                             <span className='relative'>{tag.name}</span>
                           </span>
                         ))}
@@ -319,9 +319,9 @@ const PlayDetailsSection = ({
                         .map((country: string, index: number) => (
                           <span
                             key={index}
-                            className='relative group bg-linear-to-r from-blue-500/90 to-cyan-500/90 dark:from-blue-600/90 dark:to-cyan-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105'
+                            className='relative group bg-linear-to-r from-primary-500/90 to-cyan-500/90 dark:from-primary-600/90 dark:to-cyan-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105'
                           >
-                            <span className='absolute inset-0 bg-linear-to-r from-blue-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                            <span className='absolute inset-0 bg-linear-to-r from-primary-400 to-cyan-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
                             <span className='relative'>{country}</span>
                           </span>
                         ))}
@@ -397,7 +397,7 @@ const PlayDetailsSection = ({
                       onClick={() => onCelebrityClick(celebrity.name)}
                       className='shrink-0 text-center group cursor-pointer'
                     >
-                      <div className='w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 mb-2 ring-2 ring-transparent group-hover:ring-blue-500 transition-all duration-300 group-hover:scale-110 shadow-md group-hover:shadow-xl'>
+                      <div className='w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 mb-2 ring-2 ring-transparent group-hover:ring-primary-500 transition-all duration-300 group-hover:scale-110 shadow-md group-hover:shadow-xl'>
                         <img
                           src={processImageUrl(celebrity.avatar)}
                           alt={celebrity.name}
@@ -415,7 +415,7 @@ const PlayDetailsSection = ({
                         />
                       </div>
                       <p
-                        className='text-xs font-medium text-gray-700 dark:text-gray-300 w-20 truncate group-hover:text-blue-500 transition-colors'
+                        className='text-xs font-medium text-gray-700 dark:text-gray-300 w-20 truncate group-hover:text-primary-500 transition-colors'
                         title={celebrity.name}
                       >
                         {celebrity.name}
@@ -452,7 +452,7 @@ const PlayDetailsSection = ({
 
               {loadingCelebrityWorks ? (
                 <div className='flex flex-col items-center justify-center py-12'>
-                  <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4'></div>
+                  <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4'></div>
                   <p className='text-gray-600 dark:text-gray-400'>
                     正在加载作品...
                   </p>

@@ -47,7 +47,7 @@ const PlayToolbar = ({
         <span className='relative z-10 hidden sm:inline text-xs font-medium text-gray-600 dark:text-gray-300'>
           {netdiskLoading ? (
             <span className='flex items-center gap-1'>
-              <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin'></span>
+              <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin'></span>
               搜索中
             </span>
           ) : netdiskTotal > 0 ? (
@@ -61,8 +61,8 @@ const PlayToolbar = ({
         {netdiskTotal > 0 && (
           <div className='absolute -top-0.5 -right-0.5 z-20'>
             <div className='relative'>
-              <div className='absolute inset-0 bg-blue-400 rounded-full blur-sm opacity-75 animate-pulse'></div>
-              <div className='relative w-2 h-2 rounded-full bg-linear-to-br from-blue-400 to-blue-500 shadow-lg'></div>
+              <div className='absolute inset-0 bg-primary-400 rounded-full blur-sm opacity-75 animate-pulse'></div>
+              <div className='relative w-2 h-2 rounded-full bg-linear-to-br from-primary-400 to-primary-500 shadow-lg'></div>
             </div>
           </div>
         )}

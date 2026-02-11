@@ -76,7 +76,7 @@ const CommentSection = memo(function CommentSection({
             href={`https://movie.douban.com/subject/${videoDoubanId}/comments?status=P`}
             target='_blank'
             rel='noopener noreferrer'
-            className='inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline'
+            className='inline-flex items-center gap-1 text-sm text-primary-600 dark:text-primary-400 hover:underline'
           >
             查看更多短评
             <svg

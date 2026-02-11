@@ -382,15 +382,15 @@ export const VirtualSearchGrid = React.forwardRef<
         {/* 搜索完成提示 */}
         {containerWidth > 100 && !isLoading && totalItemCount > 0 && (
           <div className='flex justify-center mt-8 py-8'>
-            <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+            <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-primary-50 via-indigo-50 to-purple-50 dark:from-primary-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-primary-200/50 dark:border-primary-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
               {/* 装饰性背景 */}
-              <div className='absolute inset-0 bg-linear-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
+              <div className='absolute inset-0 bg-linear-to-br from-primary-100/20 to-purple-100/20 dark:from-primary-800/10 dark:to-purple-800/10'></div>
 
               {/* 内容 */}
               <div className='relative flex flex-col items-center gap-2'>
                 {/* 完成图标 */}
                 <div className='relative'>
-                  <div className='w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
+                  <div className='w-12 h-12 rounded-full bg-linear-to-br from-primary-500 to-purple-500 flex items-center justify-center shadow-lg'>
                     <svg
                       className='w-7 h-7 text-white'
                       fill='none'
@@ -406,7 +406,7 @@ export const VirtualSearchGrid = React.forwardRef<
                     </svg>
                   </div>
                   {/* 光圈效果 */}
-                  <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+                  <div className='absolute inset-0 rounded-full bg-primary-400/30 animate-ping'></div>
                 </div>
 
                 {/* 文字 */}

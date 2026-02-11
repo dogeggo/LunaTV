@@ -66,7 +66,7 @@ import YouTubeConfig from '@/components/YouTubeConfig';
 const buttonStyles = {
   // 主要操作按钮（蓝色）- 用于配置、设置、确认等
   primary:
-    'px-3 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors',
+    'px-3 py-1.5 text-sm font-medium bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg transition-colors',
   // 成功操作按钮（绿色）- 用于添加、启用、保存等
   success:
     'px-3 py-1.5 text-sm font-medium bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-colors',
@@ -81,7 +81,7 @@ const buttonStyles = {
     'px-3 py-1.5 text-sm font-medium bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white rounded-lg transition-colors',
   // 小尺寸主要按钮
   primarySmall:
-    'px-2 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-md transition-colors',
+    'px-2 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-md transition-colors',
   // 小尺寸成功按钮
   successSmall:
     'px-2 py-1 text-xs font-medium bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-md transition-colors',
@@ -96,7 +96,7 @@ const buttonStyles = {
     'px-2 py-1 text-xs font-medium bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white rounded-md transition-colors',
   // 圆角小按钮（用于表格操作）
   roundedPrimary:
-    'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-200 transition-colors',
+    'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 hover:bg-primary-200 dark:bg-primary-900/40 dark:hover:bg-primary-900/60 dark:text-primary-200 transition-colors',
   roundedSuccess:
     'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 dark:text-green-200 transition-colors',
   roundedDanger:
@@ -182,7 +182,7 @@ const AlertModal = ({
       case 'warning':
         return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
       default:
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800';
     }
   };
 
@@ -978,8 +978,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
   if (!config) {
     return (
       <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 dark:border-primary-700 dark:border-t-primary-400'></div>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             加载配置中...
           </span>
@@ -996,7 +996,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
           <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-3'>
             注册设置
           </h4>
-          <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800'>
+          <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
             <div className='flex items-center justify-between'>
               <div>
                 <div className='font-medium text-gray-900 dark:text-gray-100'>
@@ -1009,7 +1009,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
               <div className='flex items-center'>
                 <button
                   type='button'
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 ${
                     config.UserConfig.AllowRegister
                       ? buttonStyles.toggleOn
                       : buttonStyles.toggleOff
@@ -1082,7 +1082,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 <div className='flex items-center'>
                   <button
                     type='button'
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 ${
                       config.UserConfig.AutoCleanupInactiveUsers
                         ? buttonStyles.toggleOn
                         : buttonStyles.toggleOff
@@ -1198,7 +1198,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       }
                     });
                   }}
-                  className='w-20 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                  className='w-20 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
                 />
                 <span className='text-sm text-gray-600 dark:text-gray-400'>
                   天（最后登入超过此天数的用户将被自动删除）
@@ -1288,7 +1288,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                             }
                           });
                         }}
-                        className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+                        className='h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded'
                       />
                       <span className='ml-3 text-sm font-medium text-gray-900 dark:text-gray-100'>
                         {tag.name}
@@ -1312,8 +1312,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
               {config.SiteConfig.DefaultUserTags &&
                 config.SiteConfig.DefaultUserTags.length > 0 && (
-                  <div className='mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800'>
-                    <div className='text-xs text-blue-700 dark:text-blue-300'>
+                  <div className='mt-3 p-2 bg-primary-50 dark:bg-primary-900/20 rounded-md border border-primary-200 dark:border-primary-800'>
+                    <div className='text-xs text-primary-700 dark:text-primary-300'>
                       💡 已选择 {config.SiteConfig.DefaultUserTags.length}{' '}
                       个默认分组，新用户将获得这些分组的权限并集
                     </div>
@@ -1419,9 +1419,9 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   <td colSpan={3} className='px-6 py-12'>
                     <div className='flex flex-col items-center justify-center'>
                       <div className='relative mb-4'>
-                        <div className='w-16 h-16 bg-linear-to-br from-blue-100 to-indigo-200 dark:from-blue-900/40 dark:to-indigo-900/40 rounded-2xl flex items-center justify-center shadow-lg'>
+                        <div className='w-16 h-16 bg-linear-to-br from-primary-100 to-indigo-200 dark:from-primary-900/40 dark:to-indigo-900/40 rounded-2xl flex items-center justify-center shadow-lg'>
                           <svg
-                            className='w-8 h-8 text-blue-500 dark:text-blue-400'
+                            className='w-8 h-8 text-primary-500 dark:text-primary-400'
                             fill='none'
                             stroke='currentColor'
                             viewBox='0 0 24 24'
@@ -1434,7 +1434,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                             ></path>
                           </svg>
                         </div>
-                        <div className='absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping'></div>
+                        <div className='absolute -top-1 -right-1 w-3 h-3 bg-primary-400 rounded-full animate-ping'></div>
                       </div>
                       <p className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'>
                         暂无用户组
@@ -1462,7 +1462,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
             <select
               value={filterUserGroup}
               onChange={(e) => setFilterUserGroup(e.target.value)}
-              className='px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+              className='px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
             >
               <option value='all'>全部用户</option>
               <option value='none'>无用户组</option>
@@ -1477,7 +1477,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
               placeholder='按用户名搜索'
-              className='w-44 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+              className='w-44 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
             />
           </div>
           <div className='flex items-center space-x-2'>
@@ -1596,8 +1596,8 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
 
         {/* 修改密码表单 */}
         {showChangePasswordForm && (
-          <div className='mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700'>
-            <h5 className='text-sm font-medium text-blue-800 dark:text-blue-300 mb-3'>
+          <div className='mb-4 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-700'>
+            <h5 className='text-sm font-medium text-primary-800 dark:text-primary-300 mb-3'>
               修改用户密码
             </h5>
             <div className='flex flex-col sm:flex-row gap-4 sm:gap-3'>
@@ -1618,7 +1618,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     password: e.target.value,
                   }))
                 }
-                className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
               />
               <button
                 onClick={handleChangePassword}
@@ -1656,7 +1656,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
             <select
               value={userPageSize}
               onChange={(e) => setUserPageSize(Number(e.target.value))}
-              className='px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+              className='px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -1710,7 +1710,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                         type='checkbox'
                         checked={selectAllUsers}
                         onChange={(e) => handleSelectAllUsers(e.target.checked)}
-                        className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+                        className='w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
                       />
                     ) : (
                       <div className='w-4 h-4' />
@@ -1806,7 +1806,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                                   e.target.checked,
                                 )
                               }
-                              className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+                              className='w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
                             />
                           ) : (
                             <div className='w-4 h-4' />
@@ -2071,10 +2071,10 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 </div>
 
                 <div className='mb-6'>
-                  <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+                  <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4'>
                     <div className='flex items-center space-x-2 mb-2'>
                       <svg
-                        className='w-5 h-5 text-blue-600 dark:text-blue-400'
+                        className='w-5 h-5 text-primary-600 dark:text-primary-400'
                         fill='none'
                         stroke='currentColor'
                         viewBox='0 0 24 24'
@@ -2086,11 +2086,11 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
                         />
                       </svg>
-                      <span className='text-sm font-medium text-blue-800 dark:text-blue-300'>
+                      <span className='text-sm font-medium text-primary-800 dark:text-primary-300'>
                         配置说明
                       </span>
                     </div>
-                    <p className='text-sm text-blue-700 dark:text-blue-400 mt-1'>
+                    <p className='text-sm text-primary-700 dark:text-primary-400 mt-1'>
                       提示：全不选为无限制，选中的采集源将限制用户只能访问这些源
                     </p>
                   </div>
@@ -2121,7 +2121,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                               );
                             }
                           }}
-                          className='rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700'
+                          className='rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700'
                         />
                         <div className='flex-1 min-w-0'>
                           <div className='text-sm font-medium text-gray-900 dark:text-gray-100 truncate'>
@@ -2162,7 +2162,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                   </div>
                   <div className='text-sm text-gray-600 dark:text-gray-400'>
                     已选择：
-                    <span className='font-medium text-blue-600 dark:text-blue-400'>
+                    <span className='font-medium text-primary-600 dark:text-primary-400'>
                       {selectedApis.length > 0
                         ? `${selectedApis.length} 个源`
                         : '无限制'}
@@ -2296,7 +2296,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           name: e.target.value,
                         }))
                       }
-                      className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                      className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
                     />
                   </div>
 
@@ -2334,7 +2334,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                                 }));
                               }
                             }}
-                            className='rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700'
+                            className='rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700'
                           />
                           <div className='flex-1 min-w-0'>
                             <div className='text-sm font-medium text-gray-900 dark:text-gray-100 truncate'>
@@ -2794,10 +2794,10 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 </div>
 
                 <div className='mb-6'>
-                  <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+                  <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4'>
                     <div className='flex items-center space-x-2 mb-2'>
                       <svg
-                        className='w-5 h-5 text-blue-600 dark:text-blue-400'
+                        className='w-5 h-5 text-primary-600 dark:text-primary-400'
                         fill='none'
                         stroke='currentColor'
                         viewBox='0 0 24 24'
@@ -2809,11 +2809,11 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
                         />
                       </svg>
-                      <span className='text-sm font-medium text-blue-800 dark:text-blue-300'>
+                      <span className='text-sm font-medium text-primary-800 dark:text-primary-300'>
                         配置说明
                       </span>
                     </div>
-                    <p className='text-sm text-blue-700 dark:text-blue-400 mt-1'>
+                    <p className='text-sm text-primary-700 dark:text-primary-400 mt-1'>
                       提示：选择"无用户组"为无限制，选择特定用户组将限制用户只能访问该用户组允许的采集源
                     </p>
                   </div>
@@ -2832,7 +2832,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       const value = e.target.value;
                       setSelectedUserGroups(value ? [value] : []);
                     }}
-                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors'
+                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors'
                   >
                     <option value=''>无用户组（无限制）</option>
                     {userGroups.map((group) => (
@@ -3208,10 +3208,10 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                 </div>
 
                 <div className='mb-6'>
-                  <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4'>
+                  <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 mb-4'>
                     <div className='flex items-center space-x-2 mb-2'>
                       <svg
-                        className='w-5 h-5 text-blue-600 dark:text-blue-400'
+                        className='w-5 h-5 text-primary-600 dark:text-primary-400'
                         fill='none'
                         stroke='currentColor'
                         viewBox='0 0 24 24'
@@ -3223,11 +3223,11 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
                         />
                       </svg>
-                      <span className='text-sm font-medium text-blue-800 dark:text-blue-300'>
+                      <span className='text-sm font-medium text-primary-800 dark:text-primary-300'>
                         批量操作说明
                       </span>
                     </div>
-                    <p className='text-sm text-blue-700 dark:text-blue-400'>
+                    <p className='text-sm text-primary-700 dark:text-primary-400'>
                       将为选中的 <strong>{selectedUsers.size} 个用户</strong>{' '}
                       设置用户组，选择"无用户组"为无限制
                     </p>
@@ -3239,7 +3239,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                     </label>
                     <select
                       onChange={(e) => setSelectedUserGroup(e.target.value)}
-                      className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors'
+                      className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors'
                       value={selectedUserGroup}
                     >
                       <option value=''>无用户组（无限制）</option>
@@ -3795,7 +3795,7 @@ const VideoSourceConfig = ({
         return {
           text: '检测中',
           className:
-            'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300',
+            'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300',
           icon: '⟳',
           message: result.message,
         };
@@ -3857,7 +3857,7 @@ const VideoSourceConfig = ({
             type='checkbox'
             checked={selectedSources.has(source.key)}
             onChange={(e) => handleSelectSource(source.key, e.target.checked)}
-            className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+            className='w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
           />
         </td>
         <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100'>
@@ -4266,8 +4266,8 @@ const VideoSourceConfig = ({
   if (!config) {
     return (
       <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 dark:border-primary-700 dark:border-t-primary-400'></div>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             加载配置中...
           </span>
@@ -4279,12 +4279,12 @@ const VideoSourceConfig = ({
   return (
     <div className='space-y-6'>
       {/* Cloudflare Worker 代理配置 */}
-      <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10'>
+      <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gradient-to-r from-primary-50/50 to-indigo-50/50 dark:from-primary-900/10 dark:to-indigo-900/10'>
         <div className='flex items-center justify-between mb-4'>
           <div>
             <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
               <svg
-                className='w-5 h-5 text-blue-600'
+                className='w-5 h-5 text-primary-600'
                 fill='none'
                 stroke='currentColor'
                 viewBox='0 0 24 24'
@@ -4314,7 +4314,7 @@ const VideoSourceConfig = ({
               }
               className='sr-only peer'
             />
-            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
           </label>
         </div>
 
@@ -4341,11 +4341,11 @@ const VideoSourceConfig = ({
               </p>
             </div>
 
-            <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3'>
-              <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2'>
+            <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3'>
+              <h4 className='text-sm font-semibold text-primary-900 dark:text-primary-300 mb-2'>
                 💡 功能说明
               </h4>
-              <ul className='text-xs text-blue-800 dark:text-blue-300 space-y-1'>
+              <ul className='text-xs text-primary-800 dark:text-primary-300 space-y-1'>
                 <li>• 通过Cloudflare全球CDN加速视频源API访问</li>
                 <li>• 自动转发所有API参数（ac=list, ac=detail等）</li>
                 <li>• 为每个源生成唯一路径，提升兼容性</li>
@@ -4392,7 +4392,7 @@ const VideoSourceConfig = ({
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               isLoading('saveVideoProxy')
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-primary-600 hover:bg-primary-700 text-white'
             }`}
           >
             {isLoading('saveVideoProxy') ? '保存中...' : '保存代理配置'}
@@ -4539,7 +4539,7 @@ const VideoSourceConfig = ({
               onClick={() =>
                 setImportExportModal({ isOpen: true, mode: 'import' })
               }
-              className='px-3 py-1 text-sm rounded-lg transition-colors flex items-center space-x-1 bg-linear-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white'
+              className='px-3 py-1 text-sm rounded-lg transition-colors flex items-center space-x-1 bg-linear-to-r from-primary-600 to-cyan-500 hover:from-primary-700 hover:to-cyan-600 text-white'
               title='从 JSON 文件导入视频源'
             >
               <Upload className='w-4 h-4' />
@@ -4697,7 +4697,7 @@ const VideoSourceConfig = ({
                     type='checkbox'
                     checked={selectAll}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className='w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
+                    className='w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600'
                   />
                 </th>
                 <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
@@ -5062,7 +5062,7 @@ const CategoryConfig = ({
           <span
             className={`px-2 py-1 text-xs rounded-full ${
               category.type === 'movie'
-                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300'
+                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300'
                 : 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
             }`}
           >
@@ -5119,8 +5119,8 @@ const CategoryConfig = ({
   if (!config) {
     return (
       <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 dark:border-primary-700 dark:border-t-primary-400'></div>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             加载配置中...
           </span>
@@ -5364,8 +5364,8 @@ const ConfigFileComponent = ({
   if (!config) {
     return (
       <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 dark:border-primary-700 dark:border-t-primary-400'></div>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             加载配置中...
           </span>
@@ -5470,7 +5470,7 @@ const ConfigFileComponent = ({
             rows={20}
             placeholder='请输入配置文件内容（JSON 格式）...'
             disabled={false}
-            className='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500'
+            className='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono text-sm leading-relaxed resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500'
             style={{
               fontFamily:
                 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
@@ -5670,8 +5670,8 @@ const SiteConfigComponent = ({
   if (!config) {
     return (
       <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 dark:border-primary-700 dark:border-t-primary-400'></div>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             加载配置中...
           </span>
@@ -5851,7 +5851,7 @@ const SiteConfigComponent = ({
               href='https://www.themoviedb.org/settings/api'
               target='_blank'
               rel='noopener noreferrer'
-              className='text-blue-500 hover:text-blue-600'
+              className='text-primary-500 hover:text-primary-600'
             >
               TMDB 官网
             </a>{' '}
@@ -6247,8 +6247,8 @@ const LiveSourceConfig = ({
   if (!config) {
     return (
       <div className='flex justify-center items-center py-8'>
-        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200/50 dark:border-blue-700/50 shadow-md'>
-          <div className='animate-spin rounded-full h-5 w-5 border-2 border-blue-300 border-t-blue-600 dark:border-blue-700 dark:border-t-blue-400'></div>
+        <div className='flex items-center gap-3 px-6 py-3 bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 rounded-xl border border-primary-200/50 dark:border-primary-700/50 shadow-md'>
+          <div className='animate-spin rounded-full h-5 w-5 border-2 border-primary-300 border-t-primary-600 dark:border-primary-700 dark:border-t-primary-400'></div>
           <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
             加载配置中...
           </span>
@@ -6311,7 +6311,7 @@ const LiveSourceConfig = ({
             className={`px-3 py-1.5 text-sm font-medium flex items-center space-x-2 ${
               isRefreshing || isLoading('refreshLiveSources')
                 ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white rounded-lg'
-                : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors'
+                : 'bg-primaryary-600 hovbg-primaryrimary-700bg-primaryg-primary-600 dabg-primaryr:bg-primary-700 text-white rounded-lg transition-colors'
             }`}
           >
             <span>
@@ -6332,16 +6332,16 @@ const LiveSourceConfig = ({
       </div>
 
       {/* 📊 CORS 检测统计面板 */}
-      <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3'>
+      <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 space-y-3'>
         {corsStats.totalChecked > 0 ? (
           <>
             <div className='flex items-center justify-between'>
-              <h4 className='text-sm font-semibold text-blue-900 dark:text-blue-100'>
+              <h4 className='text-sm font-semibold text-primary-900 dark:text-primary-100'>
                 📊 直连模式统计
               </h4>
               <button
                 onClick={handleClearCorsCache}
-                className='text-xs px-3 py-1.5 bg-blue-100 dark:bg-blue-800 hover:bg-blue-200 dark:hover:bg-blue-700 text-blue-700 dark:text-blue-200 rounded-lg transition-colors font-medium'
+                className='text-xs px-3 py-1.5 bg-primary-100 dark:bg-primary-800 hover:bg-primary-200 dark:hover:bg-primary-700 text-primary-700 dark:text-primary-200 rounded-lg transition-colors font-medium'
               >
                 清除缓存
               </button>
@@ -6390,7 +6390,7 @@ const LiveSourceConfig = ({
               <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>
                 总检测数 / 估算流量节省
               </div>
-              <div className='text-base font-semibold text-blue-600 dark:text-blue-400'>
+              <div className='text-base font-semibold text-primary-600 dark:text-primary-400'>
                 📈 {corsStats.totalChecked} 个源
                 <span className='text-sm ml-3 text-green-600 dark:text-green-400 font-normal'>
                   💾 节省约{' '}
@@ -6404,7 +6404,7 @@ const LiveSourceConfig = ({
               </div>
             </div>
 
-            <div className='text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-blue-200 dark:border-blue-800'>
+            <div className='text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-primary-200 dark:border-primary-800'>
               💡 提示:
               直连模式通过客户端直接访问流媒体源来节省服务器带宽，但需要流媒体源支持跨域访问（CORS）。检测结果缓存有效期7天。
             </div>
@@ -6862,7 +6862,7 @@ const NetDiskConfig = ({
           <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2'>
             基础设置
           </h3>
-          <div className='flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg'>
+          <div className='flex items-center space-x-2 text-sm text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-3 py-2 rounded-lg'>
             <svg className='h-4 w-4' fill='currentColor' viewBox='0 0 20 20'>
               <path
                 fillRule='evenodd'
@@ -6877,7 +6877,7 @@ const NetDiskConfig = ({
               href='https://github.com/fish2018/pansou'
               target='_blank'
               rel='noopener noreferrer'
-              className='text-blue-700 dark:text-blue-300 hover:underline font-medium'
+              className='text-primary-700 dark:text-primary-300 hover:underline font-medium'
             >
               查看项目
             </a>
@@ -6897,7 +6897,7 @@ const NetDiskConfig = ({
                     enabled: e.target.checked,
                   }))
                 }
-                className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700'
+                className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700'
               />
               <span className='ml-2 text-sm font-medium text-gray-900 dark:text-gray-100'>
                 启用网盘搜索功能
@@ -6920,7 +6920,7 @@ const NetDiskConfig = ({
                 }))
               }
               placeholder='https://so.dogegg.online'
-              className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
+              className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500'
             />
             <div className='flex items-start space-x-2 text-sm text-gray-500 dark:text-gray-400'>
               <div className='flex-1'>
@@ -6930,7 +6930,7 @@ const NetDiskConfig = ({
                 href='https://github.com/fish2018/pansou'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors whitespace-nowrap'
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/30 rounded-md transition-colors whitespace-nowrap'
               >
                 <svg
                   className='h-3 w-3 mr-1'
@@ -6964,7 +6964,7 @@ const NetDiskConfig = ({
                   timeout: parseInt(e.target.value) || 30,
                 }))
               }
-              className='w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500'
+              className='w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500'
             />
           </div>
         </div>
@@ -7004,7 +7004,7 @@ const NetDiskConfig = ({
                 onChange={(e) =>
                   handleCloudTypeChange(option.key, e.target.checked)
                 }
-                className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700'
+                className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700'
               />
               <span className='text-lg'>{option.icon}</span>
               <span className='text-sm font-medium text-gray-900 dark:text-gray-100'>
@@ -7014,13 +7014,13 @@ const NetDiskConfig = ({
           ))}
         </div>
 
-        <div className='mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
+        <div className='mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg'>
           <div className='flex items-start space-x-2'>
             <CheckCircle
               size={16}
-              className='text-blue-600 dark:text-blue-400 mt-0.5 shrink-0'
+              className='text-primary-600 dark:text-primary-400 mt-0.5 shrink-0'
             />
-            <div className='text-sm text-blue-700 dark:text-blue-300'>
+            <div className='text-sm text-primary-700 dark:text-primary-300'>
               <p className='font-medium mb-1'>配置说明</p>
               <p>
                 选择要在搜索结果中显示的网盘类型。取消选择的类型不会出现在搜索结果中。
@@ -7407,7 +7407,7 @@ function AdminPageClient() {
                     viewBox='0 0 24 24'
                     width='20'
                     height='20'
-                    className='text-blue-500 dark:text-blue-400'
+                    className='text-primary-500 dark:text-primary-400'
                     fill='currentColor'
                   >
                     <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.05-.49-.82-.27-1.47-.42-1.42-.88.03-.24.37-.48 1.02-.73 4-1.74 6.68-2.88 8.03-3.44 3.82-1.58 4.61-1.85 5.13-1.86.11 0 .37.03.54.17.14.11.18.26.2.37.02.08.03.29.01.45z' />

@@ -146,7 +146,7 @@ function RegisterPageClient() {
         )}
 
         {/* 渐变叠加层 */}
-        <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
+        <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-primary-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-primary-900/40 dark:to-pink-900/50' />
         <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
         <div className='absolute top-4 right-4 z-20'>
@@ -170,7 +170,7 @@ function RegisterPageClient() {
           {/* 装饰性光效 */}
           <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-yellow-400/30 to-orange-400/30 rounded-full blur-3xl animate-pulse' />
           <div
-            className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-purple-400/30 rounded-full blur-3xl animate-pulse'
+            className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-primary-400/30 to-purple-400/30 rounded-full blur-3xl animate-pulse'
             style={{ animationDelay: '1s' }}
           />
 
@@ -218,7 +218,7 @@ function RegisterPageClient() {
       )}
 
       {/* 渐变叠加层 */}
-      <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
+      <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-primary-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-primary-900/40 dark:to-pink-900/50' />
       <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
       <div className='absolute top-3 right-3 sm:top-4 sm:right-4 z-20'>
@@ -240,7 +240,7 @@ function RegisterPageClient() {
           }
         `}</style>
         {/* 装饰性光效 */}
-        <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse' />
+        <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-primary-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse' />
         <div
           className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse'
           style={{ animationDelay: '1s' }}
@@ -248,10 +248,10 @@ function RegisterPageClient() {
 
         {/* 标题区域 */}
         <div className='text-center mb-6 sm:mb-8'>
-          <div className='inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/50 dark:shadow-blue-500/30'>
+          <div className='inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 shadow-lg shadow-primary-500/50 dark:shadow-primary-500/30'>
             <UserPlus className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
           </div>
-          <h1 className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
+          <h1 className='text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-indigo-600 to-purple-600 dark:from-primary-400 dark:via-indigo-400 dark:to-purple-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
             {siteName}
           </h1>
           <p className='text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-medium'>
@@ -269,13 +269,13 @@ function RegisterPageClient() {
             </label>
             <div className='relative'>
               <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none'>
-                <User className='h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors' />
+                <User className='h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors' />
               </div>
               <input
                 id='username'
                 type='text'
                 autoComplete='username'
-                className='block w-full pl-12 pr-4 py-3.5 rounded-xl border-0 text-gray-900 dark:text-gray-100 shadow-sm ring-2 ring-white/60 dark:ring-white/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none sm:text-base bg-white/80 dark:bg-zinc-800/80 backdrop-blur transition-all duration-300 hover:shadow-md'
+                className='block w-full pl-12 pr-4 py-3.5 rounded-xl border-0 text-gray-900 dark:text-gray-100 shadow-sm ring-2 ring-white/60 dark:ring-white/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:outline-none sm:text-base bg-white/80 dark:bg-zinc-800/80 backdrop-blur transition-all duration-300 hover:shadow-md'
                 placeholder='3-20位字母数字下划线'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -292,13 +292,13 @@ function RegisterPageClient() {
             </label>
             <div className='relative'>
               <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none'>
-                <Lock className='h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors' />
+                <Lock className='h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors' />
               </div>
               <input
                 id='password'
                 type='password'
                 autoComplete='new-password'
-                className='block w-full pl-12 pr-4 py-3.5 rounded-xl border-0 text-gray-900 dark:text-gray-100 shadow-sm ring-2 ring-white/60 dark:ring-white/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none sm:text-base bg-white/80 dark:bg-zinc-800/80 backdrop-blur transition-all duration-300 hover:shadow-md'
+                className='block w-full pl-12 pr-4 py-3.5 rounded-xl border-0 text-gray-900 dark:text-gray-100 shadow-sm ring-2 ring-white/60 dark:ring-white/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:outline-none sm:text-base bg-white/80 dark:bg-zinc-800/80 backdrop-blur transition-all duration-300 hover:shadow-md'
                 placeholder='至少6位字符'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -315,13 +315,13 @@ function RegisterPageClient() {
             </label>
             <div className='relative'>
               <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none'>
-                <Shield className='h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors' />
+                <Shield className='h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors' />
               </div>
               <input
                 id='confirmPassword'
                 type='password'
                 autoComplete='new-password'
-                className='block w-full pl-12 pr-4 py-3.5 rounded-xl border-0 text-gray-900 dark:text-gray-100 shadow-sm ring-2 ring-white/60 dark:ring-white/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none sm:text-base bg-white/80 dark:bg-zinc-800/80 backdrop-blur transition-all duration-300 hover:shadow-md'
+                className='block w-full pl-12 pr-4 py-3.5 rounded-xl border-0 text-gray-900 dark:text-gray-100 shadow-sm ring-2 ring-white/60 dark:ring-white/10 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:outline-none sm:text-base bg-white/80 dark:bg-zinc-800/80 backdrop-blur transition-all duration-300 hover:shadow-md'
                 placeholder='再次输入密码'
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -350,7 +350,7 @@ function RegisterPageClient() {
             disabled={
               !username || !password || !confirmPassword || loading || !!success
             }
-            className='group relative inline-flex w-full justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden'
+            className='group relative inline-flex w-full justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden'
           >
             <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
             <UserPlus className='h-5 w-5' />
@@ -367,7 +367,7 @@ function RegisterPageClient() {
             </p>
             <a
               href='/login'
-              className='group flex items-center justify-center gap-2 w-full px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400 text-sm font-semibold hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-100'
+              className='group flex items-center justify-center gap-2 w-full px-6 py-2.5 rounded-lg bg-gradient-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 border border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400 text-sm font-semibold hover:from-primary-100 hover:to-indigo-100 dark:hover:from-primary-900/30 dark:hover:to-indigo-900/30 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-100'
             >
               <Lock className='w-4 h-4' />
               <span>立即登录</span>

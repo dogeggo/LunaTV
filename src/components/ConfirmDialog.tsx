@@ -62,9 +62,9 @@ export function ConfirmDialog({
         'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white',
     },
     info: {
-      icon: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30',
+      icon: 'text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900/30',
       button:
-        'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white',
+        'bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white',
     },
   };
 
@@ -79,7 +79,7 @@ export function ConfirmDialog({
       />
 
       {/* 对话框 */}
-      <div className='relative w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-slide-up'>
+      <div className='relative w-full max-w-md bg-primary-50 dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-slide-up'>
         {/* 关闭按钮 */}
         <button
           onClick={onCancel}

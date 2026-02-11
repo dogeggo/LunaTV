@@ -60,7 +60,7 @@ export function TelegramAuthConfig({
       {/* 标题和说明 */}
       <div className='border-b border-gray-200 dark:border-gray-700 pb-4'>
         <h2 className='text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
-          <Send className='w-5 h-5 text-blue-500' />
+          <Send className='w-5 h-5 text-primary-500' />
           Telegram 登录配置
         </h2>
         <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>
@@ -69,10 +69,10 @@ export function TelegramAuthConfig({
       </div>
 
       {/* 配置提示 */}
-      <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+      <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4'>
         <div className='flex gap-3'>
-          <AlertCircle className='w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5' />
-          <div className='text-sm text-blue-800 dark:text-blue-200 space-y-2'>
+          <AlertCircle className='w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5' />
+          <div className='text-sm text-primary-800 dark:text-primary-200 space-y-2'>
             <p className='font-semibold'>配置步骤：</p>
             <ol className='list-decimal list-inside space-y-1 ml-2'>
               <li>
@@ -81,7 +81,7 @@ export function TelegramAuthConfig({
                   href='https://t.me/botfather'
                   target='_blank'
                   rel='noopener noreferrer'
-                  className='underline hover:text-blue-600'
+                  className='underline hover:text-primary-600'
                 >
                   @BotFather
                 </a>{' '}
@@ -91,7 +91,7 @@ export function TelegramAuthConfig({
               <li>启用自动注册（推荐）</li>
               <li>启用配置并保存</li>
             </ol>
-            <p className='text-xs text-blue-600 dark:text-blue-300 mt-2'>
+            <p className='text-xs text-primary-600 dark:text-primary-300 mt-2'>
               💡 工作原理：用户输入 Telegram 用户名后，系统会通过 Bot
               发送登录链接到用户的 Telegram，用户点击链接即可登录
             </p>
@@ -143,8 +143,10 @@ export function TelegramAuthConfig({
           onClick={() =>
             setLocalConfig({ ...localConfig, enabled: !localConfig.enabled })
           }
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            localConfig.enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+            localConfig.enabled
+              ? 'bg-primary-600'
+              : 'bg-gray-200 dark:bg-gray-700'
           }`}
         >
           <span
@@ -171,7 +173,7 @@ export function TelegramAuthConfig({
             onChange={(e) =>
               setLocalConfig({ ...localConfig, botToken: e.target.value })
             }
-            className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+            className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             placeholder='1234567890:ABCdefGHIjklMNOpqrsTUVwxyz'
           />
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
@@ -193,7 +195,7 @@ export function TelegramAuthConfig({
             onChange={(e) =>
               setLocalConfig({ ...localConfig, botUsername: e.target.value })
             }
-            className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+            className='w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
             placeholder='YourBotUsername'
           />
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
@@ -228,9 +230,9 @@ export function TelegramAuthConfig({
                 autoRegister: !localConfig.autoRegister,
               })
             }
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               localConfig.autoRegister
-                ? 'bg-blue-600'
+                ? 'bg-primary-600'
                 : 'bg-gray-200 dark:bg-gray-700'
             }`}
           >
@@ -266,7 +268,7 @@ export function TelegramAuthConfig({
         <button
           onClick={handleSave}
           disabled={saving || !hasChanges}
-          className='flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 font-medium'
+          className='flex items-center gap-2 px-6 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 font-medium'
         >
           <Save className='w-4 h-4' />
           {saving ? '保存中...' : '保存配置'}

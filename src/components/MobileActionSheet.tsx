@@ -203,7 +203,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
 
       {/* 操作表单 */}
       <div
-        className='relative w-full max-w-lg mx-4 mb-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl transition-all duration-200 ease-out'
+        className='relative w-full max-w-lg mx-4 mb-4 bg-primary-50 dark:bg-gray-900 rounded-2xl shadow-2xl transition-all duration-200 ease-out'
         onTouchMove={(e) => {
           // 允许操作表单内部滚动，阻止事件冒泡到外层
           e.stopPropagation();

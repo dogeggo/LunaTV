@@ -39,6 +39,7 @@ import PlayPlayerPanel from '@/components/play/PlayPlayerPanel';
 import PlayToolbar from '@/components/play/PlayToolbar';
 
 import { useDownload } from '@/contexts/DownloadContext';
+import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
 declare global {
@@ -58,6 +59,12 @@ interface WakeLockSentinel {
 function PlayPageClient() {
   const searchParams = useSearchParams();
   const { createTask, setShowDownloadPanel } = useDownload();
+  const { stopNavigation } = useNavigationLoading();
+
+  // 播放页挂载后关闭导航加载提示
+  useEffect(() => {
+    stopNavigation();
+  }, [stopNavigation]);
 
   // -----------------------------------------------------------------------------
   // 状态变量（State）
@@ -813,6 +820,9 @@ function PlayPageClient() {
   // Wake Lock 相关
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
+  // 组件卸载状态引用
+  const isUnmountedRef = useRef(false);
+
   // -----------------------------------------------------------------------------
   // 工具函数（Utils）
   // -----------------------------------------------------------------------------
@@ -997,6 +1007,13 @@ function PlayPageClient() {
     }
   };
 
+  const isRetestDisabled =
+    !speedTestReady ||
+    isSpeedTestRunning ||
+    sourceSearchLoading ||
+    loading ||
+    filteredSources.length === 0;
+
   // 轻量级优选：仅测试连通性，不创建video和HLS
   const lightweightPreference = async (
     sources: SearchResult[],
@@ -1067,9 +1084,18 @@ function PlayPageClient() {
     let testedCount = 0; // 已测试数量
 
     for (let i = 0; i < sources.length; i += concurrency) {
+      // 检查组件是否已卸载
+      if (isUnmountedRef.current) {
+        console.log('组件已卸载，终止测速');
+        break;
+      }
+
       const batch = sources.slice(i, i + concurrency);
       const batchResults = await Promise.all(
         batch.map(async (source) => {
+          // 再次检查组件是否已卸载
+          if (isUnmountedRef.current) return null;
+
           try {
             if (!source.episodes || source.episodes.length === 0) {
               return null;
@@ -1092,6 +1118,11 @@ function PlayPageClient() {
       if (i + concurrency < sources.length) {
         await new Promise((resolve) => setTimeout(resolve, 200));
       }
+    }
+
+    // 如果组件已卸载，不更新状态
+    if (isUnmountedRef.current) {
+      return;
     }
 
     // 等待所有测速完成，包含成功和失败的结果
@@ -2673,27 +2704,6 @@ function PlayPageClient() {
     };
   }, []);
 
-  // 🚀 组件卸载时清理所有定时器和状态
-  useEffect(() => {
-    return () => {
-      // 清理所有定时器
-      if (danmuOperationTimeoutRef.current) {
-        clearTimeout(danmuOperationTimeoutRef.current);
-      }
-      if (episodeSwitchTimeoutRef.current) {
-        clearTimeout(episodeSwitchTimeoutRef.current);
-      }
-      if (sourceSwitchTimeoutRef.current) {
-        clearTimeout(sourceSwitchTimeoutRef.current);
-      }
-
-      // 重置状态
-      isSourceChangingRef.current = false;
-      switchPromiseRef.current = null;
-      pendingSwitchRef.current = null;
-    };
-  }, []);
-
   // ---------------------------------------------------------------------------
   // 集数切换
   // ---------------------------------------------------------------------------
@@ -2869,9 +2879,9 @@ function PlayPageClient() {
 
       lastSaveTimeRef.current = Date.now();
       console.log('播放进度已保存:', {
-        id: currentIdRef.current,
-        source: currentSourceRef.current,
-        title: videoTitleRef.current,
+        id: newDetail.id,
+        source: newDetail.source,
+        title: newDetail.title,
         episode: currentEpisodeIndexRef.current + 1,
         year: newDetail.year,
         progress: `${Math.floor(currentTime)}/${Math.floor(duration)}`,
@@ -2912,15 +2922,6 @@ function PlayPageClient() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentEpisodeIndex, detail, artPlayerRef.current]);
-
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      if (saveIntervalRef.current) {
-        clearInterval(saveIntervalRef.current);
-      }
-    };
-  }, []);
 
   // ---------------------------------------------------------------------------
   // 收藏相关
@@ -3263,25 +3264,6 @@ function PlayPageClient() {
             console.log(`🎯 开始切换源: ${videoUrl}`);
             // 换源时保持播放进度
             switchPromise = artPlayerRef.current.switchQuality(videoUrl);
-            try {
-              const allRecords = await getAllPlayRecords();
-              const key = generateStorageKey(currentSource, currentId);
-              const record = allRecords[key];
-              if (record) {
-                let play_time =
-                  record.index - 1 == currentEpisodeIndexRef.current
-                    ? record.play_time
-                    : 0;
-                const duration = record.total_time || 0;
-                if (duration && play_time >= duration - 2) {
-                  play_time = Math.max(0, duration - 5);
-                }
-                artPlayerRef.current.currentTime = play_time;
-                console.log('1111成功恢复播放进度到:', play_time);
-              } else artPlayerRef.current.currentTime = 0;
-            } catch (err) {
-              console.warn('恢复播放进度失败:', err);
-            }
           }
 
           // 创建切换Promise
@@ -3795,34 +3777,6 @@ function PlayPageClient() {
                 handleNextEpisode();
               },
             },
-            // 🚀 简单弹幕发送按钮（仅Web端显示）
-            ...(isMobile
-              ? []
-              : [
-                  {
-                    position: 'right',
-                    html: '<span>弹</span>',
-                    tooltip: '发送弹幕',
-                    click: function () {
-                      if (
-                        artPlayerRef.current?.plugins?.artplayerPluginDanmuku
-                      ) {
-                        // 手动弹出输入框发送弹幕
-                        const text = prompt('请输入弹幕内容', '');
-                        if (text && text.trim()) {
-                          artPlayerRef.current.plugins.artplayerPluginDanmuku.emit(
-                            {
-                              text: text.trim(),
-                              time: artPlayerRef.current.currentTime,
-                              color: '#FFFFFF',
-                              mode: 0,
-                            },
-                          );
-                        }
-                      }
-                    },
-                  },
-                ]),
           ],
           // 🚀 性能优化的弹幕插件配置 - 保持弹幕数量，优化渲染性能
           plugins: [
@@ -4750,28 +4704,27 @@ function PlayPageClient() {
           videoEndedHandledRef.current = false;
           try {
             const allRecords = await getAllPlayRecords();
-            const key = generateStorageKey(currentSource, currentId);
-            const record = allRecords[key];
-            const play_time =
-              record && record.index - 1 == currentEpisodeIndexRef.current
-                ? record.play_time
-                : 0;
-            const duration = artPlayerRef.current.duration || 0;
-            const current = artPlayerRef.current.currentTime || 0;
-            let target = play_time > current ? play_time : current;
-            if (duration && target >= duration - 2) {
-              target = Math.max(0, duration - 5);
-            }
-            if (target > current) {
-              artPlayerRef.current.currentTime = target;
-            }
-            console.log(
-              '成功恢复播放进度到:',
-              target,
-              currentSource,
-              currentId,
-              record,
+            const key = generateStorageKey(
+              currentSourceRef.current,
+              currentIdRef.current,
             );
+            const record = allRecords[key];
+            if (record) {
+              const play_time =
+                record.index - 1 == currentEpisodeIndexRef.current
+                  ? record.play_time
+                  : 0;
+              const duration = artPlayerRef.current.duration || 0;
+              const current = artPlayerRef.current.currentTime || 0;
+              let target = play_time > current ? play_time : current;
+              if (duration && target >= duration - 2) {
+                target = Math.max(0, duration - 5);
+              }
+              if (target > current) {
+                artPlayerRef.current.currentTime = target;
+              }
+              console.log('成功恢复播放进度到:', target, record);
+            }
           } catch (err) {
             console.warn('恢复播放进度失败:', err);
           }
@@ -5042,27 +4995,40 @@ function PlayPageClient() {
   // 当组件卸载时清理定时器、Wake Lock 和播放器资源
   useEffect(() => {
     return () => {
+      // 标记组件已卸载，终止正在进行的异步操作（如测速）
+      isUnmountedRef.current = true;
+
       saveCurrentPlayProgress();
-      // 清理定时器
+
+      // 1. 同步清理所有定时器 (确保在组件销毁瞬间停止)
       if (saveIntervalRef.current) {
         clearInterval(saveIntervalRef.current);
+        saveIntervalRef.current = null;
       }
 
-      // 清理弹幕重置定时器
-      if (seekResetTimeoutRef.current) {
-        clearTimeout(seekResetTimeoutRef.current);
-      }
+      const timeoutRefs = [
+        seekResetTimeoutRef,
+        resizeResetTimeoutRef,
+        sourceSwitchTimeoutRef,
+        danmuOperationTimeoutRef,
+        episodeSwitchTimeoutRef,
+      ];
 
-      // 清理resize防抖定时器
-      if (resizeResetTimeoutRef.current) {
-        clearTimeout(resizeResetTimeoutRef.current);
-      }
+      timeoutRefs.forEach((ref) => {
+        if (ref.current) {
+          clearTimeout(ref.current);
+          ref.current = null;
+        }
+      });
 
-      // 释放 Wake Lock
+      // 2. 重置关键状态引用
+      isSourceChangingRef.current = false;
+      switchPromiseRef.current = null;
+      pendingSwitchRef.current = null;
+      danmuLoadingRef.current = false;
+
+      // 3. 释放 Wake Lock
       releaseWakeLock();
-
-      // 清理Anime4K
-      cleanupAnime4K();
 
       // 🚀 关键修复：在组件卸载时同步清理 HLS 实例
       // 必须在 cleanupPlayer 之前同步执行，避免异步导致的网络请求中断问题
@@ -5078,7 +5044,6 @@ function PlayPageClient() {
           console.warn('组件卸载时清理HLS出错:', e);
         }
       }
-
       // 销毁播放器实例
       cleanupPlayer();
     };
@@ -5127,12 +5092,6 @@ function PlayPageClient() {
       detail.type_name.toLowerCase().includes('动画') ||
       detail.type_name.toLowerCase().includes('anime')),
   );
-  const isRetestDisabled =
-    !speedTestReady ||
-    isSpeedTestRunning ||
-    sourceSearchLoading ||
-    loading ||
-    filteredSources.length === 0;
 
   const handleOpenNetdisk = () => {
     if (!netdiskResults && !netdiskLoading && videoTitle) {

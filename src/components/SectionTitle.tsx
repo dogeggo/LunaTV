@@ -10,7 +10,7 @@ interface SectionTitleProps {
 export default function SectionTitle({
   title,
   icon: Icon,
-  iconColor = 'text-blue-500',
+  iconColor = 'text-primary-500',
 }: SectionTitleProps) {
   return (
     <div className='relative inline-block group'>
@@ -32,10 +32,10 @@ export default function SectionTitle({
       </div>
 
       {/* 动态下划线 */}
-      <div className='absolute -bottom-1 left-0 h-0.5 w-0 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out group-hover:w-full rounded-full shadow-lg shadow-blue-500/50'></div>
+      <div className='absolute -bottom-1 left-0 h-0.5 w-0 bg-linear-to-r from-primary-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out group-hover:w-full rounded-full shadow-lg shadow-primary-500/50'></div>
 
       {/* 装饰点 */}
-      <div className='absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-linear-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
+      <div className='absolute -left-2 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-linear-to-r from-primary-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
     </div>
   );
 }

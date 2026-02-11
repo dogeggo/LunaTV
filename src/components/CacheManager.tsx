@@ -73,7 +73,7 @@ const CACHE_TYPES: CacheType[] = [
     name: '弹幕数据',
     description: '外部弹幕API获取的弹幕内容缓存',
     icon: DocumentTextIcon,
-    color: 'text-blue-600 bg-blue-100',
+    color: 'text-primary-600 bg-primary-100',
   },
   {
     key: 'netdisk',
@@ -192,7 +192,7 @@ export default function CacheManager() {
       {/* 标题和刷新按钮 */}
       <div className='flex items-center justify-between'>
         <div className='flex items-center space-x-3'>
-          <ChartBarIcon className='h-6 w-6 text-blue-600' />
+          <ChartBarIcon className='h-6 w-6 text-primary-600' />
           <h2 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
             缓存管理
           </h2>
@@ -230,23 +230,23 @@ export default function CacheManager() {
 
       {/* 总览统计 */}
       {stats && (
-        <div className='bg-linear-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white'>
+        <div className='bg-linear-to-r from-primary-500 to-primary-600 rounded-lg p-6 text-white'>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             <div className='text-center'>
               <div className='text-3xl font-bold'>{stats.total.count}</div>
-              <div className='text-blue-100'>缓存项总数</div>
+              <div className='text-primary-100'>缓存项总数</div>
             </div>
             <div className='text-center'>
               <div className='text-3xl font-bold'>
                 {stats.formattedSizes.total}
               </div>
-              <div className='text-blue-100'>占用存储空间</div>
+              <div className='text-primary-100'>占用存储空间</div>
             </div>
             <div className='text-center'>
               <div className='text-3xl font-bold'>
                 {Object.keys(CACHE_TYPES).length}
               </div>
-              <div className='text-blue-100'>缓存类型</div>
+              <div className='text-primary-100'>缓存类型</div>
             </div>
           </div>
         </div>
@@ -442,7 +442,7 @@ export default function CacheManager() {
       {/* 加载状态 */}
       {loading && !stats && (
         <div className='flex items-center justify-center py-12'>
-          <ArrowPathIcon className='h-8 w-8 animate-spin text-blue-500 mr-3' />
+          <ArrowPathIcon className='h-8 w-8 animate-spin text-primary-500 mr-3' />
           <span className='text-gray-600 dark:text-gray-300'>
             正在获取缓存统计...
           </span>

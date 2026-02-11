@@ -42,22 +42,22 @@ export default function ModernNav() {
       icon: Home,
       label: '首页',
       href: '/',
-      color: 'text-green-500',
-      gradient: 'from-green-500 to-emerald-500',
+      color: 'text-primary-500',
+      gradient: 'from-primary-500 to-emerald-500',
     },
     {
       icon: Search,
       label: '搜索',
       href: '/search',
-      color: 'text-blue-500',
-      gradient: 'from-blue-500 to-cyan-500',
+      color: 'text-primary-500',
+      gradient: 'from-primary-500 to-cyan-500',
     },
     {
       icon: Globe,
       label: '源浏览器',
       href: '/source-browser',
-      color: 'text-emerald-500',
-      gradient: 'from-emerald-500 to-green-500',
+      color: 'text-primary-500',
+      gradient: 'from-primary-500 to-green-500',
     },
     {
       icon: Film,
@@ -70,8 +70,8 @@ export default function ModernNav() {
       icon: Tv,
       label: '剧集',
       href: '/douban?type=tv',
-      color: 'text-blue-600',
-      gradient: 'from-blue-600 to-indigo-600',
+      color: 'text-primary-600',
+      gradient: 'from-primary-600 to-indigo-600',
     },
     {
       icon: PlaySquare,
@@ -140,20 +140,20 @@ export default function ModernNav() {
 
   return (
     <>
-      {/* Desktop Top Navigation - 2025 Disney+ Style */}
-      <nav className='hidden md:block fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50'>
-        <div className='max-w-[2560px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20'>
-          <div className='flex items-center justify-between h-16 gap-4'>
+      {/* Desktop Top Navigation */}
+      <nav className='hidden md:block fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/60 backdrop-blur-2xl'>
+        <div className='max-w-[2560px] mx-auto px-6 lg:px-12 xl:px-16 2xl:px-20'>
+          <div className='flex items-center justify-between h-14 gap-6'>
             {/* Logo */}
             <FastLink href='/' className='shrink-0'>
-              <div className='text-xl font-bold bg-linear-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent'>
+              <span className='text-lg font-semibold tracking-tight text-gray-900 dark:text-white'>
                 {siteName}
-              </div>
+              </span>
             </FastLink>
 
             {/* Navigation Items */}
-            <div className='overflow-x-auto scrollbar-hide flex-1 min-w-0 px-4'>
-              <div className='flex items-center gap-1 lg:gap-2 w-max mx-auto'>
+            <div className='overflow-x-auto scrollbar-hide flex-1 min-w-0'>
+              <div className='flex items-center gap-0.5 w-max mx-auto'>
                 {menuItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
@@ -163,41 +163,25 @@ export default function ModernNav() {
                       key={item.label}
                       href={item.href}
                       useTransitionNav
-                      className='group relative flex items-center gap-2 px-3 lg:px-4 py-2 rounded-full transition-all duration-300 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 whitespace-nowrap shrink-0'
+                      className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 ${
+                        active
+                          ? 'text-gray-900 dark:text-white'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      }`}
                     >
-                      {/* Active indicator */}
-                      {active && (
-                        <div
-                          className={`absolute inset-0 bg-linear-to-r ${item.gradient} opacity-10 rounded-full animate-pulse`}
-                        />
-                      )}
-
-                      {/* Icon */}
-                      <div className='relative'>
-                        <Icon
-                          className={`w-5 h-5 transition-all duration-300 ${
-                            active
-                              ? item.color
-                              : 'text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200'
-                          } ${active ? 'scale-110' : 'group-hover:scale-110'}`}
-                        />
-                      </div>
-
-                      {/* Label */}
-                      <span
-                        className={`text-sm font-medium transition-all duration-300 ${
+                      <Icon
+                        className={`w-4 h-4 transition-colors duration-200 ${
                           active
-                            ? `${item.color} font-semibold`
-                            : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100'
+                            ? item.color
+                            : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
                         }`}
-                      >
-                        {item.label}
-                      </span>
+                      />
+                      <span>{item.label}</span>
 
-                      {/* Bottom active border */}
+                      {/* Active dot */}
                       {active && (
-                        <div
-                          className={`absolute bottom-0 left-0 right-0 h-0.5 bg-linear-to-r ${item.gradient} rounded-full`}
+                        <span
+                          className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-current ${item.color}`}
                         />
                       )}
                     </FastLink>
@@ -207,12 +191,14 @@ export default function ModernNav() {
             </div>
 
             {/* Right Side Actions */}
-            <div className='flex items-center gap-2 shrink-0'>
+            <div className='flex items-center gap-1.5 shrink-0'>
               <ThemeToggle />
               <UserMenu />
             </div>
           </div>
         </div>
+        {/* Bottom border line */}
+        <div className='h-px bg-gray-200/60 dark:bg-white/[0.06]' />
       </nav>
 
       {/* More Menu Modal - Render outside nav to avoid z-index issues */}
@@ -336,7 +322,7 @@ export default function ModernNav() {
       </nav>
 
       {/* Spacer for fixed navigation */}
-      <div className='hidden md:block h-16' />
+      <div className='hidden md:block h-14' />
       <div className='md:hidden h-20' />
     </>
   );

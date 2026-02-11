@@ -150,7 +150,7 @@ export function TVBoxTokenModal({
         {/* 头部 */}
         <div className='flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700'>
           <div className='flex items-center space-x-3'>
-            <Key className='w-5 h-5 text-blue-600' />
+            <Key className='w-5 h-5 text-primary-600' />
             <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
               TVBox Token 管理 - {username}
             </h3>
@@ -202,7 +202,7 @@ export function TVBoxTokenModal({
               </label>
               <button
                 onClick={toggleAll}
-                className='text-xs text-blue-600 hover:text-blue-700'
+                className='text-xs text-primary-600 hover:text-primary-700'
               >
                 {selectedSources.length === allSources.length
                   ? '取消全选'
@@ -222,7 +222,7 @@ export function TVBoxTokenModal({
                     type='checkbox'
                     checked={selectedSources.includes(source.key)}
                     onChange={() => toggleSource(source.key)}
-                    className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
+                    className='w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500'
                   />
                   <span className='ml-3 text-sm text-gray-900 dark:text-gray-100'>
                     {source.name} ({source.key})
@@ -257,7 +257,7 @@ export function TVBoxTokenModal({
             <button
               onClick={() => handleSave(true)}
               disabled={isSaving}
-              className='px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-lg disabled:opacity-50 flex items-center space-x-1'
+              className='px-4 py-2 text-sm bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-800 rounded-lg disabled:opacity-50 flex items-center space-x-1'
             >
               <Settings className='w-4 h-4' />
               <span>{tvboxToken ? '重新生成' : '生成Token'}</span>
@@ -265,7 +265,7 @@ export function TVBoxTokenModal({
             <button
               onClick={() => handleSave(false)}
               disabled={isSaving}
-              className='px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50'
+              className='px-4 py-2 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded-lg disabled:opacity-50'
             >
               {isSaving ? '保存中...' : '保存配置'}
             </button>

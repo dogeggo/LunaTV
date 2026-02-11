@@ -38,7 +38,7 @@ export function DownloadSettingsModal({
         />
 
         {/* 模态框内容 */}
-        <div className='relative bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700 overflow-hidden'>
+        <div className='relative bg-primary-50 dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md border border-gray-200 dark:border-gray-700 overflow-hidden'>
           {/* 标题栏 */}
           <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700'>
             <h2 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white'>
@@ -70,7 +70,7 @@ export function DownloadSettingsModal({
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                 下载线程数:{' '}
-                <span className='text-blue-600 dark:text-blue-400'>
+                <span className='text-primary-600 dark:text-primary-400'>
                   {settings.concurrency}
                 </span>
               </label>
@@ -85,7 +85,7 @@ export function DownloadSettingsModal({
                     concurrency: parseInt(e.target.value, 10),
                   })
                 }
-                className='w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600'
+                className='w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600'
               />
               <div className='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
                 <span>1 线程</span>
@@ -105,7 +105,7 @@ export function DownloadSettingsModal({
             <div>
               <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
                 失败重试次数:{' '}
-                <span className='text-blue-600 dark:text-blue-400'>
+                <span className='text-primary-600 dark:text-primary-400'>
                   {settings.maxRetries}
                 </span>
               </label>
@@ -120,7 +120,7 @@ export function DownloadSettingsModal({
                     maxRetries: parseInt(e.target.value, 10),
                   })
                 }
-                className='w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600'
+                className='w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-600'
               />
               <div className='flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1'>
                 <span>不重试</span>
@@ -135,14 +135,14 @@ export function DownloadSettingsModal({
               </label>
               <div className='space-y-3'>
                 {/* 普通模式 */}
-                <label className='flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-600 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20'>
+                <label className='flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-600 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 dark:has-[:checked]:bg-primary-900/20'>
                   <input
                     type='radio'
                     name='streamMode'
                     value='disabled'
                     checked={settings.streamMode === 'disabled'}
                     onChange={() => handleStreamModeChange('disabled')}
-                    className='mt-1 w-4 h-4 accent-blue-600'
+                    className='mt-1 w-4 h-4 accent-primary-600'
                   />
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
@@ -163,7 +163,7 @@ export function DownloadSettingsModal({
                     !streamModeSupport.serviceWorker
                       ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50'
                       : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                  } border-gray-200 dark:border-gray-600 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20`}
+                  } border-gray-200 dark:border-gray-600 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 dark:has-[:checked]:bg-primary-900/20`}
                 >
                   <input
                     type='radio'
@@ -172,7 +172,7 @@ export function DownloadSettingsModal({
                     checked={settings.streamMode === 'service-worker'}
                     onChange={() => handleStreamModeChange('service-worker')}
                     disabled={!streamModeSupport.serviceWorker}
-                    className='mt-1 w-4 h-4 accent-blue-600 disabled:cursor-not-allowed'
+                    className='mt-1 w-4 h-4 accent-primary-600 disabled:cursor-not-allowed'
                   />
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
@@ -203,7 +203,7 @@ export function DownloadSettingsModal({
                     !streamModeSupport.fileSystem
                       ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50'
                       : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                  } border-gray-200 dark:border-gray-600 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50 dark:has-[:checked]:bg-blue-900/20`}
+                  } border-gray-200 dark:border-gray-600 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 dark:has-[:checked]:bg-primary-900/20`}
                 >
                   <input
                     type='radio'
@@ -212,7 +212,7 @@ export function DownloadSettingsModal({
                     checked={settings.streamMode === 'file-system'}
                     onChange={() => handleStreamModeChange('file-system')}
                     disabled={!streamModeSupport.fileSystem}
-                    className='mt-1 w-4 h-4 accent-blue-600 disabled:cursor-not-allowed'
+                    className='mt-1 w-4 h-4 accent-primary-600 disabled:cursor-not-allowed'
                   />
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
@@ -259,7 +259,7 @@ export function DownloadSettingsModal({
                     onChange={() =>
                       setSettings({ ...settings, defaultType: 'TS' })
                     }
-                    className='w-4 h-4 accent-blue-600'
+                    className='w-4 h-4 accent-primary-600'
                   />
                   <span className='text-sm text-gray-700 dark:text-gray-300'>
                     TS 格式
@@ -274,7 +274,7 @@ export function DownloadSettingsModal({
                     onChange={() =>
                       setSettings({ ...settings, defaultType: 'MP4' })
                     }
-                    className='w-4 h-4 accent-blue-600'
+                    className='w-4 h-4 accent-primary-600'
                   />
                   <span className='text-sm text-gray-700 dark:text-gray-300'>
                     MP4 格式
@@ -288,7 +288,7 @@ export function DownloadSettingsModal({
           <div className='p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30'>
             <button
               onClick={onClose}
-              className='w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors'
+              className='w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors'
             >
               保存设置
             </button>

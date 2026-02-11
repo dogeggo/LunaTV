@@ -35,6 +35,8 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 import MobileActionSheet from '@/components/MobileActionSheet';
 
+import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
+
 export interface VideoCardProps {
   id?: string;
   source?: string;
@@ -95,6 +97,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     ref,
   ) {
     const router = useRouter();
+    const { startNavigation } = useNavigationLoading();
     const [favorited, setFavorited] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
     const [showMobileActions, setShowMobileActions] = useState(false);
@@ -335,6 +338,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       } else if (actualSource === 'shortdrama' && actualId) {
         // 短剧内容 - 使用shortdrama_id参数
         const url = `/play?title=${encodeURIComponent(actualTitle.trim())}`;
+        startNavigation(actualTitle);
         router.push(url);
       } else if (
         from === 'douban' ||
@@ -347,6 +351,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         const url = `/play?title=${encodeURIComponent(actualTitle.trim())}${
           actualYear ? `&year=${actualYear}` : ''
         }${doubanIdParam}${actualSearchType ? `&stype=${actualSearchType}` : ''}${actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''}`;
+        startNavigation(actualTitle);
         router.push(url);
       } else if (actualSource && actualId) {
         const url = `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
@@ -354,6 +359,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         )}${actualYear ? `&year=${actualYear}` : ''}${doubanIdParam}${
           actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
         }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+        startNavigation(actualTitle);
         router.push(url);
       }
     }, [
@@ -369,6 +375,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       actualQuery,
       actualSearchType,
       actualDoubanId,
+      startNavigation,
     ]);
 
     // 新标签页播放处理函数
@@ -506,11 +513,12 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       } else if (rateNum >= 7.0) {
         // 中高分：蓝色
         return {
-          bgColor: 'bg-linear-to-br from-blue-500 via-blue-600 to-blue-700',
-          ringColor: 'ring-2 ring-blue-400/40',
-          shadowColor: 'shadow-md shadow-blue-500/30',
+          bgColor:
+            'bg-linear-to-br from-primary-500 via-primary-600 to-primary-700',
+          ringColor: 'ring-2 ring-primary-400/40',
+          shadowColor: 'shadow-md shadow-primary-500/30',
           textColor: 'text-white',
-          glowClass: 'group-hover:shadow-blue-500/50',
+          glowClass: 'group-hover:shadow-primary-500/50',
         };
       } else if (rateNum >= 6.0) {
         // 中分：绿色
@@ -1348,7 +1356,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                                     key={index}
                                     className='flex items-center gap-1 sm:gap-1.5'
                                   >
-                                    <div className='w-0.5 h-0.5 sm:w-1 sm:h-1 bg-blue-400 rounded-full shrink-0'></div>
+                                    <div className='w-0.5 h-0.5 sm:w-1 sm:h-1 bg-primary-400 rounded-full shrink-0'></div>
                                     <span
                                       className='truncate text-[10px] sm:text-xs leading-tight'
                                       title={sourceName}

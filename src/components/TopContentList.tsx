@@ -82,7 +82,7 @@ export default function TopContentList({
                           ? 'bg-gray-400'
                           : index === 2
                             ? 'bg-amber-500'
-                            : 'bg-blue-500'
+                            : 'bg-primary-500'
                     }`}
                     style={{ width: `${percentage}%` }}
                   />

@@ -52,7 +52,7 @@ export function DownloadPanel() {
       case 'ready':
         return 'text-gray-500';
       case 'downloading':
-        return 'text-blue-500';
+        return 'text-primary-500';
       case 'pause':
         return 'text-yellow-500';
       case 'done':
@@ -102,7 +102,7 @@ export function DownloadPanel() {
         />
 
         {/* 模态框内容 */}
-        <div className='relative bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-lg shadow-2xl w-full md:max-w-4xl h-fit max-h-[80vh] md:max-h-[85vh] flex flex-col border-t md:border border-gray-200 dark:border-gray-700 overflow-hidden'>
+        <div className='relative bg-primary-50 dark:bg-gray-800 rounded-t-2xl md:rounded-lg shadow-2xl w-full md:max-w-4xl h-fit max-h-[80vh] md:max-h-[85vh] flex flex-col border-t md:border border-gray-200 dark:border-gray-700 overflow-hidden'>
           {/* 标题栏 */}
           <div className='flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 shrink-0'>
             <h2 className='text-lg sm:text-xl font-bold text-gray-900 dark:text-white'>
@@ -205,7 +205,7 @@ export function DownloadPanel() {
                           {task.type}
                         </span>
                         {/* 显示下载模式 */}
-                        <span className='text-xs px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'>
+                        <span className='text-xs px-2 py-0.5 rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'>
                           {getStreamModeIcon(settings.streamMode)}{' '}
                           {getStreamModeName(settings.streamMode)}
                         </span>
@@ -219,7 +219,7 @@ export function DownloadPanel() {
                           {task.finishNum} / {task.rangeDownload.targetSegment}{' '}
                           片段
                           {timeRange ? (
-                            <span className='ml-2 text-blue-600 dark:text-blue-400'>
+                            <span className='ml-2 text-primary-600 dark:text-primary-400'>
                               {task.rangeDownload.startSegment > 1 ||
                               task.rangeDownload.endSegment <
                                 task.tsUrlList.length
@@ -234,7 +234,7 @@ export function DownloadPanel() {
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
                             task.status === 'downloading'
-                              ? 'bg-linear-to-r from-blue-500 to-purple-600 animate-pulse'
+                              ? 'bg-linear-to-r from-primary-500 to-purple-600 animate-pulse'
                               : task.status === 'done'
                                 ? 'bg-green-500'
                                 : task.status === 'error'
@@ -254,7 +254,7 @@ export function DownloadPanel() {
                         </div>
                         <button
                           onClick={() => retryFailedSegments(task.id)}
-                          className='text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 underline'
+                          className='text-xs text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 underline'
                         >
                           重试失败片段
                         </button>
@@ -290,7 +290,7 @@ export function DownloadPanel() {
                         task.status === 'error') && (
                         <button
                           onClick={() => startTask(task.id)}
-                          className='flex items-center gap-1 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors'
+                          className='flex items-center gap-1 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium rounded transition-colors'
                         >
                           <svg
                             className='w-4 h-4'

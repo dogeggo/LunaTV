@@ -28,6 +28,12 @@ import {
   type PlayRecord,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
+import {
+  applyTheme,
+  getSavedTheme,
+  THEME_PRESETS,
+  type ThemePreset,
+} from '@/lib/theme-config';
 import type { Favorite } from '@/lib/types';
 import {
   checkWatchingUpdates,
@@ -129,6 +135,7 @@ export const UserMenu: React.FC = () => {
 
   // 下载相关设置
   const [downloadFormat, setDownloadFormat] = useState<'TS' | 'MP4'>('TS');
+  const [currentTheme, setCurrentTheme] = useState<ThemePreset>('emerald');
 
   // 播放缓冲模式选项
   const bufferModeOptions = [
@@ -322,6 +329,12 @@ export const UserMenu: React.FC = () => {
       const savedDownloadFormat = localStorage.getItem('downloadFormat');
       if (savedDownloadFormat === 'TS' || savedDownloadFormat === 'MP4') {
         setDownloadFormat(savedDownloadFormat);
+      }
+
+      // 读取主题设置
+      const savedTheme = getSavedTheme();
+      if (savedTheme) {
+        setCurrentTheme(savedTheme);
       }
     }
   }, []);
@@ -739,6 +752,11 @@ export const UserMenu: React.FC = () => {
     }
   };
 
+  const handleThemeChange = (theme: ThemePreset) => {
+    setCurrentTheme(theme);
+    applyTheme(theme);
+  };
+
   const handleResetSettings = useCallback(() => {
     const defaultFluidSearch =
       (window as any).RUNTIME_CONFIG?.FLUID_SEARCH !== false;
@@ -755,6 +773,8 @@ export const UserMenu: React.FC = () => {
     setPlayerBufferMode('enhanced');
     setDownloadFormat('TS');
     setRequireClearConfirmation(true);
+    setCurrentTheme('emerald');
+    applyTheme('emerald');
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('defaultAggregateSearch', JSON.stringify(true));
@@ -833,9 +853,9 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 菜单面板 */}
-      <div className='fixed top-14 right-4 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl z-1001 border border-gray-200/50 dark:border-gray-700/50 overflow-hidden select-none'>
+      <div className='fixed top-14 right-4 w-56 bg-primary-50/95 dark:bg-gray-900/90 backdrop-blur-xl rounded-xl shadow-xl z-1001 border border-primary-200/50 dark:border-white/10 overflow-hidden select-none'>
         {/* 用户信息区域 */}
-        <div className='px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-800/50'>
+        <div className='px-3 py-2.5 border-b border-primary-200/50 dark:border-white/[0.06] bg-primary-50/50 dark:bg-white/[0.03]'>
           <div className='space-y-1'>
             <div className='flex items-center justify-between'>
               <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
@@ -846,7 +866,7 @@ export const UserMenu: React.FC = () => {
                   (authInfo?.role || 'user') === 'owner'
                     ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                     : (authInfo?.role || 'user') === 'admin'
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                      ? 'bg-primary-100 text-orange-800 dark:bg-primary-900/30 dark:text-orange-300'
                       : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                 }`}
               >
@@ -870,7 +890,7 @@ export const UserMenu: React.FC = () => {
           {/* 设置按钮 */}
           <button
             onClick={handleSettings}
-            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-[background-color] duration-150 ease-in-out text-sm'
           >
             <Settings className='w-4 h-4 text-gray-500 dark:text-gray-400' />
             <span className='font-medium'>设置</span>
@@ -880,7 +900,7 @@ export const UserMenu: React.FC = () => {
           {showWatchingUpdates && (
             <button
               onClick={handleWatchingUpdates}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
             >
               <Bell className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>更新提醒</span>
@@ -898,7 +918,7 @@ export const UserMenu: React.FC = () => {
           {showWatchingUpdates && (
             <button
               onClick={handleContinueWatching}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
             >
               <PlayCircle className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>继续观看</span>
@@ -914,7 +934,7 @@ export const UserMenu: React.FC = () => {
           {showWatchingUpdates && (
             <button
               onClick={handleFavorites}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm relative'
             >
               <Heart className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>我的收藏</span>
@@ -930,7 +950,7 @@ export const UserMenu: React.FC = () => {
           {showAdminPanel && (
             <button
               onClick={handleAdminPanel}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-[background-color] duration-150 ease-in-out text-sm'
             >
               <Shield className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>管理面板</span>
@@ -941,7 +961,7 @@ export const UserMenu: React.FC = () => {
           {showPlayStats && (
             <button
               onClick={handlePlayStats}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-[background-color] duration-150 ease-in-out text-sm'
             >
               <BarChart3 className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>
@@ -955,7 +975,7 @@ export const UserMenu: React.FC = () => {
           {/* 上映日程按钮 */}
           <button
             onClick={handleReleaseCalendar}
-            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-[background-color] duration-150 ease-in-out text-sm'
           >
             <Calendar className='w-4 h-4 text-gray-500 dark:text-gray-400' />
             <span className='font-medium'>上映日程</span>
@@ -964,7 +984,7 @@ export const UserMenu: React.FC = () => {
           {/* TVBox配置按钮 */}
           <button
             onClick={handleTVBoxConfig}
-            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-[background-color] duration-150 ease-in-out text-sm'
           >
             <Tv className='w-4 h-4 text-gray-500 dark:text-gray-400' />
             <span className='font-medium'>TVBox 配置</span>
@@ -974,7 +994,7 @@ export const UserMenu: React.FC = () => {
           {showChangePassword && (
             <button
               onClick={handleChangePassword}
-              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-[background-color] duration-150 ease-in-out text-sm'
+              className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-[background-color] duration-150 ease-in-out text-sm'
             >
               <KeyRound className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>修改密码</span>
@@ -982,25 +1002,25 @@ export const UserMenu: React.FC = () => {
           )}
 
           {/* 分割线 */}
-          <div className='my-1 border-t border-gray-200 dark:border-gray-700'></div>
+          <div className='my-1 border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
           {/* 登出按钮 */}
           <button
             onClick={handleLogout}
-            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-[background-color] duration-150 ease-in-out text-sm'
+            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-[background-color] duration-150 ease-in-out text-sm'
           >
             <LogOut className='w-4 h-4' />
             <span className='font-medium'>登出</span>
           </button>
           {/* 分割线 */}
-          <div className='my-1 border-t border-gray-200 dark:border-gray-700'></div>
+          <div className='my-1 border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
           {/* 版本信息 */}
           <a
             href='https://github.com/SzeMeng76/LunaTV'
             target='_blank'
             rel='noopener noreferrer'
-            className='w-full px-3 py-2 text-center flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors text-xs'
+            className='w-full px-3 py-2 text-center flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-primary-100/50 dark:hover:bg-white/[0.03] transition-colors text-xs'
           >
             <div className='flex items-center gap-1'>
               <span className='font-mono'>Github Repo</span>
@@ -1016,7 +1036,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-1000'
+        className='fixed inset-0 bg-black/40 backdrop-blur-sm z-1000'
         onClick={handleCloseSettings}
         onTouchMove={(e) => {
           // 只阻止滚动，允许其他触摸事件
@@ -1032,7 +1052,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 设置面板 */}
-      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-1001 flex flex-col'>
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 flex flex-col border border-primary-200/50 dark:border-white/10'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='flex-1 p-6 overflow-y-auto'
@@ -1050,7 +1070,7 @@ export const UserMenu: React.FC = () => {
               </h3>
               <button
                 onClick={handleResetSettings}
-                className='px-2 py-1 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 hover:border-red-300 dark:border-red-800 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'
+                className='px-2 py-1 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 border border-red-200 hover:border-red-300 dark:border-red-500/20 dark:hover:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors'
                 title='重置为默认设置'
               >
                 恢复默认
@@ -1058,7 +1078,7 @@ export const UserMenu: React.FC = () => {
             </div>
             <button
               onClick={handleCloseSettings}
-              className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+              className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-colors'
               aria-label='Close'
             >
               <X className='w-full h-full' />
@@ -1068,7 +1088,57 @@ export const UserMenu: React.FC = () => {
           {/* 设置项 */}
           <div className='space-y-6'>
             {/* 分割线 */}
-            <div className='border-t border-gray-200 dark:border-gray-700'></div>
+            <div className='border-t border-primary-200/50 dark:border-white/[0.06]'></div>
+
+            {/* 主题颜色设置 */}
+            <div className='space-y-3'>
+              <div>
+                <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  主题颜色
+                </h4>
+                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                  选择您喜欢的界面主题色
+                </p>
+              </div>
+              <div className='grid grid-cols-5 gap-2'>
+                {Object.entries(THEME_PRESETS).map(([key, preset]) => {
+                  const isSelected = currentTheme === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => handleThemeChange(key as ThemePreset)}
+                      className={`relative group flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all duration-200 ${
+                        isSelected
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-transparent hover:bg-primary-100/50 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div
+                        className='w-8 h-8 rounded-full shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                        style={{
+                          backgroundColor: preset.colors['--color-primary-500'],
+                        }}
+                      />
+                      <span
+                        className={`text-xs font-medium ${
+                          isSelected
+                            ? 'text-primary-600 dark:text-primary-400'
+                            : 'text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
+                        {preset.name.split(' ')[0]}
+                      </span>
+                      {isSelected && (
+                        <div className='absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-primary-500 ring-2 ring-white dark:ring-gray-900' />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 分割线 */}
+            <div className='border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
             {/* 默认聚合搜索结果 */}
             <div className='flex items-center justify-between'>
@@ -1088,7 +1158,7 @@ export const UserMenu: React.FC = () => {
                     checked={defaultAggregateSearch}
                     onChange={(e) => handleAggregateToggle(e.target.checked)}
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1112,7 +1182,7 @@ export const UserMenu: React.FC = () => {
                     checked={enableOptimization}
                     onChange={(e) => handleOptimizationToggle(e.target.checked)}
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1136,7 +1206,7 @@ export const UserMenu: React.FC = () => {
                     checked={fluidSearch}
                     onChange={(e) => handleFluidSearchToggle(e.target.checked)}
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1162,14 +1232,14 @@ export const UserMenu: React.FC = () => {
                       handleLiveDirectConnectToggle(e.target.checked)
                     }
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
             </div>
 
             {/* 分割线 */}
-            <div className='border-t border-gray-200 dark:border-gray-700'></div>
+            <div className='border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
             {/* 播放缓冲优化 - 卡片式选择器 */}
             <div className='space-y-3'>
@@ -1196,10 +1266,10 @@ export const UserMenu: React.FC = () => {
                     },
                     blue: {
                       selected:
-                        'border-transparent bg-linear-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 ring-2 ring-blue-400/60 dark:ring-blue-500/50 shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] dark:shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]',
-                      icon: 'bg-linear-to-br from-blue-100 to-cyan-100 dark:from-blue-800/50 dark:to-cyan-800/50',
-                      check: 'text-blue-500',
-                      label: 'text-blue-700 dark:text-blue-300',
+                        'border-transparent bg-linear-to-r from-primary-50 to-cyan-50 dark:from-primary-900/20 dark:to-cyan-900/20 ring-2 ring-primary-400/60 dark:ring-primary-500/50 shadow-[0_0_15px_-3px] shadow-primary-500/40 dark:shadow-primary-500/30',
+                      icon: 'bg-linear-to-br from-primary-100 to-cyan-100 dark:from-primary-800/50 dark:to-cyan-800/50',
+                      check: 'text-primary-500',
+                      label: 'text-primary-700 dark:text-primary-300',
                     },
                     purple: {
                       selected:
@@ -1220,7 +1290,7 @@ export const UserMenu: React.FC = () => {
                       className={`w-full p-3 rounded-xl border-2 transition-all duration-300 text-left flex items-center gap-3 ${
                         isSelected
                           ? colors.selected
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm bg-white dark:bg-gray-800'
+                          : 'border-primary-200/50 dark:border-white/[0.06] hover:border-gray-300 dark:hover:border-white/15 hover:shadow-sm bg-white dark:bg-white/[0.03]'
                       }`}
                     >
                       {/* 图标 */}
@@ -1228,7 +1298,7 @@ export const UserMenu: React.FC = () => {
                         className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition-all duration-300 ${
                           isSelected
                             ? colors.icon
-                            : 'bg-gray-100 dark:bg-gray-700'
+                            : 'bg-gray-100 dark:bg-white/[0.06]'
                         }`}
                       >
                         {option.icon}
@@ -1279,7 +1349,7 @@ export const UserMenu: React.FC = () => {
             </div>
 
             {/* 分割线 */}
-            <div className='border-t border-gray-200 dark:border-gray-700'></div>
+            <div className='border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
             {/* 跳过片头片尾设置 */}
             <div className='space-y-4'>
@@ -1312,7 +1382,7 @@ export const UserMenu: React.FC = () => {
                         handleEnableAutoSkipToggle(e.target.checked)
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1338,7 +1408,7 @@ export const UserMenu: React.FC = () => {
                         handleEnableAutoNextEpisodeToggle(e.target.checked)
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1364,21 +1434,21 @@ export const UserMenu: React.FC = () => {
                         handleRequireClearConfirmationToggle(e.target.checked)
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
               </div>
 
               {/* 提示信息 */}
-              <div className='text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800'>
+              <div className='text-xs text-gray-500 dark:text-gray-400 bg-primary-50 dark:bg-primary-500/10 p-3 rounded-lg border border-primary-200 dark:border-primary-500/20'>
                 💡
                 这些设置会作为新视频的默认配置。对于已配置的视频，请在播放页面的"跳过设置"中单独调整。
               </div>
             </div>
 
             {/* 分割线 */}
-            <div className='border-t border-gray-200 dark:border-gray-700'></div>
+            <div className='border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
             {/* 继续观看筛选设置 */}
             <div className='space-y-4'>
@@ -1403,7 +1473,7 @@ export const UserMenu: React.FC = () => {
                         )
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1428,7 +1498,7 @@ export const UserMenu: React.FC = () => {
                         type='number'
                         min='0'
                         max='100'
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100'
                         value={continueWatchingMinProgress}
                         onChange={(e) => {
                           const value = Math.max(
@@ -1449,7 +1519,7 @@ export const UserMenu: React.FC = () => {
                         type='number'
                         min='0'
                         max='100'
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100'
                         value={continueWatchingMaxProgress}
                         onChange={(e) => {
                           const value = Math.max(
@@ -1463,7 +1533,7 @@ export const UserMenu: React.FC = () => {
                   </div>
 
                   {/* 当前范围提示 */}
-                  <div className='text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg'>
+                  <div className='text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/[0.03] p-3 rounded-lg'>
                     当前设置：显示播放进度在 {continueWatchingMinProgress}% -{' '}
                     {continueWatchingMaxProgress}% 之间的内容
                   </div>
@@ -1472,14 +1542,14 @@ export const UserMenu: React.FC = () => {
 
               {/* 关闭筛选时的提示 */}
               {!enableContinueWatchingFilter && (
-                <div className='text-xs text-gray-500 dark:text-gray-400 bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800'>
+                <div className='text-xs text-gray-500 dark:text-gray-400 bg-orange-50 dark:bg-orange-500/10 p-3 rounded-lg border border-orange-200 dark:border-orange-500/20'>
                   筛选已关闭：将显示所有播放时间超过2分钟的内容
                 </div>
               )}
             </div>
 
             {/* 分割线 */}
-            <div className='border-t border-gray-200 dark:border-gray-700'></div>
+            <div className='border-t border-primary-200/50 dark:border-white/[0.06]'></div>
 
             {/* 下载格式设置 */}
             <div className='space-y-3'>
@@ -1500,7 +1570,7 @@ export const UserMenu: React.FC = () => {
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                     downloadFormat === 'TS'
                       ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      : 'border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/15'
                   }`}
                 >
                   <div className='flex flex-col items-center gap-2'>
@@ -1542,19 +1612,19 @@ export const UserMenu: React.FC = () => {
                   onClick={() => handleDownloadFormatChange('MP4')}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                     downloadFormat === 'MP4'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/15'
                   }`}
                 >
                   <div className='flex flex-col items-center gap-2'>
                     <div
-                      className={`text-2xl ${downloadFormat === 'MP4' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'}`}
+                      className={`text-2xl ${downloadFormat === 'MP4' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}
                     >
                       🎬
                     </div>
                     <div className='text-center'>
                       <div
-                        className={`text-sm font-semibold ${downloadFormat === 'MP4' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100'}`}
+                        className={`text-sm font-semibold ${downloadFormat === 'MP4' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-900 dark:text-gray-100'}`}
                       >
                         MP4格式
                       </div>
@@ -1563,7 +1633,7 @@ export const UserMenu: React.FC = () => {
                       </div>
                     </div>
                     {downloadFormat === 'MP4' && (
-                      <div className='w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center'>
+                      <div className='w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center'>
                         <svg
                           className='w-3 h-3'
                           fill='currentColor'
@@ -1582,7 +1652,7 @@ export const UserMenu: React.FC = () => {
               </div>
 
               {/* 格式说明 */}
-              <div className='text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800'>
+              <div className='text-xs text-gray-500 dark:text-gray-400 bg-primary-50 dark:bg-primary-500/10 p-3 rounded-lg border border-primary-200 dark:border-primary-500/20'>
                 💡
                 TS格式下载速度快，兼容性好；MP4格式经过转码，体积略小，兼容性更广
               </div>
@@ -1590,7 +1660,7 @@ export const UserMenu: React.FC = () => {
           </div>
 
           {/* 底部说明 */}
-          <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
+          <div className='mt-6 pt-4 border-t border-primary-200/50 dark:border-white/[0.06]'>
             <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
               这些设置保存在本地浏览器中
             </p>
@@ -1605,7 +1675,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-1000'
+        className='fixed inset-0 bg-black/40 backdrop-blur-sm z-1000'
         onClick={handleCloseChangePassword}
         onTouchMove={(e) => {
           // 只阻止滚动，允许其他触摸事件
@@ -1621,7 +1691,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 修改密码面板 */}
-      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl z-1001 overflow-hidden'>
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 overflow-hidden border border-primary-200/50 dark:border-white/10'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='h-full p-6'
@@ -1641,7 +1711,7 @@ export const UserMenu: React.FC = () => {
             </h3>
             <button
               onClick={handleCloseChangePassword}
-              className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+              className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-colors'
               aria-label='Close'
             >
               <X className='w-full h-full' />
@@ -1657,7 +1727,7 @@ export const UserMenu: React.FC = () => {
               </label>
               <input
                 type='password'
-                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
                 placeholder='请输入新密码'
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -1672,7 +1742,7 @@ export const UserMenu: React.FC = () => {
               </label>
               <input
                 type='password'
-                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
                 placeholder='请再次输入新密码'
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -1682,17 +1752,17 @@ export const UserMenu: React.FC = () => {
 
             {/* 错误信息 */}
             {passwordError && (
-              <div className='text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-200 dark:border-red-800'>
+              <div className='text-red-500 text-sm bg-red-50 dark:bg-red-500/10 p-3 rounded-md border border-red-200 dark:border-red-500/20'>
                 {passwordError}
               </div>
             )}
           </div>
 
           {/* 操作按钮 */}
-          <div className='flex gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
+          <div className='flex gap-3 mt-6 pt-4 border-t border-primary-200/50 dark:border-white/[0.06]'>
             <button
               onClick={handleCloseChangePassword}
-              className='flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors'
+              className='flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/10 rounded-md transition-colors'
               disabled={passwordLoading}
             >
               取消
@@ -1707,7 +1777,7 @@ export const UserMenu: React.FC = () => {
           </div>
 
           {/* 底部说明 */}
-          <div className='mt-4 pt-4 border-t border-gray-200 dark:border-gray-700'>
+          <div className='mt-4 pt-4 border-t border-primary-200/50 dark:border-white/[0.06]'>
             <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
               修改密码后需要重新登录
             </p>
@@ -1722,7 +1792,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-1000'
+        className='fixed inset-0 bg-black/40 backdrop-blur-sm z-1000'
         onClick={handleCloseWatchingUpdates}
         onTouchMove={(e) => {
           e.preventDefault();
@@ -1736,7 +1806,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 更新弹窗 */}
-      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-1001 flex flex-col'>
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl z-1001 flex flex-col border border-primary-200/50 dark:border-white/10'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='flex-1 p-6 overflow-y-auto'
@@ -1763,7 +1833,7 @@ export const UserMenu: React.FC = () => {
             </div>
             <button
               onClick={handleCloseWatchingUpdates}
-              className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+              className='w-8 h-8 p-1 rounded-full flex items-center justify-center text-gray-500 hover:bg-primary-100/50 dark:hover:bg-white/[0.06] transition-colors'
               aria-label='Close'
             >
               <X className='w-full h-full' />
@@ -1841,7 +1911,7 @@ export const UserMenu: React.FC = () => {
           </div>
 
           {/* 底部说明 */}
-          <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
+          <div className='mt-6 pt-4 border-t border-primary-200/50 dark:border-white/[0.06]'>
             <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
               点击海报即可观看新更新的剧集
             </p>
@@ -1856,7 +1926,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-1000'
+        className='fixed inset-0 bg-black/40 backdrop-blur-sm z-1000'
         onClick={handleCloseContinueWatching}
         onTouchMove={(e) => {
           e.preventDefault();
@@ -1871,13 +1941,13 @@ export const UserMenu: React.FC = () => {
 
       {/* 继续观看弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-1001 max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-200/50 dark:border-white/10 z-1001 max-h-[80vh] overflow-y-auto'
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-6'>
           <div className='flex items-center justify-between mb-4'>
             <h3 className='text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-              <PlayCircle className='w-6 h-6 text-blue-500' />
+              <PlayCircle className='w-6 h-6 text-primary-500' />
               继续观看
             </h3>
             <button
@@ -1939,7 +2009,7 @@ export const UserMenu: React.FC = () => {
           )}
 
           {/* 底部说明 */}
-          <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
+          <div className='mt-6 pt-4 border-t border-primary-200/50 dark:border-white/[0.06]'>
             <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
               点击海报即可继续观看
             </p>
@@ -1954,7 +2024,7 @@ export const UserMenu: React.FC = () => {
     <>
       {/* 背景遮罩 */}
       <div
-        className='fixed inset-0 bg-black/50 backdrop-blur-sm z-1000'
+        className='fixed inset-0 bg-black/40 backdrop-blur-sm z-1000'
         onClick={handleCloseFavorites}
         onTouchMove={(e) => {
           e.preventDefault();
@@ -1969,7 +2039,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 收藏弹窗 */}
       <div
-        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-1001 max-h-[80vh] overflow-y-auto'
+        className='fixed inset-x-4 top-1/2 transform -translate-y-1/2 max-w-4xl mx-auto bg-primary-50/95 dark:bg-gray-950/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-primary-200/50 dark:border-white/10 z-1001 max-h-[80vh] overflow-y-auto'
         onClick={(e) => e.stopPropagation()}
       >
         <div className='p-6'>
@@ -2060,7 +2130,7 @@ export const UserMenu: React.FC = () => {
           )}
 
           {/* 底部说明 */}
-          <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
+          <div className='mt-6 pt-4 border-t border-primary-200/50 dark:border-white/[0.06]'>
             <p className='text-xs text-gray-500 dark:text-gray-400 text-center'>
               点击海报即可进入详情页面
             </p>
@@ -2075,11 +2145,11 @@ export const UserMenu: React.FC = () => {
       <div className='relative'>
         <button
           onClick={handleMenuClick}
-          className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-blue-500/30 dark:hover:shadow-blue-400/30 group'
+          className='relative w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-400 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-primary-500/30 dark:hover:shadow-primary-400/30 group'
           aria-label='User Menu'
         >
           {/* 微光背景效果 */}
-          <div className='absolute inset-0 rounded-full bg-linear-to-br from-blue-400/0 to-purple-600/0 group-hover:from-blue-400/20 group-hover:to-purple-600/20 dark:group-hover:from-blue-300/20 dark:group-hover:to-purple-500/20 transition-all duration-300'></div>
+          <div className='absolute inset-0 rounded-full bg-linear-to-br from-primary-400/0 to-purple-600/0 group-hover:from-primary-400/20 group-hover:to-purple-600/20 dark:group-hover:from-primary-300/20 dark:group-hover:to-purple-500/20 transition-all duration-300'></div>
 
           <User className='w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-300' />
         </button>

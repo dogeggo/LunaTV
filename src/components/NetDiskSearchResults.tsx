@@ -27,7 +27,7 @@ interface NetDiskSearchResultsProps {
 const CLOUD_TYPES = {
   baidu: {
     name: '百度网盘',
-    color: 'bg-blue-500',
+    color: 'bg-primary-500',
     icon: '📁',
     domain: 'pan.baidu.com',
   },
@@ -158,7 +158,7 @@ export default function NetDiskSearchResults({
   if (loading) {
     return (
       <div className='flex items-center justify-center py-12'>
-        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500'></div>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500'></div>
         <span className='ml-3 text-gray-600 dark:text-gray-300'>
           正在搜索网盘资源...
         </span>
@@ -175,13 +175,13 @@ export default function NetDiskSearchResults({
 
     return (
       <div
-        className={`${isFunctionDisabled ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'} border rounded-lg p-4 animate-fade-in`}
+        className={`${isFunctionDisabled ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'} border rounded-lg p-4 animate-fade-in`}
       >
         <div className='flex items-start'>
           <div className='shrink-0 mt-0.5'>
             {isFunctionDisabled ? (
               <svg
-                className='h-5 w-5 text-blue-500'
+                className='h-5 w-5 text-primary-500'
                 fill='currentColor'
                 viewBox='0 0 20 20'
               >
@@ -207,22 +207,22 @@ export default function NetDiskSearchResults({
           </div>
           <div className='ml-3 flex-1'>
             <h3
-              className={`text-sm font-medium ${isFunctionDisabled ? 'text-blue-800 dark:text-blue-200' : 'text-red-800 dark:text-red-200'}`}
+              className={`text-sm font-medium ${isFunctionDisabled ? 'text-primary-800 dark:text-primary-200' : 'text-red-800 dark:text-red-200'}`}
             >
               {isFunctionDisabled ? '网盘搜索功能未启用' : '网盘搜索失败'}
             </h3>
             <div
-              className={`mt-2 text-sm ${isFunctionDisabled ? 'text-blue-700 dark:text-blue-300' : 'text-red-700 dark:text-red-300'}`}
+              className={`mt-2 text-sm ${isFunctionDisabled ? 'text-primary-700 dark:text-primary-300' : 'text-red-700 dark:text-red-300'}`}
             >
               {error}
             </div>
 
             {/* 用户友好的解决建议 */}
             <div
-              className={`mt-3 p-3 ${isFunctionDisabled ? 'bg-blue-100 dark:bg-blue-800/30' : 'bg-red-100 dark:bg-red-800/30'} rounded-md`}
+              className={`mt-3 p-3 ${isFunctionDisabled ? 'bg-primary-100 dark:bg-primary-800/30' : 'bg-red-100 dark:bg-red-800/30'} rounded-md`}
             >
               <div
-                className={`text-xs ${isFunctionDisabled ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}
+                className={`text-xs ${isFunctionDisabled ? 'text-primary-600 dark:text-primary-400' : 'text-red-600 dark:text-red-400'}`}
               >
                 💡 <strong>解决方案：</strong>
                 {isFunctionDisabled ? (
@@ -313,8 +313,8 @@ export default function NetDiskSearchResults({
               onClick={() => setActiveType(null)}
               className={`inline-flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border transition-colors ${
                 activeType === null
-                  ? 'bg-blue-500 text-white border-transparent'
-                  : 'bg-blue-500/10 border-gray-300 dark:border-gray-600 hover:bg-blue-500/20'
+                  ? 'bg-primary-500 text-white border-transparent'
+                  : 'bg-primary-500/10 border-gray-300 dark:border-gray-600 hover:bg-primary-500/20'
               } text-xs sm:text-sm font-medium`}
               title='显示全部内容'
             >
@@ -355,10 +355,10 @@ export default function NetDiskSearchResults({
         </div>
       </div>
       {/* 搜索结果统计 */}
-      <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6'>
+      <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4 mb-6'>
         <div className='flex items-center'>
           <svg
-            className='h-5 w-5 text-blue-500 mr-2'
+            className='h-5 w-5 text-primary-500 mr-2'
             fill='currentColor'
             viewBox='0 0 20 20'
           >
@@ -368,7 +368,7 @@ export default function NetDiskSearchResults({
               clipRule='evenodd'
             />
           </svg>
-          <span className='text-sm text-blue-800 dark:text-blue-200'>
+          <span className='text-sm text-primary-800 dark:text-primary-200'>
             {activeType ? (
               <>
                 仅显示{' '}
@@ -456,7 +456,7 @@ export default function NetDiskSearchResults({
                                         onClick={() =>
                                           toggleTitleExpansion(linkKey)
                                         }
-                                        className='inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-700 transition-all duration-200 ease-in-out'
+                                        className='inline-flex items-center space-x-1 px-2 py-1 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-800/30 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-700 transition-all duration-200 ease-in-out'
                                       >
                                         <span>
                                           {isTitleExpanded ? '收起' : '展开'}
@@ -492,7 +492,7 @@ export default function NetDiskSearchResults({
                                       onClick={() =>
                                         toggleTitleExpansion(linkKey)
                                       }
-                                      className='inline-flex items-center space-x-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-800/30 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-medium rounded-md border border-blue-200 dark:border-blue-700 transition-all duration-200 ease-in-out'
+                                      className='inline-flex items-center space-x-1 px-2 py-1 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-800/30 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-xs font-medium rounded-md border border-primary-200 dark:border-primary-700 transition-all duration-200 ease-in-out'
                                     >
                                       <span>
                                         {isTitleExpanded ? '收起' : '展开'}

@@ -257,7 +257,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
                       return title;
                     })()}
                     {isCurrent && (
-                      <span className='absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full'></span>
+                      <span className='absolute -top-1 -right-1 w-2 h-2 bg-primary-500 rounded-full'></span>
                     )}
                   </button>
                 );
@@ -277,7 +277,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
                 <>
                   第 {Array.from(selectedEpisodes)[0] + 1} 集
                   {Array.from(selectedEpisodes)[0] === currentEpisodeIndex && (
-                    <span className='ml-2 text-blue-500 dark:text-blue-400'>
+                    <span className='ml-2 text-primary-500 dark:text-primary-400'>
                       (当前播放)
                     </span>
                   )}

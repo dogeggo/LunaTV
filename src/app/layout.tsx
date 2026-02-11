@@ -9,10 +9,12 @@ import { loadConfig } from '@/lib/config';
 import CacheCleaner from '../components/CacheCleaner';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
+import NavigationLoading from '../components/NavigationLoading';
 import QueryProvider from '../components/QueryProvider';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
+import { NavigationLoadingProvider } from '../contexts/NavigationLoadingContext';
 
 const inter = Inter({ subsets: ['latin'], preload: false });
 export const dynamic = 'force-dynamic';
@@ -111,14 +113,17 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <DownloadProvider>
-              <SiteProvider siteName={siteName} announcement={announcement}>
-                <CacheCleaner />
-                {children}
-                <GlobalErrorIndicator />
-              </SiteProvider>
-              <DownloadPanel />
-            </DownloadProvider>
+            <NavigationLoadingProvider>
+              <DownloadProvider>
+                <SiteProvider siteName={siteName} announcement={announcement}>
+                  <CacheCleaner />
+                  {children}
+                  <GlobalErrorIndicator />
+                  <NavigationLoading />
+                </SiteProvider>
+                <DownloadPanel />
+              </DownloadProvider>
+            </NavigationLoadingProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

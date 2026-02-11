@@ -157,14 +157,14 @@ export const TMDBFilterPanel: React.FC<TMDBFilterPanelProps> = ({
         onClick={onToggleVisible}
         className={`inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium ${
           hasActiveFilters
-            ? 'text-blue-700 bg-blue-50 border-blue-300 dark:text-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
+            ? 'text-primary-700 bg-primary-50 border-primary-300 dark:text-primary-300 dark:bg-primary-900/20 dark:border-primary-600'
             : 'text-gray-700 bg-white hover:bg-gray-50 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700'
         } transition-colors`}
       >
         <FunnelIcon className='h-4 w-4 mr-2' />
         筛选
         {hasActiveFilters && (
-          <span className='ml-1 bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5'>
+          <span className='ml-1 bg-primary-600 text-white text-xs rounded-full px-1.5 py-0.5'>
             {Object.keys(localFilters).length}
           </span>
         )}
@@ -353,7 +353,7 @@ export const TMDBFilterPanel: React.FC<TMDBFilterPanelProps> = ({
                     }}
                     className={`px-2 py-1 text-xs rounded-md border transition-colors ${
                       (localFilters.genreIds || []).includes(genre.id)
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-primary-600 text-white border-primary-600'
                         : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -384,7 +384,7 @@ export const TMDBFilterPanel: React.FC<TMDBFilterPanelProps> = ({
                     }}
                     className={`px-2 py-1 text-xs rounded-md border transition-colors ${
                       (localFilters.languages || []).includes(lang.code)
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-primary-600 text-white border-primary-600'
                         : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -431,7 +431,7 @@ export const TMDBFilterPanel: React.FC<TMDBFilterPanelProps> = ({
                   onChange={(e) =>
                     updateFilter('onlyRated', e.target.checked || undefined)
                   }
-                  className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+                  className='h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded'
                 />
                 <span className='ml-2 text-sm text-gray-700 dark:text-gray-300'>
                   只显示有评分的作品
@@ -471,7 +471,7 @@ export const TMDBFilterPanel: React.FC<TMDBFilterPanelProps> = ({
               </span>
               <button
                 onClick={applyFilters}
-                className='px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors'
+                className='px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 transition-colors'
               >
                 应用筛选
               </button>

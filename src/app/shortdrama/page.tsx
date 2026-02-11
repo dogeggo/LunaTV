@@ -461,7 +461,7 @@ export default function ShortDramaPage() {
               <div className='relative px-12 py-10 rounded-3xl bg-linear-to-br from-gray-50 via-slate-50 to-gray-100 dark:from-gray-800/40 dark:via-slate-800/40 dark:to-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 shadow-xl backdrop-blur-sm overflow-hidden max-w-md'>
                 {/* 装饰性元素 */}
                 <div className='absolute top-0 left-0 w-32 h-32 bg-linear-to-br from-purple-200/20 to-pink-200/20 rounded-full blur-3xl'></div>
-                <div className='absolute bottom-0 right-0 w-32 h-32 bg-linear-to-br from-blue-200/20 to-teal-200/20 rounded-full blur-3xl'></div>
+                <div className='absolute bottom-0 right-0 w-32 h-32 bg-linear-to-br from-primary-200/20 to-teal-200/20 rounded-full blur-3xl'></div>
 
                 {/* 内容 */}
                 <div className='relative flex flex-col items-center gap-4'>
@@ -500,7 +500,7 @@ export default function ShortDramaPage() {
                   {/* 按钮 */}
                   <button
                     onClick={() => handleSearch('')}
-                    className='mt-2 px-6 py-2.5 bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105'
+                    className='mt-2 px-6 py-2.5 bg-linear-to-r from-primary-500 to-purple-500 hover:from-primary-600 hover:to-purple-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105'
                   >
                     清除搜索条件
                   </button>

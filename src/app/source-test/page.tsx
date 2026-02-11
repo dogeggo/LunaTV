@@ -95,8 +95,8 @@ export default function SourceTestPage() {
                 <ArrowLeftIcon className='w-5 h-5 text-gray-600 dark:text-gray-400' />
               </button>
               <div className='flex items-center space-x-3'>
-                <div className='p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg'>
-                  <MagnifyingGlassIcon className='w-6 h-6 text-blue-600 dark:text-blue-400' />
+                <div className='p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg'>
+                  <MagnifyingGlassIcon className='w-6 h-6 text-primary-600 dark:text-primary-400' />
                 </div>
                 <div>
                   <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>

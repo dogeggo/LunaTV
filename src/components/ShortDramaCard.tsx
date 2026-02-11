@@ -1,7 +1,7 @@
 'use client';
 
 import { Heart, Play, Star } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { memo, useCallback, useEffect, useState } from 'react';
 
 import {
@@ -13,6 +13,8 @@ import {
 } from '@/lib/db.client';
 import { ShortDramaItem } from '@/lib/types';
 import { processImageUrl } from '@/lib/utils';
+
+import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
 
 interface ShortDramaCardProps {
   drama: ShortDramaItem;
@@ -27,6 +29,8 @@ function ShortDramaCard({
   className = '',
   priority = false,
 }: ShortDramaCardProps) {
+  const router = useRouter();
+  const { startNavigation } = useNavigationLoading();
   // 直接使用 props 中的 episode_count，不再尝试异步获取真实集数
   const realEpisodeCount = drama.episode_count;
   const showEpisodeCount = drama.episode_count > 1;
@@ -107,6 +111,11 @@ function ShortDramaCard({
     }
   };
 
+  const handleClick = useCallback(() => {
+    startNavigation(drama.name);
+    router.push(`/play?title=${encodeURIComponent(drama.name)}`);
+  }, [drama.name, startNavigation, router]);
+
   return (
     <div
       className={`group relative ${className} transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-30 hover:shadow-2xl`}
@@ -114,10 +123,7 @@ function ShortDramaCard({
       onTouchStart={() => setShouldCheckStatus(true)}
       onFocus={() => setShouldCheckStatus(true)}
     >
-      <Link
-        href={`/play?title=${encodeURIComponent(drama.name)}`}
-        className='block'
-      >
+      <div onClick={handleClick} className='block cursor-pointer'>
         {/* 封面图片 */}
         <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-800'>
           {/* 渐变光泽动画层 */}
@@ -194,16 +200,16 @@ function ShortDramaCard({
 
         {/* 信息区域 */}
         <div className='mt-2 space-y-1.5'>
-          <h3 className='text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-linear-to-r group-hover:from-blue-600 group-hover:to-purple-600 dark:group-hover:from-blue-400 dark:group-hover:to-purple-400 transition-all duration-300'>
+          <h3 className='text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-linear-to-r group-hover:from-primary-600 group-hover:to-purple-600 dark:group-hover:from-primary-400 dark:group-hover:to-purple-400 transition-all duration-300'>
             {drama.name}
           </h3>
 
           {/* 演员信息 */}
           {drama.author && (
             <div className='flex items-center gap-1.5 text-xs'>
-              <div className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200/50 dark:border-blue-700/50'>
+              <div className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-linear-to-r from-primary-50 to-indigo-50 dark:from-primary-900/20 dark:to-indigo-900/20 border border-primary-200/50 dark:border-primary-700/50'>
                 <svg
-                  className='w-3 h-3 text-blue-600 dark:text-blue-400'
+                  className='w-3 h-3 text-primary-600 dark:text-primary-400'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -215,7 +221,7 @@ function ShortDramaCard({
                     d='M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
                   ></path>
                 </svg>
-                <span className='text-blue-700 dark:text-blue-300 font-medium line-clamp-1'>
+                <span className='text-primary-700 dark:text-primary-300 font-medium line-clamp-1'>
                   {drama.author}
                 </span>
               </div>
@@ -250,7 +256,7 @@ function ShortDramaCard({
             </p>
           )}
         </div>
-      </Link>
+      </div>
     </div>
   );
 }

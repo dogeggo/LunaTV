@@ -76,12 +76,7 @@ export async function GET(request: NextRequest) {
       console.log(
         `⏱️  [性能提示] 用户 ${authInfo.username} 的收藏查询耗时 ${durationSeconds}s，性能尚可。收藏数: ${count}`,
       );
-    } else {
-      console.log(
-        `✅ [性能良好] 用户 ${authInfo.username} 的收藏查询耗时 ${durationSeconds}s，性能优秀！收藏数: ${count}`,
-      );
     }
-
     return NextResponse.json(favorites, { status: 200 });
   } catch (err) {
     console.error('获取收藏失败', err);

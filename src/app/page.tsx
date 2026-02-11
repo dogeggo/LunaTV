@@ -858,7 +858,7 @@ function HomeClient() {
                     项
                   </span>
                   {favoriteStats.movie > 0 && (
-                    <span className='px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-full'>
+                    <span className='px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-full'>
                       电影 {favoriteStats.movie}
                     </span>
                   )}
@@ -907,7 +907,7 @@ function HomeClient() {
                       onClick={() => setFavoriteFilter(key)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         favoriteFilter === key
-                          ? 'bg-linear-to-r from-blue-500 to-purple-500 text-white shadow-lg scale-105'
+                          ? 'bg-linear-to-r from-primary-500 to-purple-500 text-white shadow-lg scale-105'
                           : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                       }`}
                     >
@@ -934,7 +934,7 @@ function HomeClient() {
                         onClick={() => setFavoriteSortBy(key)}
                         className={`px-3 py-1 rounded-md transition-colors ${
                           favoriteSortBy === key
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-primary-500 text-white'
                             : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                         }`}
                       >
@@ -1359,7 +1359,7 @@ function HomeClient() {
                   <SectionTitle
                     title='热门剧集'
                     icon={Tv}
-                    iconColor='text-blue-500'
+                    iconColor='text-primary-500'
                   />
                   <Link
                     href='/douban?type=tv'

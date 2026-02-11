@@ -2036,7 +2036,7 @@ function LivePageClient() {
             <div className='space-y-3'>
               <button
                 onClick={() => window.location.reload()}
-                className='w-full px-6 py-3 bg-linear-to-r from-blue-500 to-cyan-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-cyan-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl'
+                className='w-full px-6 py-3 bg-linear-to-r from-primary-500 to-cyan-600 text-white rounded-xl font-medium hover:from-primary-600 hover:to-cyan-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl'
               >
                 🔄 重新尝试
               </button>
@@ -2053,7 +2053,7 @@ function LivePageClient() {
         {/* 第一行：页面标题 */}
         <div className='py-1'>
           <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2'>
-            <Radio className='w-5 h-5 text-blue-500 shrink-0' />
+            <Radio className='w-5 h-5 text-primary-500 shrink-0' />
             <div className='min-w-0 flex-1 flex items-center gap-2'>
               {/* 频道名称 - 点击展开/收起 */}
               <div
@@ -2089,12 +2089,12 @@ function LivePageClient() {
                 {currentChannel && (
                   <div className='shrink-0 flex items-center gap-1'>
                     {expandedChannels.has('page-title') ? (
-                      <ChevronUp className='w-4 h-4 text-blue-500 dark:text-blue-400 transition-transform duration-300' />
+                      <ChevronUp className='w-4 h-4 text-primary-500 dark:text-primary-400 transition-transform duration-300' />
                     ) : (
-                      <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all duration-300' />
+                      <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-all duration-300' />
                     )}
                     {/* 文字提示 - 仅桌面端显示 */}
-                    <span className='hidden md:inline text-xs text-blue-500 dark:text-blue-400'>
+                    <span className='hidden md:inline text-xs text-primary-500 dark:text-primary-400'>
                       {expandedChannels.has('page-title') ? '收起' : '展开'}
                     </span>
                   </div>
@@ -2115,7 +2115,7 @@ function LivePageClient() {
                     }
                     // useEffect 会自动检测 directPlaybackEnabled 的变化并重新加载播放器
                   }}
-                  className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-linear-to-r from-blue-100 to-cyan-100 dark:from-blue-900/40 dark:to-cyan-900/40 border border-blue-200 dark:border-blue-700 whitespace-nowrap cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150'
+                  className='inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full shrink-0 bg-linear-to-r from-primary-100 to-cyan-100 dark:from-primary-900/40 dark:to-cyan-900/40 border border-primary-200 dark:border-primary-700 whitespace-nowrap cursor-pointer hover:opacity-80 active:scale-95 transition-all duration-150'
                   title={
                     directPlaybackEnabled
                       ? playbackMode === 'direct'
@@ -2241,7 +2241,7 @@ function LivePageClient() {
 
                 {/* DVR 回放支持提示 */}
                 {dvrDetected && (
-                  <div className='absolute top-4 left-4 right-4 bg-linear-to-r from-blue-500/90 to-cyan-500/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg z-550 animate-in fade-in slide-in-from-top-2 duration-300'>
+                  <div className='absolute top-4 left-4 right-4 bg-linear-to-r from-primary-500/90 to-cyan-500/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg z-550 animate-in fade-in slide-in-from-top-2 duration-300'>
                     <div className='flex items-center justify-between'>
                       <div className='flex items-center gap-3 flex-1'>
                         <div className='shrink-0'>
@@ -2547,12 +2547,12 @@ function LivePageClient() {
                                         {/* Chevron图标 - 始终显示，带旋转动画 */}
                                         <div className='shrink-0 flex items-center gap-1'>
                                           {expandedChannels.has(channel.id) ? (
-                                            <ChevronUp className='w-4 h-4 text-blue-500 dark:text-blue-400 transition-transform duration-300' />
+                                            <ChevronUp className='w-4 h-4 text-primary-500 dark:text-primary-400 transition-transform duration-300' />
                                           ) : (
-                                            <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all duration-300' />
+                                            <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-all duration-300' />
                                           )}
                                           {/* 文字提示 - 仅桌面端显示 */}
-                                          <span className='hidden md:inline text-xs text-blue-500 dark:text-blue-400'>
+                                          <span className='hidden md:inline text-xs text-primary-500 dark:text-primary-400'>
                                             {expandedChannels.has(channel.id)
                                               ? '收起'
                                               : '展开'}
@@ -2578,7 +2578,7 @@ function LivePageClient() {
                                   <Tv className='w-10 h-10 text-gray-400 dark:text-gray-500' />
                                 </div>
                                 {/* 装饰小点 */}
-                                <div className='absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping'></div>
+                                <div className='absolute -top-1 -right-1 w-3 h-3 bg-primary-400 rounded-full animate-ping'></div>
                                 <div className='absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse'></div>
                               </div>
                               <p className='text-base font-semibold text-gray-700 dark:text-gray-300 mb-2'>
@@ -2688,12 +2688,12 @@ function LivePageClient() {
                                       {/* Chevron图标 - 始终显示，带旋转动画 */}
                                       <div className='shrink-0 flex items-center gap-1'>
                                         {expandedChannels.has(channel.id) ? (
-                                          <ChevronUp className='w-4 h-4 text-blue-500 dark:text-blue-400 transition-transform duration-300' />
+                                          <ChevronUp className='w-4 h-4 text-primary-500 dark:text-primary-400 transition-transform duration-300' />
                                         ) : (
-                                          <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all duration-300' />
+                                          <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-all duration-300' />
                                         )}
                                         {/* 文字提示 - 仅桌面端显示 */}
-                                        <span className='hidden md:inline text-xs text-blue-500 dark:text-blue-400'>
+                                        <span className='hidden md:inline text-xs text-primary-500 dark:text-primary-400'>
                                           {expandedChannels.has(channel.id)
                                             ? '收起'
                                             : '展开'}
@@ -2765,7 +2765,7 @@ function LivePageClient() {
                         <button
                           onClick={refreshLiveSources}
                           disabled={isRefreshingSource}
-                          className='flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white text-sm rounded-lg transition-colors flex-1'
+                          className='flex items-center gap-2 px-3 py-2 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white text-sm rounded-lg transition-colors flex-1'
                         >
                           <RefreshCw
                             className={`w-4 h-4 ${isRefreshingSource ? 'animate-spin' : ''}`}
@@ -3025,12 +3025,12 @@ function LivePageClient() {
                         {/* Chevron图标 - 始终显示，带旋转动画 */}
                         <div className='shrink-0 flex items-center gap-1'>
                           {expandedChannels.has('current-channel-info') ? (
-                            <ChevronUp className='w-4 h-4 text-blue-500 dark:text-blue-400 transition-transform duration-300' />
+                            <ChevronUp className='w-4 h-4 text-primary-500 dark:text-primary-400 transition-transform duration-300' />
                           ) : (
-                            <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-all duration-300' />
+                            <ChevronDown className='w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-all duration-300' />
                           )}
                           {/* 文字提示 - 仅桌面端显示 */}
-                          <span className='hidden md:inline text-xs text-blue-500 dark:text-blue-400'>
+                          <span className='hidden md:inline text-xs text-primary-500 dark:text-primary-400'>
                             {expandedChannels.has('current-channel-info')
                               ? '收起'
                               : '展开'}

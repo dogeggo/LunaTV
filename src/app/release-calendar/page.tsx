@@ -362,13 +362,13 @@ export default function ReleaseCalendarPage() {
         {/* Aurora Mesh Gradient Background */}
         <div className='absolute inset-0 -z-10'>
           {/* Light mode: Aurora mesh gradient */}
-          <div className='absolute inset-0 bg-linear-to-br from-blue-50 via-white to-purple-50 dark:hidden'></div>
+          <div className='absolute inset-0 bg-linear-to-br from-primary-50 via-white to-purple-50 dark:hidden'></div>
           <div className='absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob dark:hidden'></div>
           <div className='absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 dark:hidden'></div>
           <div className='absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 dark:hidden'></div>
 
           {/* Dark mode: Deep aurora mesh gradient */}
-          <div className='hidden dark:block absolute inset-0 bg-linear-to-br from-gray-900 via-blue-950 to-purple-950'></div>
+          <div className='hidden dark:block absolute inset-0 bg-linear-to-br from-gray-900 via-primary-950 to-purple-950'></div>
           <div className='hidden dark:block absolute top-0 -left-4 w-72 h-72 bg-purple-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob'></div>
           <div className='hidden dark:block absolute top-0 -right-4 w-72 h-72 bg-cyan-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-2000'></div>
           <div className='hidden dark:block absolute -bottom-8 left-20 w-72 h-72 bg-pink-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000'></div>
@@ -386,7 +386,7 @@ export default function ReleaseCalendarPage() {
           {/* 页面标题 */}
           <div className='mb-8'>
             <div className='flex items-center gap-3 mb-4'>
-              <Calendar className='w-8 h-8 text-blue-600' />
+              <Calendar className='w-8 h-8 text-primary-600' />
               <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
                 影视上映日程
               </h1>
@@ -412,7 +412,7 @@ export default function ReleaseCalendarPage() {
                       type: e.target.value as 'movie' | 'tv' | '',
                     }))
                   }
-                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                 >
                   <option value=''>全部</option>
                   {data?.filters.types.map((type) => (
@@ -433,7 +433,7 @@ export default function ReleaseCalendarPage() {
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, region: e.target.value }))
                   }
-                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                 >
                   <option value=''>全部</option>
                   {data?.filters.regions.map((region) => (
@@ -454,7 +454,7 @@ export default function ReleaseCalendarPage() {
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, genre: e.target.value }))
                   }
-                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                 >
                   <option value=''>全部</option>
                   {data?.filters.genres.map((genre) => (
@@ -482,7 +482,7 @@ export default function ReleaseCalendarPage() {
                         search: e.target.value,
                       }))
                     }
-                    className='w-full pl-10 p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400'
+                    className='w-full pl-10 p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400'
                   />
                 </div>
               </div>
@@ -503,7 +503,7 @@ export default function ReleaseCalendarPage() {
                       dateFrom: e.target.value,
                     }))
                   }
-                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                 />
               </div>
               <div>
@@ -516,7 +516,7 @@ export default function ReleaseCalendarPage() {
                   onChange={(e) =>
                     setFilters((prev) => ({ ...prev, dateTo: e.target.value }))
                   }
-                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
+                  className='w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white'
                 />
               </div>
             </div>
@@ -526,7 +526,7 @@ export default function ReleaseCalendarPage() {
               <button
                 onClick={applyFilters}
                 disabled={loading}
-                className='flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                className='flex items-center gap-2 px-4 py-2 bg-primary-600 dark:bg-primary-700 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 <Filter className='w-4 h-4' />
                 应用过滤器
@@ -562,7 +562,7 @@ export default function ReleaseCalendarPage() {
                   onClick={() => setViewMode('grid')}
                   className={`px-3 py-2 rounded-lg transition-colors ${
                     viewMode === 'grid'
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -595,7 +595,7 @@ export default function ReleaseCalendarPage() {
           {/* 加载状态 */}
           {loading && !data && (
             <div className='flex justify-center items-center py-12'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600'></div>
             </div>
           )}
 
@@ -656,7 +656,7 @@ export default function ReleaseCalendarPage() {
                     return (
                       <div
                         key={item.id}
-                        className='group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer'
+                        className='group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl hover:shadow-primary-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer'
                       >
                         {/* 状态指示器 */}
                         <div className='absolute top-3 right-3 z-10'>
@@ -666,7 +666,7 @@ export default function ReleaseCalendarPage() {
                             </span>
                           )}
                           {isUpcoming && !isToday && (
-                            <span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
+                            <span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300'>
                               ⏰ 即将上映
                             </span>
                           )}
@@ -700,7 +700,7 @@ export default function ReleaseCalendarPage() {
                           </div>
 
                           {/* 标题 */}
-                          <h3 className='font-bold text-lg text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                          <h3 className='font-bold text-lg text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors'>
                             {item.title}
                           </h3>
 
@@ -749,11 +749,11 @@ export default function ReleaseCalendarPage() {
                           </div>
 
                           {/* 底部渐变效果 */}
-                          <div className='absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
+                          <div className='absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-primary-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
                         </div>
 
                         {/* 悬停效果遮罩 */}
-                        <div className='absolute inset-0 bg-linear-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none'></div>
+                        <div className='absolute inset-0 bg-linear-to-br from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none'></div>
                       </div>
                     );
                   })}
@@ -869,7 +869,7 @@ export default function ReleaseCalendarPage() {
                                       : 'bg-linear-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-800/80 shadow-sm hover:shadow-md'
                                   } ${
                                     isToday
-                                      ? 'ring-2 ring-blue-400 bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/30 dark:to-blue-800/20 shadow-lg shadow-blue-500/20'
+                                      ? 'ring-2 ring-primary-400 bg-linear-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/30 dark:to-primary-800/20 shadow-lg shadow-primary-500/20'
                                       : ''
                                   } hover:scale-[1.02] hover:-translate-y-0.5`}
                                 >
@@ -877,7 +877,7 @@ export default function ReleaseCalendarPage() {
                                   <div
                                     className={`text-sm font-medium mb-1 ${
                                       isToday
-                                        ? 'text-blue-600 dark:text-blue-400'
+                                        ? 'text-primary-600 dark:text-primary-400'
                                         : !isCurrentMonth
                                           ? 'text-gray-400'
                                           : 'text-gray-900 dark:text-white'
@@ -910,7 +910,7 @@ export default function ReleaseCalendarPage() {
                                           e.stopPropagation();
                                           toggleDateExpanded(dateStr);
                                         }}
-                                        className='w-full text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                        className='w-full text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 font-medium transition-colors py-1 rounded hover:bg-primary-50 dark:hover:bg-primary-900/20'
                                       >
                                         {expandedDates.has(dateStr)
                                           ? '收起'
@@ -986,7 +986,7 @@ export default function ReleaseCalendarPage() {
                               key={dateStr}
                               className={`rounded-xl p-4 transition-all duration-300 ${
                                 isToday
-                                  ? 'ring-2 ring-blue-400 bg-linear-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/30 dark:to-blue-800/20 shadow-lg shadow-blue-500/20'
+                                  ? 'ring-2 ring-primary-400 bg-linear-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/30 dark:to-primary-800/20 shadow-lg shadow-primary-500/20'
                                   : 'bg-linear-to-br from-white to-gray-50/50 dark:from-gray-800 dark:to-gray-800/80 shadow-sm hover:shadow-md'
                               }`}
                             >
@@ -997,7 +997,7 @@ export default function ReleaseCalendarPage() {
                                 <h4
                                   className={`text-lg font-semibold ${
                                     isToday
-                                      ? 'text-blue-600 dark:text-blue-400'
+                                      ? 'text-primary-600 dark:text-primary-400'
                                       : 'text-gray-900 dark:text-white'
                                   }`}
                                 >
@@ -1128,7 +1128,7 @@ export default function ReleaseCalendarPage() {
               {viewMode === 'timeline' && (
                 <div className='relative'>
                   {/* 时间线主线 */}
-                  <div className='absolute left-8 top-0 bottom-0 w-0.5 bg-linear-to-b from-blue-500 via-purple-500 to-pink-500'></div>
+                  <div className='absolute left-8 top-0 bottom-0 w-0.5 bg-linear-to-b from-primary-500 via-purple-500 to-pink-500'></div>
 
                   <div className='space-y-8'>
                     {Object.entries(
@@ -1171,7 +1171,7 @@ export default function ReleaseCalendarPage() {
                                   ? 'bg-red-500 animate-pulse shadow-lg shadow-red-500/50'
                                   : isPast
                                     ? 'bg-gray-400'
-                                    : 'bg-blue-500 shadow-lg shadow-blue-500/30'
+                                    : 'bg-primary-500 shadow-lg shadow-primary-500/30'
                               }`}
                             >
                               {isToday && (
@@ -1188,7 +1188,7 @@ export default function ReleaseCalendarPage() {
                                   ? 'border-red-500 ring-2 ring-red-500/20'
                                   : isPast
                                     ? 'border-gray-300 dark:border-gray-600 opacity-75'
-                                    : 'border-blue-200 dark:border-blue-800'
+                                    : 'border-primary-200 dark:border-primary-800'
                               }`}
                             >
                               {/* 日期头部 */}
@@ -1198,7 +1198,7 @@ export default function ReleaseCalendarPage() {
                                     ? 'bg-linear-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-200 dark:border-red-800'
                                     : isPast
                                       ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                                      : 'bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800'
+                                      : 'bg-linear-to-r from-primary-50 to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20 border-primary-200 dark:border-primary-800'
                                 }`}
                               >
                                 <div className='flex items-center justify-between'>
@@ -1209,7 +1209,7 @@ export default function ReleaseCalendarPage() {
                                           ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                                           : isPast
                                             ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                                            : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                            : 'bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
                                       }`}
                                     >
                                       <Calendar className='w-5 h-5' />
@@ -1221,7 +1221,7 @@ export default function ReleaseCalendarPage() {
                                             ? 'text-red-800 dark:text-red-300'
                                             : isPast
                                               ? 'text-gray-700 dark:text-gray-300'
-                                              : 'text-blue-800 dark:text-blue-300'
+                                              : 'text-primary-800 dark:text-primary-300'
                                         }`}
                                       >
                                         {formatDate(date)}
@@ -1240,7 +1240,7 @@ export default function ReleaseCalendarPage() {
                                       </span>
                                     )}
                                     {isUpcoming && !isToday && (
-                                      <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'>
+                                      <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300'>
                                         ⏰ 即将上映
                                       </span>
                                     )}
@@ -1262,7 +1262,7 @@ export default function ReleaseCalendarPage() {
                                       className={`group relative bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${
                                         isToday
                                           ? 'hover:bg-red-50 dark:hover:bg-red-900/10'
-                                          : 'hover:bg-blue-50 dark:hover:bg-blue-900/10'
+                                          : 'hover:bg-primary-50 dark:hover:bg-primary-900/10'
                                       }`}
                                     >
                                       {/* 类型图标 */}
@@ -1288,7 +1288,7 @@ export default function ReleaseCalendarPage() {
                                       </div>
 
                                       {/* 标题 */}
-                                      <h4 className='font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                                      <h4 className='font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors'>
                                         {item.title}
                                       </h4>
 
@@ -1331,7 +1331,7 @@ export default function ReleaseCalendarPage() {
                                       </div>
 
                                       {/* 悬停效果 */}
-                                      <div className='absolute inset-0 bg-linear-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg pointer-events-none'></div>
+                                      <div className='absolute inset-0 bg-linear-to-br from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg pointer-events-none'></div>
                                     </div>
                                   ))}
                                 </div>
@@ -1364,7 +1364,7 @@ export default function ReleaseCalendarPage() {
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
                     disabled={currentPage === totalPages}
-                    className='px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors'
+                    className='px-4 py-2 bg-primary-600 dark:bg-primary-700 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50 transition-colors'
                   >
                     下一页
                   </button>
@@ -1392,7 +1392,7 @@ export default function ReleaseCalendarPage() {
           {showBackToTop && (
             <button
               onClick={scrollToTop}
-              className='fixed bottom-20 right-6 md:bottom-6 z-50 group bg-blue-600 dark:bg-blue-700 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-300 hover:scale-110'
+              className='fixed bottom-20 right-6 md:bottom-6 z-50 group bg-primary-600 dark:bg-primary-700 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-all duration-300 hover:scale-110'
               aria-label='返回顶部'
             >
               <ChevronUp className='w-6 h-6 transition-transform group-hover:scale-110' />

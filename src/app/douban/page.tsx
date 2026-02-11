@@ -895,10 +895,10 @@ function DoubanPageClient() {
 
           {/* 选择器组件 */}
           {type !== 'custom' ? (
-            <div className='relative bg-linear-to-br from-white/80 via-blue-50/30 to-purple-50/30 dark:from-gray-800/60 dark:via-blue-900/20 dark:to-purple-900/20 rounded-2xl p-4 sm:p-6 border border-blue-200/40 dark:border-blue-700/40 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300'>
+            <div className='relative bg-linear-to-br from-white/80 via-primary-50/30 to-purple-50/30 dark:from-gray-800/60 dark:via-primary-900/20 dark:to-purple-900/20 rounded-2xl p-4 sm:p-6 border border-primary-200/40 dark:border-primary-700/40 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300'>
               {/* 装饰性光晕 */}
-              <div className='absolute -top-20 -right-20 w-40 h-40 bg-linear-to-br from-blue-300/20 to-purple-300/20 rounded-full blur-3xl pointer-events-none'></div>
-              <div className='absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-br from-green-300/20 to-teal-300/20 rounded-full blur-3xl pointer-events-none'></div>
+              <div className='absolute -top-20 -right-20 w-40 h-40 bg-linear-to-br from-primary-300/20 to-purple-300/20 rounded-full blur-3xl pointer-events-none'></div>
+              <div className='absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-br from-primary-300/20 to-teal-300/20 rounded-full blur-3xl pointer-events-none'></div>
 
               <div className='relative'>
                 <DoubanSelector
@@ -913,10 +913,10 @@ function DoubanPageClient() {
               </div>
             </div>
           ) : (
-            <div className='relative bg-linear-to-br from-white/80 via-blue-50/30 to-purple-50/30 dark:from-gray-800/60 dark:via-blue-900/20 dark:to-purple-900/20 rounded-2xl p-4 sm:p-6 border border-blue-200/40 dark:border-blue-700/40 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300'>
+            <div className='relative bg-linear-to-br from-white/80 via-primary-50/30 to-purple-50/30 dark:from-gray-800/60 dark:via-primary-900/20 dark:to-purple-900/20 rounded-2xl p-4 sm:p-6 border border-primary-200/40 dark:border-primary-700/40 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300'>
               {/* 装饰性光晕 */}
-              <div className='absolute -top-20 -right-20 w-40 h-40 bg-linear-to-br from-blue-300/20 to-purple-300/20 rounded-full blur-3xl pointer-events-none'></div>
-              <div className='absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-br from-green-300/20 to-teal-300/20 rounded-full blur-3xl pointer-events-none'></div>
+              <div className='absolute -top-20 -right-20 w-40 h-40 bg-linear-to-br from-primary-300/20 to-purple-300/20 rounded-full blur-3xl pointer-events-none'></div>
+              <div className='absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-br from-primary-300/20 to-teal-300/20 rounded-full blur-3xl pointer-events-none'></div>
 
               <div className='relative'>
                 <DoubanCustomSelector
@@ -933,7 +933,7 @@ function DoubanPageClient() {
           {/* 虚拟化开关 */}
           <div className='flex justify-end'>
             <label className='flex items-center gap-3 cursor-pointer select-none group'>
-              <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+              <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors'>
                 ⚡ 虚拟滑动
               </span>
               <div className='relative'>
@@ -943,8 +943,8 @@ function DoubanPageClient() {
                   checked={useVirtualization}
                   onChange={toggleVirtualization}
                 />
-                <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-blue-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-blue-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
-                <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-blue-300 dark:peer-checked:shadow-blue-500/50 peer-checked:scale-105'></div>
+                <div className='w-11 h-6 bg-linear-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-primary-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-primary-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
+                <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-primary-300 dark:peer-checked:shadow-primary-500/50 peer-checked:scale-105'></div>
                 {/* 开关内图标 */}
                 <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
                   <span className='text-[10px] peer-checked:text-white text-gray-500'>
@@ -1075,15 +1075,15 @@ function DoubanPageClient() {
               {/* 没有更多数据提示 */}
               {!hasMore && doubanData.length > 0 && (
                 <div className='flex justify-center mt-12 py-8'>
-                  <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+                  <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-primary-50 via-indigo-50 to-purple-50 dark:from-primary-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-primary-200/50 dark:border-primary-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
                     {/* 装饰性背景 */}
-                    <div className='absolute inset-0 bg-linear-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
+                    <div className='absolute inset-0 bg-linear-to-br from-primary-100/20 to-purple-100/20 dark:from-primary-800/10 dark:to-purple-800/10'></div>
 
                     {/* 内容 */}
                     <div className='relative flex flex-col items-center gap-2'>
                       {/* 完成图标 */}
                       <div className='relative'>
-                        <div className='w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
+                        <div className='w-12 h-12 rounded-full bg-linear-to-br from-primary-500 to-purple-500 flex items-center justify-center shadow-lg'>
                           <svg
                             className='w-7 h-7 text-white'
                             fill='none'
@@ -1099,7 +1099,7 @@ function DoubanPageClient() {
                           </svg>
                         </div>
                         {/* 光圈效果 */}
-                        <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+                        <div className='absolute inset-0 rounded-full bg-primary-400/30 animate-ping'></div>
                       </div>
 
                       {/* 文字 */}
@@ -1121,7 +1121,7 @@ function DoubanPageClient() {
                 <div className='flex justify-center py-16'>
                   <div className='relative px-12 py-10 rounded-3xl bg-linear-to-br from-gray-50 via-slate-50 to-gray-100 dark:from-gray-800/40 dark:via-slate-800/40 dark:to-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 shadow-xl backdrop-blur-sm overflow-hidden max-w-md'>
                     {/* 装饰性元素 */}
-                    <div className='absolute top-0 left-0 w-32 h-32 bg-linear-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-3xl'></div>
+                    <div className='absolute top-0 left-0 w-32 h-32 bg-linear-to-br from-primary-200/20 to-purple-200/20 rounded-full blur-3xl'></div>
                     <div className='absolute bottom-0 right-0 w-32 h-32 bg-linear-to-br from-pink-200/20 to-orange-200/20 rounded-full blur-3xl'></div>
 
                     {/* 内容 */}
@@ -1144,7 +1144,7 @@ function DoubanPageClient() {
                           </svg>
                         </div>
                         {/* 浮动小点装饰 */}
-                        <div className='absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping'></div>
+                        <div className='absolute -top-1 -right-1 w-3 h-3 bg-primary-400 rounded-full animate-ping'></div>
                         <div className='absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse'></div>
                       </div>
 

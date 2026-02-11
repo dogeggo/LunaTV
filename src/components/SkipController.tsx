@@ -1095,7 +1095,7 @@ export default function SkipController({
             </div>
 
             {/* 全局开关 */}
-            <div className='bg-linear-to-br from-blue-50/80 to-indigo-50/80 dark:from-blue-900/30 dark:to-indigo-900/30 p-5 rounded-xl mb-6 border border-blue-100/50 dark:border-blue-800/50 shadow-sm backdrop-blur-sm'>
+            <div className='bg-linear-to-br from-primary-50/80 to-indigo-50/80 dark:from-primary-900/30 dark:to-indigo-900/30 p-5 rounded-xl mb-6 border border-primary-100/50 dark:border-primary-800/50 shadow-sm backdrop-blur-sm'>
               <div className='flex items-center justify-between mb-2'>
                 <label className='flex items-center space-x-2'>
                   <input
@@ -1200,7 +1200,7 @@ export default function SkipController({
                   />
                   <button
                     onClick={markCurrentAsOpeningEnd}
-                    className='w-full px-4 py-2 bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm'
+                    className='w-full px-4 py-2 bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg hover:scale-105 backdrop-blur-sm'
                     title='标记当前播放时间为片头结束时间'
                   >
                     📍 标记当前时间
@@ -1441,7 +1441,7 @@ export default function SkipController({
 
                 <button
                   onClick={handleSaveSegment}
-                  className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors'
+                  className='px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded text-sm font-medium transition-colors'
                 >
                   添加片段
                 </button>
@@ -1519,7 +1519,7 @@ export default function SkipController({
             <div className='mt-2 pt-2 border-t border-gray-200 dark:border-gray-600'>
               <button
                 onClick={() => onSettingModeChange?.(true)}
-                className='w-full px-2 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded text-xs transition-colors'
+                className='w-full px-2 py-1 bg-primary-100 hover:bg-primary-200 dark:bg-primary-900 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 rounded text-xs transition-colors'
               >
                 修改配置
               </button>

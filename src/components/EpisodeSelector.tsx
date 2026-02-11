@@ -461,21 +461,21 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
           className={`group flex-1 py-3.5 sm:py-4 px-4 sm:px-6 text-center cursor-pointer transition-all duration-300 font-semibold relative overflow-hidden active:scale-[0.98] min-h-[44px] select-none
             ${
               activeTab === 'sources'
-                ? 'text-blue-600 dark:text-blue-400'
-                : 'text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400'
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
             }
           `.trim()}
         >
           {/* 激活态背景光晕 */}
           {activeTab === 'sources' && (
-            <div className='absolute inset-0 bg-linear-to-r from-blue-50 via-cyan-50 to-sky-50 dark:from-blue-900/20 dark:via-cyan-900/20 dark:to-sky-900/20 -z-10'></div>
+            <div className='absolute inset-0 bg-linear-to-r from-primary-50 via-cyan-50 to-sky-50 dark:from-primary-900/20 dark:via-cyan-900/20 dark:to-sky-900/20 -z-10'></div>
           )}
           {/* 非激活态背景 */}
           {activeTab !== 'sources' && (
             <div className='absolute inset-0 bg-gray-100/50 dark:bg-gray-800/50 group-hover:bg-gray-100 dark:group-hover:bg-gray-800/70 transition-colors duration-300 -z-10'></div>
           )}
           {/* 悬浮光效 */}
-          <div className='absolute inset-0 bg-linear-to-r from-transparent via-blue-100/0 to-transparent dark:via-blue-500/0 group-hover:via-blue-100/50 dark:group-hover:via-blue-500/10 transition-all duration-300 -z-10'></div>
+          <div className='absolute inset-0 bg-linear-to-r from-transparent via-primary-100/0 to-transparent dark:via-primary-500/0 group-hover:via-primary-100/50 dark:group-hover:via-primary-500/10 transition-all duration-300 -z-10'></div>
           <span className='relative z-10 font-bold text-sm sm:text-base'>
             换源
           </span>
@@ -653,7 +653,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                       ${
                         isCurrentSource
                           ? 'bg-linear-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/30 dark:via-emerald-900/30 dark:to-teal-900/30 border-2 border-green-500/50 dark:border-green-400/50 shadow-lg shadow-green-500/10'
-                          : 'bg-linear-to-r from-gray-50 to-gray-100/50 dark:from-white/5 dark:to-white/10 hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 hover:scale-[1.02] hover:shadow-md cursor-pointer border border-gray-200/50 dark:border-white/10'
+                          : 'bg-linear-to-r from-gray-50 to-gray-100/50 dark:from-white/5 dark:to-white/10 hover:from-primary-50 hover:to-cyan-50 dark:hover:from-primary-900/20 dark:hover:to-cyan-900/20 hover:scale-[1.02] hover:shadow-md cursor-pointer border border-gray-200/50 dark:border-white/10'
                       }`.trim()}
                     >
                       {/* 当前源标记 */}

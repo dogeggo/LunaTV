@@ -198,7 +198,7 @@ function LoginPageClient() {
       )}
 
       {/* 渐变叠加层 */}
-      <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-blue-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-blue-900/40 dark:to-pink-900/50' />
+      <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-primary-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-primary-900/40 dark:to-pink-900/50' />
       <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
 
       <div className='absolute top-3 right-3 sm:top-4 sm:right-4 z-20'>
@@ -222,7 +222,7 @@ function LoginPageClient() {
         {/* 装饰性光效 */}
         <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse' />
         <div
-          className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-blue-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse'
+          className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-primary-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse'
           style={{ animationDelay: '1s' }}
         />
 
@@ -349,7 +349,7 @@ function LoginPageClient() {
                   value={telegramUsername}
                   onChange={(e) => setTelegramUsername(e.target.value)}
                   placeholder='输入您的 Telegram 用户名'
-                  className='block w-full pl-9 sm:pl-10 pr-2.5 sm:pr-3 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base transition-all'
+                  className='block w-full pl-9 sm:pl-10 pr-2.5 sm:pr-3 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white text-sm sm:text-base transition-all'
                   disabled={telegramLoading}
                 />
               </div>
@@ -361,7 +361,7 @@ function LoginPageClient() {
             <button
               onClick={handleTelegramLogin}
               disabled={telegramLoading || !telegramUsername.trim()}
-              className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
+              className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary-600 to-cyan-600 hover:from-primary-700 hover:to-cyan-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
             >
               <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
               <Send className='h-4 w-4 sm:h-5 sm:w-5' />
@@ -369,11 +369,11 @@ function LoginPageClient() {
             </button>
 
             {telegramDeepLink && (
-              <div className='mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50'>
-                <p className='text-xs sm:text-sm text-blue-800 dark:text-blue-200 mb-1.5 sm:mb-2'>
+              <div className='mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800/50'>
+                <p className='text-xs sm:text-sm text-primary-800 dark:text-primary-200 mb-1.5 sm:mb-2'>
                   📱 已在新标签页打开 Telegram
                 </p>
-                <p className='text-[11px] sm:text-xs text-blue-600 dark:text-blue-300'>
+                <p className='text-[11px] sm:text-xs text-primary-600 dark:text-primary-300'>
                   如果没有自动打开，请点击{' '}
                   <a
                     href={telegramDeepLink}

@@ -81,7 +81,7 @@ const AlertModal = ({
       case 'warning':
         return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
       default:
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800';
     }
   };
 
@@ -126,7 +126,7 @@ const AlertModal = ({
                     onConfirm();
                     onClose();
                   }}
-                  className='px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors'
+                  className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors'
                 >
                   {confirmText}
                 </button>
@@ -134,7 +134,7 @@ const AlertModal = ({
             ) : (
               <button
                 onClick={onClose}
-                className='px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors'
+                className='px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors'
               >
                 确定
               </button>
@@ -350,8 +350,8 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
           {/* 数据导出 */}
           <div className='border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800 hover:shadow-sm transition-shadow flex flex-col'>
             <div className='flex items-center gap-3 mb-6'>
-              <div className='w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center'>
-                <Download className='w-4 h-4 text-blue-600 dark:text-blue-400' />
+              <div className='w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center'>
+                <Download className='w-4 h-4 text-primary-600 dark:text-primary-400' />
               </div>
               <div>
                 <h3 className='font-semibold text-gray-900 dark:text-gray-100'>
@@ -376,7 +376,7 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
                     value={exportPassword}
                     onChange={(e) => setExportPassword(e.target.value)}
                     placeholder='设置强密码保护备份文件'
-                    className='w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'
+                    className='w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors'
                     disabled={isExporting}
                   />
                   <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
@@ -405,7 +405,7 @@ const DataMigration = ({ onRefreshConfig }: DataMigrationProps) => {
                 className={`w-full px-4 py-2.5 rounded-lg font-medium transition-colors mt-10 ${
                   isExporting || !exportPassword.trim()
                     ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-primary-600 hover:bg-primary-700 text-white'
                 }`}
               >
                 {isExporting ? (

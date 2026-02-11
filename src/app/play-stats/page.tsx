@@ -36,7 +36,7 @@ const USER_LEVELS = [
     minLogins: 10,
     maxLogins: 49,
     description: '热爱电影的观众',
-    gradient: 'from-blue-400 to-blue-600',
+    gradient: 'from-primary-400 to-primary-600',
   },
   {
     level: 3,
@@ -773,7 +773,7 @@ const PlayStatsPage: React.FC = () => {
                   onClick={() => setActiveTab('admin')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'admin'
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
                 >
@@ -783,7 +783,7 @@ const PlayStatsPage: React.FC = () => {
                   onClick={() => setActiveTab('personal')}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'personal'
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
                   }`}
                 >
@@ -796,7 +796,7 @@ const PlayStatsPage: React.FC = () => {
             <button
               onClick={handleRefreshClick}
               disabled={loading}
-              className='px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm rounded-lg transition-colors flex items-center space-x-2 mb-0.5'
+              className='px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white text-sm rounded-lg transition-colors flex items-center space-x-2 mb-0.5'
             >
               <svg
                 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -852,11 +852,11 @@ const PlayStatsPage: React.FC = () => {
             <>
               {/* 全站统计概览 */}
               <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 mb-8'>
-                <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800'>
-                  <div className='text-2xl font-bold text-blue-800 dark:text-blue-300'>
+                <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
+                  <div className='text-2xl font-bold text-primary-800 dark:text-primary-300'>
                     {statsData.totalUsers}
                   </div>
-                  <div className='text-sm text-blue-600 dark:text-blue-400'>
+                  <div className='text-sm text-primary-600 dark:text-primary-400'>
                     总用户数
                   </div>
                 </div>
@@ -955,11 +955,11 @@ const PlayStatsPage: React.FC = () => {
                             {formatDate(stat.date)}
                           </span>
                           <div className='flex items-center space-x-2'>
-                            <span className='text-sm text-blue-600 dark:text-blue-400'>
+                            <span className='text-sm text-primary-600 dark:text-primary-400'>
                               {stat.newUsers} 人
                             </span>
                             {stat.newUsers > 0 && (
-                              <div className='w-2 h-2 bg-blue-500 rounded-full'></div>
+                              <div className='w-2 h-2 bg-primary-500 rounded-full'></div>
                             )}
                           </div>
                         </div>
@@ -986,7 +986,7 @@ const PlayStatsPage: React.FC = () => {
                       <span className='text-sm text-gray-600 dark:text-gray-400'>
                         周活跃用户
                       </span>
-                      <span className='text-lg font-semibold text-blue-600 dark:text-blue-400'>
+                      <span className='text-lg font-semibold text-primary-600 dark:text-primary-400'>
                         {statsData.activeUsers.weekly}
                       </span>
                     </div>
@@ -1020,7 +1020,7 @@ const PlayStatsPage: React.FC = () => {
                         className='flex items-center justify-between'
                       >
                         <div className='flex items-center space-x-3'>
-                          <span className='w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 rounded-full flex items-center justify-center text-xs font-bold'>
+                          <span className='w-6 h-6 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-300 rounded-full flex items-center justify-center text-xs font-bold'>
                             {index + 1}
                           </span>
                           <span className='text-sm text-gray-900 dark:text-white'>
@@ -1058,7 +1058,7 @@ const PlayStatsPage: React.FC = () => {
                         value={userStatsSearch}
                         onChange={(e) => setUserStatsSearch(e.target.value)}
                         placeholder='搜索用户名'
-                        className='w-full sm:w-48 px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+                        className='w-full sm:w-48 px-3 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40'
                         aria-label='搜索用户名'
                       />
                       <label className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
@@ -1074,7 +1074,7 @@ const PlayStatsPage: React.FC = () => {
                                 | 'totalPlays',
                             )
                           }
-                          className='px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+                          className='px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/40'
                           aria-label='排序字段'
                         >
                           <option value='lastPlayTime'>最后播放</option>
@@ -1090,7 +1090,7 @@ const PlayStatsPage: React.FC = () => {
                           onChange={(e) =>
                             setUserStatsPageSize(Number(e.target.value))
                           }
-                          className='px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+                          className='px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/40'
                           aria-label='每页显示数量'
                         >
                           <option value={10}>10</option>
@@ -1144,8 +1144,8 @@ const PlayStatsPage: React.FC = () => {
                         <div className='flex items-center justify-between'>
                           <div className='flex items-center space-x-3'>
                             <div className='shrink-0'>
-                              <div className='w-9 h-9 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center'>
-                                <span className='text-xs font-medium text-blue-600 dark:text-blue-400'>
+                              <div className='w-9 h-9 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center'>
+                                <span className='text-xs font-medium text-primary-600 dark:text-primary-400'>
                                   {userStat.username.charAt(0).toUpperCase()}
                                 </span>
                               </div>
@@ -1332,7 +1332,7 @@ const PlayStatsPage: React.FC = () => {
                                         </div>
                                         <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5'>
                                           <div
-                                            className='bg-blue-500 h-1.5 rounded-full transition-all duration-300'
+                                            className='bg-primary-500 h-1.5 rounded-full transition-all duration-300'
                                             style={{
                                               width: `${getProgressPercentage(
                                                 record.play_time,
@@ -1382,11 +1382,11 @@ const PlayStatsPage: React.FC = () => {
             <>
               {/* 个人统计概览 */}
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-8'>
-                <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800'>
-                  <div className='text-2xl font-bold text-blue-800 dark:text-blue-300'>
+                <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
+                  <div className='text-2xl font-bold text-primary-800 dark:text-primary-300'>
                     {formatTime(userStats.totalWatchTime)}
                   </div>
-                  <div className='text-sm text-blue-600 dark:text-blue-400'>
+                  <div className='text-sm text-primary-600 dark:text-primary-400'>
                     总观看时长
                   </div>
                 </div>
@@ -1499,14 +1499,14 @@ const PlayStatsPage: React.FC = () => {
                 <div
                   className={`p-4 rounded-lg border transition-all ${
                     (watchingUpdates?.continueWatchingCount || 0) > 0
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                      ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                       : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
                   }`}
                 >
                   <div
                     className={`text-2xl font-bold ${
                       (watchingUpdates?.continueWatchingCount || 0) > 0
-                        ? 'text-blue-800 dark:text-blue-300'
+                        ? 'text-primary-800 dark:text-primary-300'
                         : 'text-gray-800 dark:text-gray-300'
                     }`}
                   >
@@ -1515,14 +1515,14 @@ const PlayStatsPage: React.FC = () => {
                   <div
                     className={`text-sm ${
                       (watchingUpdates?.continueWatchingCount || 0) > 0
-                        ? 'text-blue-600 dark:text-blue-400'
+                        ? 'text-primary-600 dark:text-primary-400'
                         : 'text-gray-600 dark:text-gray-400'
                     }`}
                   >
                     继续观看
                   </div>
                   {(watchingUpdates?.continueWatchingCount || 0) > 0 && (
-                    <div className='text-xs text-blue-500 dark:text-blue-400 mt-1'>
+                    <div className='text-xs text-primary-500 dark:text-primary-400 mt-1'>
                       有剧集待续看！
                     </div>
                   )}
@@ -1793,8 +1793,8 @@ const PlayStatsPage: React.FC = () => {
                         继续观看
                       </h2>
                       <div className='flex items-center gap-1'>
-                        <div className='w-2 h-2 bg-blue-500 rounded-full animate-pulse'></div>
-                        <span className='text-sm text-blue-500 font-medium'>
+                        <div className='w-2 h-2 bg-primary-500 rounded-full animate-pulse'></div>
+                        <span className='text-sm text-primary-500 font-medium'>
                           {
                             watchingUpdates.updatedSeries.filter(
                               (series) =>
@@ -1836,10 +1836,10 @@ const PlayStatsPage: React.FC = () => {
                                   remarks={series.remarks}
                                 />
                                 {/* 继续观看提示光环效果 */}
-                                <div className='absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
+                                <div className='absolute inset-0 rounded-lg ring-2 ring-primary-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
                               </div>
                               {/* 继续观看徽章 - Netflix 统一风格 */}
-                              <div className='absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
+                              <div className='absolute -top-2 -right-2 bg-primary-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
                                 继续看
                               </div>
                             </div>
@@ -1876,10 +1876,10 @@ const PlayStatsPage: React.FC = () => {
                                   remarks={series.remarks}
                                 />
                                 {/* 继续观看提示光环效果 */}
-                                <div className='absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
+                                <div className='absolute inset-0 rounded-lg ring-2 ring-primary-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
                               </div>
                               {/* 继续观看徽章 - Netflix 统一风格 */}
-                              <div className='absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
+                              <div className='absolute -top-2 -right-2 bg-primary-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
                                 继续看
                               </div>
                             </div>
@@ -1959,7 +1959,7 @@ const PlayStatsPage: React.FC = () => {
                             </div>
                             <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5'>
                               <div
-                                className='bg-blue-500 h-1.5 rounded-full transition-all duration-300'
+                                className='bg-primary-500 h-1.5 rounded-full transition-all duration-300'
                                 style={{
                                   width: `${getProgressPercentage(
                                     record.play_time,
@@ -2032,7 +2032,7 @@ const PlayStatsPage: React.FC = () => {
               <button
                 onClick={handleRefreshClick}
                 disabled={loading}
-                className='px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm rounded-lg transition-colors flex items-center space-x-2'
+                className='px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white text-sm rounded-lg transition-colors flex items-center space-x-2'
               >
                 <svg
                   className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -2085,11 +2085,11 @@ const PlayStatsPage: React.FC = () => {
 
           {/* 个人统计概览 */}
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-8'>
-            <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800'>
-              <div className='text-2xl font-bold text-blue-800 dark:text-blue-300'>
+            <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
+              <div className='text-2xl font-bold text-primary-800 dark:text-primary-300'>
                 {formatTime(userStats.totalWatchTime)}
               </div>
-              <div className='text-sm text-blue-600 dark:text-blue-400'>
+              <div className='text-sm text-primary-600 dark:text-primary-400'>
                 总观看时长
               </div>
             </div>
@@ -2202,14 +2202,14 @@ const PlayStatsPage: React.FC = () => {
             <div
               className={`p-4 rounded-lg border transition-all ${
                 (watchingUpdates?.continueWatchingCount || 0) > 0
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                  ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                   : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
               }`}
             >
               <div
                 className={`text-2xl font-bold ${
                   (watchingUpdates?.continueWatchingCount || 0) > 0
-                    ? 'text-blue-800 dark:text-blue-300'
+                    ? 'text-primary-800 dark:text-primary-300'
                     : 'text-gray-800 dark:text-gray-300'
                 }`}
               >
@@ -2218,14 +2218,14 @@ const PlayStatsPage: React.FC = () => {
               <div
                 className={`text-sm ${
                   (watchingUpdates?.continueWatchingCount || 0) > 0
-                    ? 'text-blue-600 dark:text-blue-400'
+                    ? 'text-primary-600 dark:text-primary-400'
                     : 'text-gray-600 dark:text-gray-400'
                 }`}
               >
                 继续观看
               </div>
               {(watchingUpdates?.continueWatchingCount || 0) > 0 && (
-                <div className='text-xs text-blue-500 dark:text-blue-400 mt-1'>
+                <div className='text-xs text-primary-500 dark:text-primary-400 mt-1'>
                   有剧集待续看！
                 </div>
               )}
@@ -2493,8 +2493,8 @@ const PlayStatsPage: React.FC = () => {
                     继续观看
                   </h2>
                   <div className='flex items-center gap-1'>
-                    <div className='w-2 h-2 bg-blue-500 rounded-full animate-pulse'></div>
-                    <span className='text-sm text-blue-500 font-medium'>
+                    <div className='w-2 h-2 bg-primary-500 rounded-full animate-pulse'></div>
+                    <span className='text-sm text-primary-500 font-medium'>
                       {
                         watchingUpdates.updatedSeries.filter(
                           (series) =>
@@ -2534,10 +2534,10 @@ const PlayStatsPage: React.FC = () => {
                               remarks={series.remarks}
                             />
                             {/* 继续观看提示光环效果 */}
-                            <div className='absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
+                            <div className='absolute inset-0 rounded-lg ring-2 ring-primary-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
                           </div>
                           {/* 继续观看徽章 - Netflix 统一风格 */}
-                          <div className='absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
+                          <div className='absolute -top-2 -right-2 bg-primary-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
                             继续看
                           </div>
                         </div>
@@ -2573,10 +2573,10 @@ const PlayStatsPage: React.FC = () => {
                               remarks={series.remarks}
                             />
                             {/* 继续观看提示光环效果 */}
-                            <div className='absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
+                            <div className='absolute inset-0 rounded-lg ring-2 ring-primary-400 ring-opacity-50 animate-pulse pointer-events-none z-9 transition-transform duration-300 ease-in-out group-hover/card:scale-[1.05]'></div>
                           </div>
                           {/* 继续观看徽章 - Netflix 统一风格 */}
-                          <div className='absolute -top-2 -right-2 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
+                          <div className='absolute -top-2 -right-2 bg-primary-600 text-white text-xs px-2 py-0.5 rounded-md shadow-lg animate-pulse z-10 font-bold'>
                             继续看
                           </div>
                         </div>
@@ -2659,7 +2659,7 @@ const PlayStatsPage: React.FC = () => {
                         </div>
                         <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5'>
                           <div
-                            className='bg-blue-500 h-1.5 rounded-full transition-all duration-300'
+                            className='bg-primary-500 h-1.5 rounded-full transition-all duration-300'
                             style={{
                               width: `${getProgressPercentage(
                                 record.play_time,

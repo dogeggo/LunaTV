@@ -24,17 +24,18 @@
     'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
     'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-  /* Primary Colors */
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  /* Primary Colors - 修改此处即可全局换色 */
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+  --color-primary-950: #022c22;
   --color-dark: #222222;
 
   /* 修复 Tailwind 4 亮色模式下灰色过淡的问题，恢复高对比度灰色 */
@@ -136,12 +137,12 @@ body {
 html:not(.dark) body {
   background: linear-gradient(
     180deg,
-    #e6f3fb 0%,
-    #eaf3f7 18%,
+    var(--color-primary-50) 0%,
+    var(--color-primary-100) 18%,
     #f7f7f3 38%,
     #e9ecef 60%,
-    #dbe3ea 80%,
-    #d3dde6 100%
+    #dde6e3 80%,
+    #d3e0dc 100%
   );
   background-attachment: fixed;
 }
@@ -333,6 +334,41 @@ div[data-media-provider] video {
 
 .animate-fade-in {
   animation: fade-in 0.4s ease-out;
+}
+
+/* 导航加载动画 */
+@keyframes nav-progress {
+  0% {
+    width: 0%;
+    margin-left: 0%;
+  }
+  50% {
+    width: 70%;
+    margin-left: 15%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+@keyframes nav-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.animate-nav-progress {
+  animation: nav-progress 2s ease-in-out infinite;
+}
+
+.animate-nav-toast-in {
+  animation: nav-toast-in 0.3s ease-out forwards;
 }
 
 /* 状态过渡动画 */

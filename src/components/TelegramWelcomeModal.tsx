@@ -104,7 +104,7 @@ export function TelegramWelcomeModal() {
               />
               <button
                 onClick={() => handleCopy(credentials.username, 'username')}
-                className='p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors'
+                className='p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors'
                 title='复制用户名'
               >
                 {copied === 'username' ? (
@@ -143,7 +143,7 @@ export function TelegramWelcomeModal() {
               </div>
               <button
                 onClick={() => handleCopy(credentials.password, 'password')}
-                className='p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors'
+                className='p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors'
                 title='复制密码'
               >
                 {copied === 'password' ? (
@@ -156,8 +156,8 @@ export function TelegramWelcomeModal() {
           </div>
 
           {/* 提示信息 */}
-          <div className='p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-            <p className='text-sm text-blue-800 dark:text-blue-200'>
+          <div className='p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg'>
+            <p className='text-sm text-primary-800 dark:text-primary-200'>
               💡 您可以在个人中心修改密码，也可以继续使用 Telegram 一键登录
             </p>
           </div>

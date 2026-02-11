@@ -298,7 +298,7 @@ export const VirtualDoubanGrid = React.forwardRef<
           <div className='flex justify-center py-16'>
             <div className='relative px-12 py-10 rounded-3xl bg-linear-to-br from-gray-50 via-slate-50 to-gray-100 dark:from-gray-800/40 dark:via-slate-800/40 dark:to-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 shadow-xl backdrop-blur-sm overflow-hidden max-w-md'>
               {/* 装饰性元素 */}
-              <div className='absolute top-0 left-0 w-32 h-32 bg-linear-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-3xl'></div>
+              <div className='absolute top-0 left-0 w-32 h-32 bg-linear-to-br from-primary-200/20 to-purple-200/20 rounded-full blur-3xl'></div>
               <div className='absolute bottom-0 right-0 w-32 h-32 bg-linear-to-br from-pink-200/20 to-orange-200/20 rounded-full blur-3xl'></div>
 
               {/* 内容 */}
@@ -321,7 +321,7 @@ export const VirtualDoubanGrid = React.forwardRef<
                     </svg>
                   </div>
                   {/* 浮动小点装饰 */}
-                  <div className='absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping'></div>
+                  <div className='absolute -top-1 -right-1 w-3 h-3 bg-primary-400 rounded-full animate-ping'></div>
                   <div className='absolute -bottom-1 -left-1 w-2 h-2 bg-purple-400 rounded-full animate-pulse'></div>
                 </div>
 
@@ -459,15 +459,15 @@ export const VirtualDoubanGrid = React.forwardRef<
           !hasNextVirtualPage &&
           displayItemCount > 0 && (
             <div className='flex justify-center mt-8 py-8'>
-              <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-blue-200/50 dark:border-blue-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+              <div className='relative px-8 py-5 rounded-2xl bg-linear-to-r from-primary-50 via-indigo-50 to-purple-50 dark:from-primary-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border border-primary-200/50 dark:border-primary-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
                 {/* 装饰性背景 */}
-                <div className='absolute inset-0 bg-linear-to-br from-blue-100/20 to-purple-100/20 dark:from-blue-800/10 dark:to-purple-800/10'></div>
+                <div className='absolute inset-0 bg-linear-to-br from-primary-100/20 to-purple-100/20 dark:from-primary-800/10 dark:to-purple-800/10'></div>
 
                 {/* 内容 */}
                 <div className='relative flex flex-col items-center gap-2'>
                   {/* 完成图标 */}
                   <div className='relative'>
-                    <div className='w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg'>
+                    <div className='w-12 h-12 rounded-full bg-linear-to-br from-primary-500 to-purple-500 flex items-center justify-center shadow-lg'>
                       {isBangumi ? (
                         <svg
                           className='w-7 h-7 text-white'
@@ -499,7 +499,7 @@ export const VirtualDoubanGrid = React.forwardRef<
                       )}
                     </div>
                     {/* 光圈效果 */}
-                    <div className='absolute inset-0 rounded-full bg-blue-400/30 animate-ping'></div>
+                    <div className='absolute inset-0 rounded-full bg-primary-400/30 animate-ping'></div>
                   </div>
 
                   {/* 文字 */}

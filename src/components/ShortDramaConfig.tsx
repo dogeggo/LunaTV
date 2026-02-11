@@ -94,7 +94,7 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
           <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2'>
             短剧API配置
           </h3>
-          <div className='flex items-center space-x-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg'>
+          <div className='flex items-center space-x-2 text-sm text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-3 py-2 rounded-lg'>
             <svg className='h-4 w-4' fill='currentColor' viewBox='0 0 20 20'>
               <path
                 fillRule='evenodd'
@@ -120,7 +120,7 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
                 primaryApiUrl: e.target.value,
               }))
             }
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
             placeholder='https://wwzy.tv/api.php/provide/vod'
           />
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
@@ -133,7 +133,7 @@ const ShortDramaConfig = ({ config, refreshConfig }: ShortDramaConfigProps) => {
         <button
           onClick={handleSave}
           disabled={isLoading}
-          className='flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors'
+          className='flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors'
         >
           <svg
             className='h-4 w-4 mr-2'

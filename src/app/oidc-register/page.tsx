@@ -105,8 +105,8 @@ export default function OIDCRegisterPage() {
 
         {/* OIDC信息显示 */}
         {oidcInfo && (
-          <div className='mb-5 sm:mb-6 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-            <p className='text-xs sm:text-sm text-blue-700 dark:text-blue-400 leading-relaxed'>
+          <div className='mb-5 sm:mb-6 p-3 sm:p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg'>
+            <p className='text-xs sm:text-sm text-primary-700 dark:text-primary-400 leading-relaxed'>
               {oidcInfo.email && (
                 <>
                   邮箱: <strong className='break-all'>{oidcInfo.email}</strong>

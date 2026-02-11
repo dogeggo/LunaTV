@@ -73,10 +73,10 @@ const DownloadConfig: React.FC<DownloadConfigProps> = ({
       )}
 
       {/* 功能说明 */}
-      <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800'>
+      <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
         <div className='flex items-start gap-3'>
           <Download
-            className='text-blue-600 dark:text-blue-400 shrink-0 mt-1'
+            className='text-primary-600 dark:text-primary-400 shrink-0 mt-1'
             size={20}
           />
           <div>
@@ -128,7 +128,7 @@ const DownloadConfig: React.FC<DownloadConfigProps> = ({
           className={`px-6 py-2 rounded-lg font-medium transition-colors ${
             isSaving
               ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
-              : 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white'
+              : 'bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white'
           }`}
         >
           {isSaving ? '保存中...' : '保存配置'}

@@ -49,7 +49,7 @@ const PlayNetdiskModal = ({
       onClick={onClose}
     >
       <div
-        className='bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl w-full md:max-w-4xl max-h-[85vh] md:max-h-[90vh] flex flex-col shadow-2xl'
+        className='bg-primary-50 dark:bg-gray-800 rounded-t-2xl md:rounded-2xl w-full md:max-w-4xl max-h-[85vh] md:max-h-[90vh] flex flex-col shadow-2xl'
         onClick={(e) => e.stopPropagation()}
       >
         {/* 头部 - Fixed */}
@@ -69,11 +69,11 @@ const PlayNetdiskModal = ({
               </div>
               {netdiskLoading && netdiskResourceType === 'netdisk' && (
                 <span className='inline-block ml-2'>
-                  <span className='inline-block h-4 w-4 sm:h-5 sm:w-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin'></span>
+                  <span className='inline-block h-4 w-4 sm:h-5 sm:w-5 border-2 border-gray-300 border-t-primary-500 rounded-full animate-spin'></span>
                 </span>
               )}
               {netdiskTotal > 0 && netdiskResourceType === 'netdisk' && (
-                <span className='inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 ml-2'>
+                <span className='inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300 ml-2'>
                   {netdiskTotal} 个资源
                 </span>
               )}
@@ -101,7 +101,7 @@ const PlayNetdiskModal = ({
                   }}
                   className={`px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-all ${
                     netdiskResourceType === 'netdisk'
-                      ? 'bg-blue-500 text-white border-blue-500 shadow-md'
+                      ? 'bg-primary-500 text-white border-primary-500 shadow-md'
                       : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -149,7 +149,7 @@ const PlayNetdiskModal = ({
                     <button
                       onClick={() => onSearchNetdisk(videoTitle)}
                       disabled={netdiskLoading}
-                      className='mt-4 px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm sm:text-base font-medium'
+                      className='mt-4 px-4 sm:px-6 py-2 sm:py-2.5 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm sm:text-base font-medium'
                     >
                       开始搜索
                     </button>
@@ -187,7 +187,7 @@ const PlayNetdiskModal = ({
               className={`sticky bottom-6 left-full -ml-14 sm:bottom-8 sm:-ml-16 w-11 h-11 sm:w-12 sm:h-12 ${
                 netdiskResourceType === 'acg'
                   ? 'bg-purple-500 hover:bg-purple-600'
-                  : 'bg-blue-500 hover:bg-blue-600'
+                  : 'bg-primary-500 hover:bg-primary-600'
               } text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center active:scale-95 z-50 group`}
               aria-label='返回顶部'
             >

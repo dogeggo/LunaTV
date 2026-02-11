@@ -194,25 +194,25 @@ function filterAdsFromM3U8(type, m3u8Content) {
       </div>
 
       {/* 信息提示 */}
-      <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4'>
+      <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4'>
         <div className='flex items-start gap-3'>
-          <Info className='w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5' />
-          <div className='text-sm text-blue-800 dark:text-blue-200'>
+          <Info className='w-5 h-5 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5' />
+          <div className='text-sm text-primary-800 dark:text-primary-200'>
             <p className='font-medium mb-2'>使用说明：</p>
             <ul className='space-y-1 list-disc list-inside'>
               <li>
                 函数名必须为{' '}
-                <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>
+                <code className='px-1 py-0.5 bg-primary-100 dark:bg-primary-800 rounded'>
                   filterAdsFromM3U8
                 </code>
               </li>
               <li>
                 接收两个参数：
-                <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>
+                <code className='px-1 py-0.5 bg-primary-100 dark:bg-primary-800 rounded'>
                   type
                 </code>
                 （播放源key）和{' '}
-                <code className='px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded'>
+                <code className='px-1 py-0.5 bg-primary-100 dark:bg-primary-800 rounded'>
                   m3u8Content
                 </code>
                 （m3u8内容）

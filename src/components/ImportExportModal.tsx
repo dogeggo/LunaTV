@@ -94,12 +94,12 @@ export default function ImportExportModal({
 
   const modalContent = (
     <div className='fixed inset-0 bg-black/60 backdrop-blur-sm z-9999 flex items-center justify-center p-4'>
-      <div className='bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden'>
+      <div className='bg-primary-50 dark:bg-gray-800 rounded-xl shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden'>
         {/* 头部 - 更紧凑的设计 */}
         <div
           className={`relative px-5 py-4 ${
             mode === 'import'
-              ? 'bg-linear-to-r from-blue-600 to-cyan-600'
+              ? 'bg-linear-to-r from-primary-600 to-cyan-600'
               : mode === 'export'
                 ? 'bg-linear-to-r from-green-600 to-emerald-600'
                 : result && result.failed > 0
@@ -180,22 +180,22 @@ export default function ImportExportModal({
                 onDragLeave={handleDragLeave}
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
                   isDragging
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'
                 }`}
               >
                 <div className='flex flex-col items-center space-y-3'>
                   <div
                     className={`p-3 rounded-full ${
                       isDragging
-                        ? 'bg-blue-100 dark:bg-blue-900/40'
+                        ? 'bg-primary-100 dark:bg-primary-900/40'
                         : 'bg-gray-100 dark:bg-gray-700'
                     }`}
                   >
                     <Upload
                       className={`w-10 h-10 ${
                         isDragging
-                          ? 'text-blue-600 dark:text-blue-400'
+                          ? 'text-primary-600 dark:text-primary-400'
                           : 'text-gray-400 dark:text-gray-500'
                       }`}
                     />
@@ -220,7 +220,7 @@ export default function ImportExportModal({
                       className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isProcessing
                           ? 'bg-gray-400 cursor-not-allowed text-white'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-primary-600 hover:bg-primary-700 text-white'
                       }`}
                     >
                       {isProcessing ? '处理中...' : '选择 JSON 文件'}
@@ -230,11 +230,11 @@ export default function ImportExportModal({
               </div>
 
               {/* 说明文档 - 更紧凑 */}
-              <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3'>
-                <h4 className='font-semibold text-blue-900 dark:text-blue-200 mb-1.5 text-sm'>
+              <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3'>
+                <h4 className='font-semibold text-primary-900 dark:text-primary-200 mb-1.5 text-sm'>
                   📝 导入说明
                 </h4>
-                <ul className='text-xs text-blue-800 dark:text-blue-300 space-y-0.5'>
+                <ul className='text-xs text-primary-800 dark:text-primary-300 space-y-0.5'>
                   <li>• 支持标准 JSON 格式的视频源配置文件</li>
                   <li>• 重复的 key 将被跳过，不会覆盖现有配置</li>
                   <li>• 导入完成后会显示详细的导入结果</li>
@@ -259,8 +259,8 @@ export default function ImportExportModal({
               </div>
 
               {/* 导出格式选择 */}
-              <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3'>
-                <h4 className='font-semibold text-blue-900 dark:text-blue-200 mb-2.5 text-sm'>
+              <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3'>
+                <h4 className='font-semibold text-primary-900 dark:text-primary-200 mb-2.5 text-sm'>
                   📋 选择导出格式
                 </h4>
                 <div className='space-y-2.5'>
@@ -274,15 +274,15 @@ export default function ImportExportModal({
                       onChange={(e) =>
                         setExportFormat(e.target.value as 'array' | 'config')
                       }
-                      className='mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500'
+                      className='mt-1 w-4 h-4 text-primary-600 focus:ring-primary-500'
                     />
                     <div className='flex-1'>
-                      <div className='font-medium text-sm text-blue-900 dark:text-blue-100 group-hover:text-blue-700 dark:group-hover:text-blue-200'>
+                      <div className='font-medium text-sm text-primary-900 dark:text-primary-100 group-hover:text-primary-700 dark:group-hover:text-primary-200'>
                         数组格式（推荐）
                       </div>
-                      <div className='text-xs text-blue-700 dark:text-blue-300 mt-0.5'>
+                      <div className='text-xs text-primary-700 dark:text-primary-300 mt-0.5'>
                         适用于批量导入功能，结构：
-                        <code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>
+                        <code className='bg-primary-100 dark:bg-primary-900/40 px-1 py-0.5 rounded'>
                           [&#123;...&#125;]
                         </code>
                       </div>
@@ -299,15 +299,15 @@ export default function ImportExportModal({
                       onChange={(e) =>
                         setExportFormat(e.target.value as 'array' | 'config')
                       }
-                      className='mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500'
+                      className='mt-1 w-4 h-4 text-primary-600 focus:ring-primary-500'
                     />
                     <div className='flex-1'>
-                      <div className='font-medium text-sm text-blue-900 dark:text-blue-100 group-hover:text-blue-700 dark:group-hover:text-blue-200'>
+                      <div className='font-medium text-sm text-primary-900 dark:text-primary-100 group-hover:text-primary-700 dark:group-hover:text-primary-200'>
                         配置文件格式
                       </div>
-                      <div className='text-xs text-blue-700 dark:text-blue-300 mt-0.5'>
+                      <div className='text-xs text-primary-700 dark:text-primary-300 mt-0.5'>
                         适用于直接插入配置文件，结构：
-                        <code className='bg-blue-100 dark:bg-blue-900/40 px-1 py-0.5 rounded'>
+                        <code className='bg-primary-100 dark:bg-primary-900/40 px-1 py-0.5 rounded'>
                           &#123;api_site: &#123;key: &#123;...&#125;&#125;&#125;
                         </code>
                       </div>
