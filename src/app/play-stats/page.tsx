@@ -1572,7 +1572,7 @@ const PlayStatsPage: React.FC = () => {
                         Array.from({ length: 3 }).map((_, index) => (
                           <div
                             key={`loading-${index}`}
-                            className='min-w-[140px] bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 animate-pulse'
+                            className='min-w-35 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 animate-pulse'
                           >
                             <div className='h-4 bg-white/20 rounded mb-2'></div>
                             <div className='h-3 bg-white/20 rounded mb-2 w-3/4'></div>
@@ -1597,7 +1597,7 @@ const PlayStatsPage: React.FC = () => {
                                   .map((item) => (
                                     <div
                                       key={item.id}
-                                      className='min-w-[140px] bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
+                                      className='min-w-35 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
                                     >
                                       <div
                                         className='text-sm font-medium mb-1 line-clamp-2'
@@ -1636,7 +1636,7 @@ const PlayStatsPage: React.FC = () => {
                                   .map((item) => (
                                     <div
                                       key={item.id}
-                                      className='min-w-[140px] bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
+                                      className='min-w-35 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
                                     >
                                       <div
                                         className='text-sm font-medium mb-1 line-clamp-2'
@@ -2275,7 +2275,7 @@ const PlayStatsPage: React.FC = () => {
                     Array.from({ length: 3 }).map((_, index) => (
                       <div
                         key={`loading-${index}`}
-                        className='min-w-[140px] bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 animate-pulse'
+                        className='min-w-35 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 animate-pulse'
                       >
                         <div className='h-4 bg-white/20 rounded mb-2'></div>
                         <div className='h-3 bg-white/20 rounded mb-2 w-1/2'></div>
@@ -2298,7 +2298,7 @@ const PlayStatsPage: React.FC = () => {
                               .map((item) => (
                                 <div
                                   key={item.id}
-                                  className='min-w-[140px] bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
+                                  className='min-w-35 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
                                 >
                                   <div
                                     className='text-sm font-medium mb-1 line-clamp-2'
@@ -2337,7 +2337,7 @@ const PlayStatsPage: React.FC = () => {
                               .map((item) => (
                                 <div
                                   key={item.id}
-                                  className='min-w-[140px] bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
+                                  className='min-w-35 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 shrink-0'
                                 >
                                   <div
                                     className='text-sm font-medium mb-1 line-clamp-2'

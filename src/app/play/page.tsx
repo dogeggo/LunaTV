@@ -2565,8 +2565,8 @@ function PlayPageClient() {
       );
       // 更新URL参数（不刷新页面）
       const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('source', newSource);
-      newUrl.searchParams.set('id', newId);
+      newUrl.searchParams.set('source', newDetail.source);
+      newUrl.searchParams.set('id', newDetail.id);
       newUrl.searchParams.set('year', newDetail.year);
       newUrl.searchParams.set('index', targetIndex.toString()); // 🔥 同步URL的index参数
       window.history.replaceState({}, '', newUrl.toString());
@@ -2576,17 +2576,10 @@ function PlayPageClient() {
       setVideoCover(newDetail.poster);
       // 优先保留URL参数中的豆瓣ID，如果URL中没有则使用详情数据中的
       setVideoDoubanId(videoDoubanIdRef.current || newDetail.douban_id || 0);
-      setCurrentSource(newSource);
-      setCurrentId(newId);
-
+      setCurrentSource(newDetail.source);
+      setCurrentId(newDetail.id);
       await saveCurrentPlayProgress(newDetail, record);
-
       setDetail(newDetail);
-      // 🔥 只有当集数确实改变时才调用 setCurrentEpisodeIndex
-      // 这样可以避免触发不必要的 useEffect 和集数切换逻辑
-      setCurrentEpisodeIndex((prev) =>
-        prev === targetIndex ? prev : targetIndex,
-      );
       // 🚀 换源完成后，优化弹幕加载流程
       setTimeout(async () => {
         isSourceChangingRef.current = false; // 重置换源标识
@@ -2855,40 +2848,15 @@ function PlayPageClient() {
       return;
     }
     try {
-      // 获取现有播放记录以保持原始集数
-      const existingRecord = await getAllPlayRecords()
-        .then((records) => {
-          const key = generateStorageKey(
-            currentSourceRef.current,
-            currentIdRef.current,
-          );
-          return records[key];
-        })
-        .catch(() => null);
       const currentTotalEpisodes = newDetail.episodes.length || 1;
-
-      // 尝试从换源列表中获取更准确的 remarks（搜索接口比详情接口更可能有 remarks）
-      const sourceFromList = availableSourcesRef.current?.find(
-        (s) =>
-          s.source === currentSourceRef.current &&
-          s.id === currentIdRef.current,
-      );
-      const remarksToSave = sourceFromList?.remarks || newDetail.remarks;
-
-      await savePlayRecord(currentSourceRef.current, currentIdRef.current, {
+      const remarksToSave = newDetail.remarks;
+      await savePlayRecord(newDetail.source, newDetail.id, {
         title: videoTitleRef.current,
         source_name: newDetail.source_name || '',
         year: newDetail.year,
         cover: newDetail.poster || '',
         index: currentEpisodeIndexRef.current + 1, // 转换为1基索引
         total_episodes: currentTotalEpisodes,
-        // 🔑 关键：不要在这里设置 original_episodes
-        // 让 savePlayRecord 自己处理：
-        // - 首次保存时会自动设置为 total_episodes
-        // - 后续保存时会从数据库读取并保持不变
-        // - 只有当用户看了新集数时才会更新
-        // 这样避免了播放器传入错误的 original_episodes（可能是更新后的值）
-        original_episodes: existingRecord?.original_episodes, // 只传递已有值，不自动填充
         play_time: Math.floor(
           recordTime > currentTime ? recordTime : currentTime,
         ),
@@ -3285,7 +3253,6 @@ function PlayPageClient() {
 
           // 🚀 关键修复：区分换源和切换集数
           const isEpisodeChange = isEpisodeChangingRef.current;
-          const currentTime = artPlayerRef.current.currentTime || 0;
 
           let switchPromise: Promise<any>;
           if (isEpisodeChange) {
@@ -3293,29 +3260,25 @@ function PlayPageClient() {
             // 切换集数时重置播放时间到0
             switchPromise = artPlayerRef.current.switchUrl(videoUrl);
           } else {
-            console.log(
-              `🎯 开始切换源: ${videoUrl} (保持进度: ${currentTime.toFixed(2)}s)`,
-            );
+            console.log(`🎯 开始切换源: ${videoUrl}`);
             // 换源时保持播放进度
             switchPromise = artPlayerRef.current.switchQuality(videoUrl);
             try {
               const allRecords = await getAllPlayRecords();
               const key = generateStorageKey(currentSource, currentId);
               const record = allRecords[key];
-              const play_time =
-                record && record.index - 1 == currentEpisodeIndexRef.current
-                  ? record.play_time
-                  : 0;
-              const duration = artPlayerRef.current.duration || 0;
-              const current = artPlayerRef.current.currentTime || 0;
-              let target = play_time > current ? play_time : current;
-              if (duration && target >= duration - 2) {
-                target = Math.max(0, duration - 5);
-              }
-              if (target > current) {
-                artPlayerRef.current.currentTime = target;
-              }
-              console.log('成功恢复播放进度到:', target);
+              if (record) {
+                let play_time =
+                  record.index - 1 == currentEpisodeIndexRef.current
+                    ? record.play_time
+                    : 0;
+                const duration = record.total_time || 0;
+                if (duration && play_time >= duration - 2) {
+                  play_time = Math.max(0, duration - 5);
+                }
+                artPlayerRef.current.currentTime = play_time;
+                console.log('1111成功恢复播放进度到:', play_time);
+              } else artPlayerRef.current.currentTime = 0;
             } catch (err) {
               console.warn('恢复播放进度失败:', err);
             }
@@ -4802,7 +4765,13 @@ function PlayPageClient() {
             if (target > current) {
               artPlayerRef.current.currentTime = target;
             }
-            console.log('成功恢复播放进度到:', target);
+            console.log(
+              '成功恢复播放进度到:',
+              target,
+              currentSource,
+              currentId,
+              record,
+            );
           } catch (err) {
             console.warn('恢复播放进度失败:', err);
           }
