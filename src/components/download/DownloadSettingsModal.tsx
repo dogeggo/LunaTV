@@ -146,7 +146,7 @@ export function DownloadSettingsModal({
                   />
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
-                      <span className='text-green-500 font-bold'>✓</span>
+                      <span className='text-primary-500 font-bold'>✓</span>
                       <span className='font-medium text-gray-900 dark:text-white'>
                         {getStreamModeName('disabled')}
                       </span>
@@ -177,7 +177,7 @@ export function DownloadSettingsModal({
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
                       {streamModeSupport.serviceWorker ? (
-                        <span className='text-green-500 font-bold'>✓</span>
+                        <span className='text-primary-500 font-bold'>✓</span>
                       ) : (
                         <span className='text-red-500 font-bold'>✗</span>
                       )}
@@ -217,7 +217,7 @@ export function DownloadSettingsModal({
                   <div className='flex-1'>
                     <div className='flex items-center gap-2'>
                       {streamModeSupport.fileSystem ? (
-                        <span className='text-green-500 font-bold'>✓</span>
+                        <span className='text-primary-500 font-bold'>✓</span>
                       ) : (
                         <span className='text-red-500 font-bold'>✗</span>
                       )}
@@ -227,7 +227,7 @@ export function DownloadSettingsModal({
                         {getStreamModeName('file-system')}
                       </span>
                       {streamModeSupport.fileSystem && (
-                        <span className='text-xs px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'>
+                        <span className='text-xs px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'>
                           推荐
                         </span>
                       )}

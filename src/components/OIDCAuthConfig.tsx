@@ -141,7 +141,7 @@ export function OIDCAuthConfig({ providers, onSave }: OIDCAuthConfigProps) {
                 <span
                   className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${
                     provider.enabled
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                   }`}
                 >
@@ -186,19 +186,19 @@ export function OIDCAuthConfig({ providers, onSave }: OIDCAuthConfigProps) {
         <div
           className={`flex items-center gap-2 p-4 rounded-lg ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+              ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
               : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400' />
+            <CheckCircle2 className='w-5 h-5 text-primary-600 dark:text-primary-400' />
           ) : (
             <AlertCircle className='w-5 h-5 text-red-600 dark:text-red-400' />
           )}
           <span
             className={`text-sm ${
               message.type === 'success'
-                ? 'text-green-800 dark:text-green-200'
+                ? 'text-primary-800 dark:text-primary-200'
                 : 'text-red-800 dark:text-red-200'
             }`}
           >
@@ -732,19 +732,19 @@ function ProviderEditModal({
                 <div
                   className={`flex items-center gap-2 p-4 rounded-lg ${
                     message.type === 'success'
-                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                      ? 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'
                       : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                   }`}
                 >
                   {message.type === 'success' ? (
-                    <CheckCircle2 className='w-5 h-5 text-green-600 dark:text-green-400' />
+                    <CheckCircle2 className='w-5 h-5 text-primary-600 dark:text-primary-400' />
                   ) : (
                     <AlertCircle className='w-5 h-5 text-red-600 dark:text-red-400' />
                   )}
                   <span
                     className={`text-sm ${
                       message.type === 'success'
-                        ? 'text-green-800 dark:text-green-200'
+                        ? 'text-primary-800 dark:text-primary-200'
                         : 'text-red-800 dark:text-red-200'
                     }`}
                   >

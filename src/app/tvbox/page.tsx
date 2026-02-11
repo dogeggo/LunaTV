@@ -448,14 +448,14 @@ export default function TVBoxConfigPage() {
             {securityConfig.enableAuth ||
             securityConfig.enableIpWhitelist ||
             securityConfig.enableRateLimit ? (
-              <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4'>
+              <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700 rounded-lg p-4'>
                 <div className='flex items-start gap-3'>
-                  <Shield className='w-5 h-5 text-green-600 dark:text-green-400 mt-0.5' />
+                  <Shield className='w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5' />
                   <div>
-                    <h3 className='font-semibold text-green-800 dark:text-green-200 mb-1'>
+                    <h3 className='font-semibold text-primary-800 dark:text-primary-200 mb-1'>
                       🔒 已启用安全配置
                     </h3>
-                    <div className='text-sm text-green-700 dark:text-green-300 space-y-1'>
+                    <div className='text-sm text-primary-700 dark:text-primary-300 space-y-1'>
                       {securityConfig.enableAuth && (
                         <p>• Token验证：已启用（URL已自动包含token）</p>
                       )}
@@ -575,7 +575,7 @@ export default function TVBoxConfigPage() {
                   </span>
                 </div>
               </label>
-              <label className='flex items-center cursor-pointer p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-green-500 dark:hover:border-green-400 transition-colors'>
+              <label className='flex items-center cursor-pointer p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 dark:hover:border-primary-400 transition-colors'>
                 <input
                   type='radio'
                   name='configMode'
@@ -590,7 +590,7 @@ export default function TVBoxConfigPage() {
                         | 'yingshicang',
                     )
                   }
-                  className='mr-2 w-4 h-4 text-green-600 focus:ring-green-500'
+                  className='mr-2 w-4 h-4 text-primary-600 focus:ring-primary-500'
                 />
                 <div className='text-sm'>
                   <span className='font-medium text-gray-900 dark:text-white block'>
@@ -854,7 +854,7 @@ export default function TVBoxConfigPage() {
               onClick={handleCopy}
               className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                 copied
-                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  ? 'bg-primary-500 hover:bg-primary-600 text-white'
                   : 'bg-primary-500 hover:bg-primary-600 text-white'
               } transform hover:scale-105`}
             >
@@ -877,7 +877,7 @@ export default function TVBoxConfigPage() {
               <button
                 onClick={handleRefreshJar}
                 disabled={refreshingJar}
-                className='w-full sm:w-auto px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors text-sm'
+                className='w-full sm:w-auto px-4 py-2 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors text-sm'
               >
                 {refreshingJar ? '刷新中...' : '🔄 刷新 JAR'}
               </button>
@@ -952,7 +952,7 @@ export default function TVBoxConfigPage() {
                 {/* JAR 刷新消息 */}
                 {jarRefreshMsg && (
                   <div
-                    className={`mb-4 p-3 rounded-lg ${jarRefreshMsg.startsWith('✓') ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}
+                    className={`mb-4 p-3 rounded-lg ${jarRefreshMsg.startsWith('✓') ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}
                   >
                     {jarRefreshMsg}
                   </div>
@@ -969,8 +969,8 @@ export default function TVBoxConfigPage() {
                     ) : (
                       <>
                         {/* 基本信息 */}
-                        <div className='p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700'>
-                          <h3 className='font-semibold text-green-900 dark:text-green-300 mb-3'>
+                        <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-700'>
+                          <h3 className='font-semibold text-primary-900 dark:text-primary-300 mb-3'>
                             ✓ 基本信息
                           </h3>
                           <div className='grid grid-cols-1 md:grid-cols-2 gap-2 text-sm'>
@@ -994,7 +994,7 @@ export default function TVBoxConfigPage() {
                             <div
                               className={
                                 diagnosisResult.hasJson
-                                  ? 'text-green-600 dark:text-green-400 font-medium'
+                                  ? 'text-primary-600 dark:text-primary-400 font-medium'
                                   : 'text-red-600 dark:text-red-400 font-medium'
                               }
                             >
@@ -1033,13 +1033,13 @@ export default function TVBoxConfigPage() {
                           </div>
                           <div className='flex flex-wrap gap-2 text-xs'>
                             {diagnosisResult.spiderPrivate === false && (
-                              <span className='px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded'>
+                              <span className='px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded'>
                                 ✓ 公网地址
                               </span>
                             )}
                             {diagnosisResult.spiderReachable !== undefined &&
                               (diagnosisResult.spiderReachable ? (
-                                <span className='px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded'>
+                                <span className='px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded'>
                                   ✓ 可访问{' '}
                                   {diagnosisResult.spiderStatus &&
                                     `(${diagnosisResult.spiderStatus})`}
@@ -1056,7 +1056,7 @@ export default function TVBoxConfigPage() {
                                 className={`px-2 py-1 rounded ${
                                   diagnosisResult.spiderSizeKB < 50
                                     ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
-                                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                    : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                                 }`}
                               >
                                 {diagnosisResult.spiderSizeKB < 50 ? '⚠' : '✓'}{' '}
@@ -1102,7 +1102,7 @@ export default function TVBoxConfigPage() {
                                 缓存状态
                               </div>
                               <div
-                                className={`font-medium ${diagnosisResult.spider_cached ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}
+                                className={`font-medium ${diagnosisResult.spider_cached ? 'text-primary-600 dark:text-primary-400' : 'text-yellow-600 dark:text-yellow-400'}`}
                               >
                                 {diagnosisResult.spider_cached
                                   ? '✓ 已缓存'
@@ -1124,7 +1124,7 @@ export default function TVBoxConfigPage() {
                                 尝试次数
                               </div>
                               <div
-                                className={`font-medium ${diagnosisResult.spider_tried && diagnosisResult.spider_tried > 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}
+                                className={`font-medium ${diagnosisResult.spider_tried && diagnosisResult.spider_tried > 2 ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary-600 dark:text-primary-400'}`}
                               >
                                 {diagnosisResult.spider_tried || 0} 次
                               </div>
@@ -1134,7 +1134,7 @@ export default function TVBoxConfigPage() {
                                 获取状态
                               </div>
                               <div
-                                className={`font-medium ${diagnosisResult.spider_success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                                className={`font-medium ${diagnosisResult.spider_success ? 'text-primary-600 dark:text-primary-400' : 'text-red-600 dark:text-red-400'}`}
                               >
                                 {diagnosisResult.spider_success
                                   ? '✓ 成功'
@@ -1220,7 +1220,7 @@ export default function TVBoxConfigPage() {
                                     className={
                                       diagnosisResult.privateApis > 0
                                         ? 'text-yellow-600 dark:text-yellow-400 font-medium'
-                                        : 'text-green-600 dark:text-green-400 font-medium'
+                                        : 'text-primary-600 dark:text-primary-400 font-medium'
                                     }
                                   >
                                     {diagnosisResult.privateApis}
@@ -1358,7 +1358,7 @@ export default function TVBoxConfigPage() {
                               <div className='text-primary-600 dark:text-primary-400 text-xs mb-1'>
                                 优化状态
                               </div>
-                              <div className='text-green-600 dark:text-green-400 font-medium'>
+                              <div className='text-primary-600 dark:text-primary-400 font-medium'>
                                 {smartHealthResult.network.optimized
                                   ? '✓ 已优化'
                                   : '○ 未优化'}
@@ -1368,12 +1368,12 @@ export default function TVBoxConfigPage() {
                         </div>
 
                         {/* 健康分数卡片 */}
-                        <div className='p-4 bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-700'>
+                        <div className='p-4 bg-linear-to-r from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 rounded-lg border border-primary-200 dark:border-primary-700'>
                           <div className='flex items-center justify-between'>
                             <div>
                               <div className='flex items-center gap-2 mb-2'>
-                                <Zap className='w-5 h-5 text-green-600 dark:text-green-400' />
-                                <h3 className='font-semibold text-green-900 dark:text-green-300'>
+                                <Zap className='w-5 h-5 text-primary-600 dark:text-primary-400' />
+                                <h3 className='font-semibold text-primary-900 dark:text-primary-300'>
                                   健康分数
                                 </h3>
                               </div>
@@ -1388,7 +1388,7 @@ export default function TVBoxConfigPage() {
                                 className={`text-5xl font-bold ${
                                   smartHealthResult.reachability.health_score >=
                                   75
-                                    ? 'text-green-600 dark:text-green-400'
+                                    ? 'text-primary-600 dark:text-primary-400'
                                     : smartHealthResult.reachability
                                           .health_score >= 50
                                       ? 'text-yellow-600 dark:text-yellow-400'
@@ -1423,7 +1423,7 @@ export default function TVBoxConfigPage() {
                                 >
                                   <div className='flex items-center gap-2 flex-1 min-w-0'>
                                     {test.success ? (
-                                      <CheckCircle2 className='w-4 h-4 text-green-600 dark:text-green-400 shrink-0' />
+                                      <CheckCircle2 className='w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0' />
                                     ) : (
                                       <XCircle className='w-4 h-4 text-red-600 dark:text-red-400 shrink-0' />
                                     )}
@@ -1500,7 +1500,7 @@ export default function TVBoxConfigPage() {
                             <div
                               className={
                                 smartHealthResult.spider.current.success
-                                  ? 'text-green-600 dark:text-green-400 font-medium'
+                                  ? 'text-primary-600 dark:text-primary-400 font-medium'
                                   : 'text-yellow-600 dark:text-yellow-400 font-medium'
                               }
                             >
@@ -1588,11 +1588,11 @@ export default function TVBoxConfigPage() {
                               测试总数
                             </div>
                           </div>
-                          <div className='p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700 text-center'>
-                            <div className='text-2xl font-bold text-green-600 dark:text-green-400'>
+                          <div className='p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-700 text-center'>
+                            <div className='text-2xl font-bold text-primary-600 dark:text-primary-400'>
                               {jarFixResult.summary.successful}
                             </div>
-                            <div className='text-xs text-green-700 dark:text-green-300 mt-1'>
+                            <div className='text-xs text-primary-700 dark:text-primary-300 mt-1'>
                               成功
                             </div>
                           </div>
@@ -1610,7 +1610,7 @@ export default function TVBoxConfigPage() {
                         <div
                           className={`p-4 rounded-lg border ${
                             jarFixResult.status.network_quality === 'good'
-                              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                              ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-700'
                               : jarFixResult.status.network_quality === 'fair'
                                 ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
                                 : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
@@ -1632,7 +1632,7 @@ export default function TVBoxConfigPage() {
                             <div
                               className={`text-2xl font-bold ${
                                 jarFixResult.status.network_quality === 'good'
-                                  ? 'text-green-600 dark:text-green-400'
+                                  ? 'text-primary-600 dark:text-primary-400'
                                   : jarFixResult.status.network_quality ===
                                       'fair'
                                     ? 'text-yellow-600 dark:text-yellow-400'
@@ -1650,8 +1650,8 @@ export default function TVBoxConfigPage() {
 
                         {/* 推荐源 */}
                         {jarFixResult.recommended_sources.length > 0 && (
-                          <div className='p-4 bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-700'>
-                            <h3 className='font-semibold text-green-900 dark:text-green-300 mb-3'>
+                          <div className='p-4 bg-linear-to-r from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 rounded-lg border border-primary-200 dark:border-primary-700'>
+                            <h3 className='font-semibold text-primary-900 dark:text-primary-300 mb-3'>
                               ✅ 推荐源 (Top 3)
                             </h3>
                             <div className='space-y-2'>
@@ -1659,10 +1659,10 @@ export default function TVBoxConfigPage() {
                                 (source, idx) => (
                                   <div
                                     key={idx}
-                                    className='p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-700'
+                                    className='p-3 bg-white dark:bg-gray-800 rounded border border-primary-200 dark:border-primary-700'
                                   >
                                     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1'>
-                                      <div className='font-medium text-green-700 dark:text-green-300'>
+                                      <div className='font-medium text-primary-700 dark:text-primary-300'>
                                         #{idx + 1} {source.name}
                                       </div>
                                       <div className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 whitespace-nowrap flex-shrink-0'>
@@ -1696,14 +1696,14 @@ export default function TVBoxConfigPage() {
                                 key={idx}
                                 className={`p-2 rounded border ${
                                   test.success
-                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-700'
                                     : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
                                 }`}
                               >
                                 <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2'>
                                   <div className='flex items-center gap-2 flex-1 min-w-0'>
                                     {test.success ? (
-                                      <CheckCircle2 className='w-4 h-4 text-green-600 dark:text-green-400 shrink-0' />
+                                      <CheckCircle2 className='w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0' />
                                     ) : (
                                       <XCircle className='w-4 h-4 text-red-600 dark:text-red-400 shrink-0' />
                                     )}
@@ -1807,8 +1807,8 @@ export default function TVBoxConfigPage() {
 
                         {/* 修复后的配置URL */}
                         {jarFixResult.fixed_config_urls.length > 0 && (
-                          <div className='p-4 bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-700'>
-                            <h3 className='font-semibold text-green-900 dark:text-green-300 mb-2'>
+                          <div className='p-4 bg-linear-to-r from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 rounded-lg border border-primary-200 dark:border-primary-700'>
+                            <h3 className='font-semibold text-primary-900 dark:text-primary-300 mb-2'>
                               🔗 优化配置链接
                             </h3>
                             <div className='space-y-2'>
@@ -1816,7 +1816,7 @@ export default function TVBoxConfigPage() {
                                 (url, idx) => (
                                   <div
                                     key={idx}
-                                    className='p-2 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-700'
+                                    className='p-2 bg-white dark:bg-gray-800 rounded border border-primary-200 dark:border-primary-700'
                                   >
                                     <div className='text-xs font-mono text-gray-600 dark:text-gray-400 break-all'>
                                       {url}
@@ -1878,8 +1878,8 @@ export default function TVBoxConfigPage() {
                                 : '🌐 国际'}
                             </div>
                           </div>
-                          <div className='p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700'>
-                            <div className='text-xs text-green-600 dark:text-green-400 mb-1'>
+                          <div className='p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-700'>
+                            <div className='text-xs text-primary-600 dark:text-primary-400 mb-1'>
                               时区
                             </div>
                             <div className='text-sm font-medium text-gray-900 dark:text-white'>
@@ -1908,11 +1908,11 @@ export default function TVBoxConfigPage() {
                               总测试源
                             </div>
                           </div>
-                          <div className='p-3 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg text-center'>
-                            <div className='text-2xl font-bold text-green-600 dark:text-green-400 break-words'>
+                          <div className='p-3 bg-linear-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-lg text-center'>
+                            <div className='text-2xl font-bold text-primary-600 dark:text-primary-400 break-words'>
                               {deepDiagnosticResult.summary.successCount}
                             </div>
-                            <div className='text-xs text-green-700 dark:text-green-300 mt-1 break-words'>
+                            <div className='text-xs text-primary-700 dark:text-primary-300 mt-1 break-words'>
                               可用源
                             </div>
                           </div>
@@ -1969,7 +1969,7 @@ export default function TVBoxConfigPage() {
                                   key={idx}
                                   className={`p-3 rounded border ${
                                     test.status === 'success'
-                                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                                      ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-700'
                                       : test.status === 'timeout'
                                         ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
                                         : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
@@ -1978,7 +1978,7 @@ export default function TVBoxConfigPage() {
                                   <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2'>
                                     <div className='flex items-center gap-2 min-w-0'>
                                       {test.status === 'success' ? (
-                                        <CheckCircle2 className='w-4 h-4 text-green-600 dark:text-green-400 shrink-0' />
+                                        <CheckCircle2 className='w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0' />
                                       ) : (
                                         <XCircle className='w-4 h-4 text-red-600 dark:text-red-400 shrink-0' />
                                       )}
@@ -1989,7 +1989,7 @@ export default function TVBoxConfigPage() {
                                     <span
                                       className={`text-xs px-2 py-1 rounded whitespace-nowrap flex-shrink-0 ${
                                         test.status === 'success'
-                                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                          ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                                           : test.status === 'timeout'
                                             ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                                             : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
@@ -2046,7 +2046,7 @@ export default function TVBoxConfigPage() {
                                         <span
                                           className={`ml-1 font-medium ${
                                             test.isValidJar
-                                              ? 'text-green-600 dark:text-green-400'
+                                              ? 'text-primary-600 dark:text-primary-400'
                                               : 'text-red-600 dark:text-red-400'
                                           }`}
                                         >

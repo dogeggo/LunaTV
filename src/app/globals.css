@@ -128,6 +128,15 @@ body {
   overscroll-behavior: none;
   /* iOS Safari 平滑惯性滚动 */
   -webkit-overflow-scrolling: touch;
+  /* 隐藏非输入区域的闪烁光标 */
+  caret-color: transparent;
+}
+
+/* 恢复输入框的光标 */
+input,
+textarea,
+[contenteditable='true'] {
+  caret-color: auto;
 }
 
 body {

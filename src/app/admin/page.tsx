@@ -69,7 +69,7 @@ const buttonStyles = {
     'px-3 py-1.5 text-sm font-medium bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg transition-colors',
   // 成功操作按钮（绿色）- 用于添加、启用、保存等
   success:
-    'px-3 py-1.5 text-sm font-medium bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-colors',
+    'px-3 py-1.5 text-sm font-medium bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-lg transition-colors',
   // 危险操作按钮（红色）- 用于删除、禁用、重置等
   danger:
     'px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white rounded-lg transition-colors',
@@ -84,7 +84,7 @@ const buttonStyles = {
     'px-2 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-md transition-colors',
   // 小尺寸成功按钮
   successSmall:
-    'px-2 py-1 text-xs font-medium bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-md transition-colors',
+    'px-2 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-md transition-colors',
   // 小尺寸危险按钮
   dangerSmall:
     'px-2 py-1 text-xs font-medium bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white rounded-md transition-colors',
@@ -98,7 +98,7 @@ const buttonStyles = {
   roundedPrimary:
     'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 hover:bg-primary-200 dark:bg-primary-900/40 dark:hover:bg-primary-900/60 dark:text-primary-200 transition-colors',
   roundedSuccess:
-    'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 dark:text-green-200 transition-colors',
+    'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 hover:bg-primary-200 dark:bg-primary-900/40 dark:hover:bg-primary-900/60 dark:text-primary-200 transition-colors',
   roundedDanger:
     'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 dark:text-red-200 transition-colors',
   roundedSecondary:
@@ -113,7 +113,7 @@ const buttonStyles = {
   disabledSmall:
     'px-2 py-1 text-xs font-medium bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white rounded-md transition-colors',
   // 开关按钮样式
-  toggleOn: 'bg-green-600 dark:bg-green-600',
+  toggleOn: 'bg-primary-600 dark:bg-primary-600',
   toggleOff: 'bg-gray-200 dark:bg-gray-700',
   toggleThumb: 'bg-white',
   toggleThumbOn: 'translate-x-6',
@@ -163,7 +163,7 @@ const AlertModal = ({
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle className='w-8 h-8 text-green-500' />;
+        return <CheckCircle className='w-8 h-8 text-primary-500' />;
       case 'error':
         return <AlertCircle className='w-8 h-8 text-red-500' />;
       case 'warning':
@@ -176,7 +176,7 @@ const AlertModal = ({
   const getBgColor = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800';
       case 'error':
         return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
       case 'warning':
@@ -1329,11 +1329,11 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
         <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-3'>
           用户统计
         </h4>
-        <div className='p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800'>
-          <div className='text-2xl font-bold text-green-800 dark:text-green-300'>
+        <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
+          <div className='text-2xl font-bold text-primary-800 dark:text-primary-300'>
             {config.UserConfig.Users.length}
           </div>
-          <div className='text-sm text-green-600 dark:text-green-400'>
+          <div className='text-sm text-primary-600 dark:text-primary-400'>
             总用户数
           </div>
         </div>
@@ -1530,7 +1530,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       username: e.target.value,
                     }))
                   }
-                  className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                  className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
                 />
                 <input
                   type='password'
@@ -1542,7 +1542,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       password: e.target.value,
                     }))
                   }
-                  className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                  className='px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
                 />
               </div>
               <div>
@@ -1557,7 +1557,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       userGroup: e.target.value,
                     }))
                   }
-                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
                 >
                   <option value=''>无用户组（无限制）</option>
                   {userGroups.map((group) => (
@@ -1836,7 +1836,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${
                               !user.banned
-                                ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300'
                                 : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
                             }`}
                           >
@@ -2986,10 +2986,10 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                       </p>
                     </div>
                   ) : (
-                    <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4'>
+                    <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4'>
                       <div className='flex items-center space-x-2'>
                         <svg
-                          className='w-5 h-5 text-green-600 dark:text-green-400'
+                          className='w-5 h-5 text-primary-600 dark:text-primary-400'
                           fill='none'
                           stroke='currentColor'
                           viewBox='0 0 24 24'
@@ -3001,7 +3001,7 @@ const UserConfig = ({ config, role, refreshConfig }: UserConfigProps) => {
                             d='M5 13l4 4L19 7'
                           />
                         </svg>
-                        <span className='text-sm font-medium text-green-800 dark:text-green-300'>
+                        <span className='text-sm font-medium text-primary-800 dark:text-primary-300'>
                           ✅ 当前没有用户使用此用户组
                         </span>
                       </div>
@@ -3803,7 +3803,7 @@ const VideoSourceConfig = ({
         return {
           text: '有效',
           className:
-            'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300',
+            'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300',
           icon: '✓',
           message: result.message,
         };
@@ -3882,7 +3882,7 @@ const VideoSourceConfig = ({
           <span
             className={`px-2 py-1 text-xs rounded-full ${
               !source.disabled
-                ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300'
                 : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
             }`}
           >
@@ -4381,7 +4381,7 @@ const VideoSourceConfig = ({
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               !videoProxySettings.enabled || isLoading('checkProxyStatus')
                 ? 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed text-gray-500'
-                : 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-primary-600 hover:bg-primary-700 text-white'
             }`}
           >
             {isLoading('checkProxyStatus') ? '检测中...' : '🔍 检测代理状态'}
@@ -4404,14 +4404,14 @@ const VideoSourceConfig = ({
           <div
             className={`mt-3 p-3 rounded-lg border ${
               proxyStatus.healthy
-                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                 : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
             }`}
           >
             <div className='flex items-center gap-2'>
               {proxyStatus.healthy ? (
                 <svg
-                  className='w-5 h-5 text-green-600'
+                  className='w-5 h-5 text-primary-600'
                   fill='none'
                   stroke='currentColor'
                   viewBox='0 0 24 24'
@@ -4442,7 +4442,7 @@ const VideoSourceConfig = ({
                 <div
                   className={`text-sm font-semibold ${
                     proxyStatus.healthy
-                      ? 'text-green-900 dark:text-green-300'
+                      ? 'text-primary-900 dark:text-primary-300'
                       : 'text-red-900 dark:text-red-300'
                   }`}
                 >
@@ -4550,7 +4550,7 @@ const VideoSourceConfig = ({
               onClick={() =>
                 setImportExportModal({ isOpen: true, mode: 'export' })
               }
-              className='px-3 py-1 text-sm rounded-lg transition-colors flex items-center space-x-1 bg-linear-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white'
+              className='px-3 py-1 text-sm rounded-lg transition-colors flex items-center space-x-1 bg-linear-to-r from-primary-600 to-emerald-500 hover:from-primary-700 hover:to-emerald-600 text-white'
               title={
                 selectedSources.size > 0
                   ? `导出选中的 ${selectedSources.size} 个视频源`
@@ -5079,7 +5079,7 @@ const CategoryConfig = ({
           <span
             className={`px-2 py-1 text-xs rounded-full ${
               !category.disabled
-                ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300'
                 : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
             }`}
           >
@@ -5402,7 +5402,7 @@ const ConfigFileComponent = ({
               onChange={(e) => setSubscriptionUrl(e.target.value)}
               placeholder='https://example.com/config.json'
               disabled={false}
-              className='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 shadow-sm hover:border-gray-400 dark:hover:border-gray-500'
+              className='w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 shadow-sm hover:border-gray-400 dark:hover:border-gray-500'
             />
             <p className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
               输入配置文件的订阅地址，要求 JSON 格式，且使用 Base58 编码
@@ -5445,7 +5445,7 @@ const ConfigFileComponent = ({
               type='button'
               onClick={() => setAutoUpdate(!autoUpdate)}
               disabled={false}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                 autoUpdate ? buttonStyles.toggleOn : buttonStyles.toggleOff
               }`}
             >
@@ -5693,7 +5693,7 @@ const SiteConfigComponent = ({
           onChange={(e) =>
             setSiteSettings((prev) => ({ ...prev, SiteName: e.target.value }))
           }
-          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
         />
       </div>
 
@@ -5711,7 +5711,7 @@ const SiteConfigComponent = ({
             }))
           }
           rows={3}
-          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
         />
       </div>
 
@@ -5730,7 +5730,7 @@ const SiteConfigComponent = ({
               SearchDownstreamMaxPage: Number(e.target.value),
             }))
           }
-          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
         />
       </div>
 
@@ -5749,7 +5749,7 @@ const SiteConfigComponent = ({
               SiteInterfaceCacheTime: Number(e.target.value),
             }))
           }
-          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+          className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
         />
       </div>
 
@@ -5802,7 +5802,7 @@ const SiteConfigComponent = ({
                 FluidSearch: !prev.FluidSearch,
               }))
             }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               siteSettings.FluidSearch
                 ? buttonStyles.toggleOn
                 : buttonStyles.toggleOff
@@ -5843,7 +5843,7 @@ const SiteConfigComponent = ({
               }))
             }
             placeholder='请输入TMDB API Key'
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
           />
           <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
             请在{' '}
@@ -5872,7 +5872,7 @@ const SiteConfigComponent = ({
                 TMDBLanguage: e.target.value,
               }))
             }
-            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent'
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent'
           >
             <option value='zh-CN'>中文（简体）</option>
             <option value='zh-TW'>中文（繁体）</option>
@@ -5902,7 +5902,7 @@ const SiteConfigComponent = ({
             }
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
               siteSettings.EnableTMDBActorSearch
-                ? 'bg-green-600'
+                ? 'bg-primary-600'
                 : 'bg-gray-200 dark:bg-gray-700'
             }`}
           >
@@ -6202,7 +6202,7 @@ const LiveSourceConfig = ({
           <span
             className={`px-2 py-1 text-xs rounded-full ${
               !liveSource.disabled
-                ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300'
                 : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300'
             }`}
           >
@@ -6352,7 +6352,7 @@ const LiveSourceConfig = ({
                 <div className='text-xs text-gray-500 dark:text-gray-400 mb-1'>
                   支持直连
                 </div>
-                <div className='text-base font-semibold text-green-600 dark:text-green-400'>
+                <div className='text-base font-semibold text-primary-600 dark:text-primary-400'>
                   ✅ {corsStats.directCount} 个
                   <span className='text-sm ml-2 font-normal'>
                     (
@@ -6392,7 +6392,7 @@ const LiveSourceConfig = ({
               </div>
               <div className='text-base font-semibold text-primary-600 dark:text-primary-400'>
                 📈 {corsStats.totalChecked} 个源
-                <span className='text-sm ml-3 text-green-600 dark:text-green-400 font-normal'>
+                <span className='text-sm ml-3 text-primary-600 dark:text-primary-400 font-normal'>
                   💾 节省约{' '}
                   {corsStats.totalChecked > 0
                     ? Math.round(
@@ -7353,7 +7353,7 @@ function AdminPageClient() {
               icon={
                 <Download
                   size={20}
-                  className='text-green-600 dark:text-green-400'
+                  className='text-primary-600 dark:text-primary-400'
                 />
               }
               isExpanded={expandedTabs.downloadConfig}

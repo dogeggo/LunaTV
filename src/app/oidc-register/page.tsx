@@ -96,7 +96,7 @@ export default function OIDCRegisterPage() {
             }
           }
         `}</style>
-        <h1 className='text-green-600 tracking-tight text-center text-2xl sm:text-3xl font-extrabold mb-2 bg-clip-text drop-shadow-sm'>
+        <h1 className='text-primary-600 tracking-tight text-center text-2xl sm:text-3xl font-extrabold mb-2 bg-clip-text drop-shadow-sm'>
           {siteName}
         </h1>
         <p className='text-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-6 sm:mb-8'>
@@ -140,7 +140,7 @@ export default function OIDCRegisterPage() {
               id='username'
               type='text'
               autoComplete='username'
-              className='block w-full rounded-lg border-0 py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-green-500 focus:outline-none text-sm sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur transition-all'
+              className='block w-full rounded-lg border-0 py-2.5 sm:py-3 px-3 sm:px-4 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-white/60 dark:ring-white/20 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 focus:outline-none text-sm sm:text-base bg-white/60 dark:bg-zinc-800/60 backdrop-blur transition-all'
               placeholder='输入用户名（3-20位）'
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -161,7 +161,7 @@ export default function OIDCRegisterPage() {
           <button
             type='submit'
             disabled={!username || loading}
-            className='inline-flex w-full justify-center rounded-lg bg-green-600 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-green-700 hover:shadow-xl hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg active:scale-95'
+            className='inline-flex w-full justify-center rounded-lg bg-primary-600 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-lg transition-all duration-200 hover:bg-primary-700 hover:shadow-xl hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg active:scale-95'
           >
             {loading ? '注册中...' : '完成注册'}
           </button>

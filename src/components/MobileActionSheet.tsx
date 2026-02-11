@@ -369,7 +369,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
       case 'danger':
         return 'text-red-600 dark:text-red-400';
       case 'primary':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-primary-600 dark:text-primary-400';
       default:
         return 'text-gray-700 dark:text-gray-300';
     }
@@ -380,7 +380,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
       case 'danger':
         return 'hover:bg-red-50/50 dark:hover:bg-red-900/10';
       case 'primary':
-        return 'hover:bg-green-50/50 dark:hover:bg-green-900/10';
+        return 'hover:bg-primary-50/50 dark:hover:bg-primary-900/10';
       default:
         return 'hover:bg-gray-50/50 dark:hover:bg-gray-800/20';
     }

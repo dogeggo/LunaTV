@@ -270,7 +270,7 @@ const TVBoxSecurityConfig = ({
         <div
           className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
               : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
           }`}
         >
@@ -358,7 +358,7 @@ const TVBoxSecurityConfig = ({
                           token: generateToken(),
                         }))
                       }
-                      className='flex-1 sm:flex-none px-4 py-2 text-sm bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                      className='flex-1 sm:flex-none px-4 py-2 text-sm bg-primary-100 dark:bg-primary-900 hover:bg-primary-200 dark:hover:bg-primary-800 text-primary-700 dark:text-primary-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
                     >
                       <svg
                         className='h-4 w-4'
@@ -620,7 +620,7 @@ const TVBoxSecurityConfig = ({
                 href={generateExampleURL()}
                 target='_blank'
                 rel='noopener noreferrer'
-                className='flex-1 sm:flex-none px-4 py-2 text-sm bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
+                className='flex-1 sm:flex-none px-4 py-2 text-sm bg-primary-100 dark:bg-primary-800 hover:bg-primary-200 dark:hover:bg-primary-700 text-primary-700 dark:text-primary-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
               >
                 <ExternalLink className='h-4 w-4' />
                 测试访问
@@ -659,20 +659,20 @@ const TVBoxSecurityConfig = ({
           <div
             className={`border rounded-lg p-4 ${
               diagnoseResult.pass
-                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                 : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
             }`}
           >
             <div className='flex items-center gap-2 mb-3'>
               {diagnoseResult.pass ? (
-                <CheckCircle className='h-5 w-5 text-green-600 dark:text-green-400' />
+                <CheckCircle className='h-5 w-5 text-primary-600 dark:text-primary-400' />
               ) : (
                 <AlertCircle className='h-5 w-5 text-yellow-600 dark:text-yellow-400' />
               )}
               <h3
                 className={`text-sm font-semibold ${
                   diagnoseResult.pass
-                    ? 'text-green-900 dark:text-green-300'
+                    ? 'text-primary-900 dark:text-primary-300'
                     : 'text-yellow-900 dark:text-yellow-300'
                 }`}
               >
@@ -700,7 +700,7 @@ const TVBoxSecurityConfig = ({
                 </div>
                 <div className='text-gray-900 dark:text-gray-100'>
                   {diagnoseResult.hasJson ? (
-                    <span className='text-green-600 dark:text-green-400'>
+                    <span className='text-primary-600 dark:text-primary-400'>
                       ✓ 成功
                     </span>
                   ) : (
@@ -756,7 +756,7 @@ const TVBoxSecurityConfig = ({
                           {diagnoseResult.privateApis}
                         </span>
                       ) : (
-                        <span className='text-green-600 dark:text-green-400'>
+                        <span className='text-primary-600 dark:text-primary-400'>
                           0
                         </span>
                       )}
@@ -794,7 +794,7 @@ const TVBoxSecurityConfig = ({
                             ⚠ Spider 是私网地址
                           </span>
                         ) : (
-                          <span className='text-green-600 dark:text-green-400'>
+                          <span className='text-primary-600 dark:text-primary-400'>
                             ✓ Spider 是公网地址
                           </span>
                         )}
@@ -803,7 +803,7 @@ const TVBoxSecurityConfig = ({
                     {diagnoseResult.spiderReachable !== undefined && (
                       <div className='text-xs'>
                         {diagnoseResult.spiderReachable ? (
-                          <span className='text-green-600 dark:text-green-400'>
+                          <span className='text-primary-600 dark:text-primary-400'>
                             ✓ Spider 可访问
                             {diagnoseResult.spiderStatus &&
                               ` (状态码: ${diagnoseResult.spiderStatus})`}
@@ -823,7 +823,7 @@ const TVBoxSecurityConfig = ({
                           className={
                             diagnoseResult.spiderSizeKB < 50
                               ? 'text-yellow-600 dark:text-yellow-400'
-                              : 'text-green-600 dark:text-green-400'
+                              : 'text-primary-600 dark:text-primary-400'
                           }
                         >
                           {diagnoseResult.spiderSizeKB < 50 ? '⚠' : '✓'}{' '}

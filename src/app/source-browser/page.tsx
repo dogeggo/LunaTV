@@ -577,7 +577,7 @@ export default function SourceBrowserPage() {
       <PageLayout activePath='/source-browser'>
         <div className='flex items-center justify-center min-h-[50vh]'>
           <div className='flex flex-col items-center gap-4'>
-            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <div className='w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin' />
             <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
               正在进入源浏览器...
             </p>
@@ -592,14 +592,14 @@ export default function SourceBrowserPage() {
       <div className='max-w-7xl mx-auto space-y-6 -mt-6 md:mt-0'>
         {/* Header - 美化版 */}
         <div className='relative'>
-          <div className='absolute inset-0 bg-linear-to-r from-emerald-400/10 via-green-400/10 to-teal-400/10 rounded-2xl blur-3xl'></div>
+          <div className='absolute inset-0 bg-linear-to-r from-primary-400/10 via-primary-400/10 to-teal-400/10 rounded-2xl blur-3xl'></div>
           <div className='relative flex items-center gap-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-xl'>
-            <div className='relative w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-500 via-green-500 to-teal-500 flex items-center justify-center shadow-lg group hover:scale-110 transition-transform duration-300'>
-              <div className='absolute inset-0 bg-emerald-400 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity'></div>
+            <div className='relative w-16 h-16 rounded-2xl bg-linear-to-br from-primary-500 via-primary-500 to-teal-500 flex items-center justify-center shadow-lg group hover:scale-110 transition-transform duration-300'>
+              <div className='absolute inset-0 bg-primary-400 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity'></div>
               <Layers className='relative w-8 h-8 text-white drop-shadow-lg' />
             </div>
             <div className='flex-1'>
-              <h1 className='text-3xl md:text-4xl font-bold bg-linear-to-r from-emerald-600 via-green-600 to-teal-600 dark:from-emerald-400 dark:via-green-400 dark:to-teal-400 bg-clip-text text-transparent'>
+              <h1 className='text-3xl md:text-4xl font-bold bg-linear-to-r from-primary-600 via-primary-600 to-teal-600 dark:from-primary-400 dark:via-primary-400 dark:to-teal-400 bg-clip-text text-transparent'>
                 源浏览器
               </h1>
               <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
@@ -607,9 +607,9 @@ export default function SourceBrowserPage() {
               </p>
             </div>
             {sources.length > 0 && (
-              <div className='hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'>
-                <Server className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
-                <span className='text-sm font-medium text-emerald-700 dark:text-emerald-300'>
+              <div className='hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800'>
+                <Server className='w-4 h-4 text-primary-600 dark:text-primary-400' />
+                <span className='text-sm font-medium text-primary-700 dark:text-primary-300'>
                   {sources.length} 个源可用
                 </span>
               </div>
@@ -618,16 +618,16 @@ export default function SourceBrowserPage() {
         </div>
 
         {/* Sources - 美化版 */}
-        <div className='bg-linear-to-br from-white via-emerald-50/30 to-white dark:from-gray-800 dark:via-emerald-900/10 dark:to-gray-800 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm'>
+        <div className='bg-linear-to-br from-white via-primary-50/30 to-white dark:from-gray-800 dark:via-primary-900/10 dark:to-gray-800 rounded-2xl shadow-lg border border-gray-200/80 dark:border-gray-700/80 backdrop-blur-sm'>
           <div className='px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between'>
             <div className='flex items-center gap-2.5 font-semibold text-gray-900 dark:text-white'>
-              <div className='w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center'>
-                <Server className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
+              <div className='w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center'>
+                <Server className='w-4 h-4 text-primary-600 dark:text-primary-400' />
               </div>
               <span>选择来源站</span>
             </div>
             {!loadingSources && sources.length > 0 && (
-              <span className='text-xs px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium'>
+              <span className='text-xs px-2.5 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium'>
                 {sources.length} 个
               </span>
             )}
@@ -635,7 +635,7 @@ export default function SourceBrowserPage() {
           <div className='p-5'>
             {loadingSources ? (
               <div className='flex items-center gap-2 text-sm text-gray-500'>
-                <div className='w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin'></div>
+                <div className='w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin'></div>
                 加载中...
               </div>
             ) : sourceError ? (
@@ -659,15 +659,15 @@ export default function SourceBrowserPage() {
                     onClick={() => setActiveSourceKey(s.key)}
                     className={`group relative px-4 py-2.5 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
                       activeSourceKey === s.key
-                        ? 'bg-linear-to-r from-emerald-500 to-green-500 text-white border-transparent shadow-lg shadow-emerald-500/30'
-                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-emerald-50 hover:to-green-50 dark:hover:from-emerald-900/20 dark:hover:to-green-900/20 hover:border-emerald-300 dark:hover:border-emerald-700'
+                        ? 'bg-linear-to-r from-primary-500 to-primary-500 text-white border-transparent shadow-lg shadow-primary-500/30'
+                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-primary-50 hover:to-primary-50 dark:hover:from-primary-900/20 dark:hover:to-primary-900/20 hover:border-primary-300 dark:hover:border-primary-700'
                     }`}
                     style={{
                       animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`,
                     }}
                   >
                     {activeSourceKey === s.key && (
-                      <div className='absolute inset-0 rounded-xl bg-linear-to-r from-emerald-400 to-green-400 blur-lg opacity-50 -z-10'></div>
+                      <div className='absolute inset-0 rounded-xl bg-linear-to-r from-primary-400 to-primary-400 blur-lg opacity-50 -z-10'></div>
                     )}
                     {s.name}
                   </button>
@@ -704,7 +704,7 @@ export default function SourceBrowserPage() {
                       setMode(query.trim() ? 'search' : 'category');
                     }
                   }}
-                  placeholder='输入关键词并回车进行搜索；清空回车恢复分类'
+                  placeholder='输入关键词并回车进行搜索, 清空回车恢复分类'
                   className='flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm'
                 />
                 {query && (
@@ -740,7 +740,7 @@ export default function SourceBrowserPage() {
                         | 'year-desc',
                     )
                   }
-                  className='sm:flex-1 sm:min-w-[120px] px-2 sm:px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs sm:text-sm'
+                  className='sm:flex-1 sm:min-w-30 px-2 sm:px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs sm:text-sm'
                   title='排序'
                 >
                   <option value='default'>默认</option>
@@ -752,7 +752,7 @@ export default function SourceBrowserPage() {
                 <select
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  className='sm:flex-1 sm:min-w-[100px] px-2 sm:px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs sm:text-sm'
+                  className='sm:flex-1 sm:min-w-25 px-2 sm:px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs sm:text-sm'
                   title='年份'
                 >
                   <option value=''>全部年份</option>
@@ -766,7 +766,7 @@ export default function SourceBrowserPage() {
                   value={filterKeyword}
                   onChange={(e) => setFilterKeyword(e.target.value)}
                   placeholder='地区/关键词'
-                  className='col-span-2 sm:flex-1 sm:min-w-[140px] px-2 sm:px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs sm:text-sm'
+                  className='col-span-2 sm:flex-1 sm:min-w-35 px-2 sm:px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs sm:text-sm'
                 />
               </div>
             </div>
@@ -815,15 +815,15 @@ export default function SourceBrowserPage() {
                         onClick={() => setActiveCategory(c.type_id)}
                         className={`group relative px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-300 transform hover:scale-105 ${
                           activeCategory === c.type_id
-                            ? 'bg-linear-to-r from-primary-500 to-indigo-500 text-white border-transparent shadow-lg shadow-primary-500/30'
-                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-linear-to-r hover:from-primary-50 hover:to-indigo-50 dark:hover:from-primary-900/20 dark:hover:to-indigo-900/20 hover:border-primary-300 dark:hover:border-primary-700'
+                            ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:border-primary-300 dark:hover:border-primary-700'
                         }`}
                         style={{
                           animation: `fadeInUp 0.3s ease-out ${index * 0.03}s both`,
                         }}
                       >
                         {activeCategory === c.type_id && (
-                          <div className='absolute inset-0 rounded-xl bg-linear-to-r from-primary-400 to-indigo-400 blur-lg opacity-50 -z-10'></div>
+                          <div className='absolute inset-0 rounded-xl bg-primary-400 blur-lg opacity-50 -z-10'></div>
                         )}
                         {c.type_name}
                       </button>
@@ -869,7 +869,7 @@ export default function SourceBrowserPage() {
                           {/* 发光效果 */}
                           <div className='absolute inset-0 bg-linear-to-t from-primary-500/0 via-primary-500/0 to-primary-500/0 group-hover:from-primary-500/10 group-hover:via-primary-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none z-10'></div>
 
-                          <div className='aspect-[2/3] bg-linear-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 overflow-hidden relative'>
+                          <div className='aspect-2/3 bg-linear-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-700 dark:via-gray-800 dark:to-gray-700 overflow-hidden relative'>
                             {item.poster ? (
                               <img
                                 src={processImageUrl(item.poster)}
@@ -1056,7 +1056,7 @@ export default function SourceBrowserPage() {
                           const d = previewDouban;
                           if (d?.rate) {
                             return (
-                              <span className='px-2 py-0.5 rounded-md text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'>
+                              <span className='px-2 py-0.5 rounded-md text-xs bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'>
                                 豆瓣 {d.rate}
                               </span>
                             );

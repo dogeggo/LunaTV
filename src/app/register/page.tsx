@@ -196,7 +196,7 @@ function RegisterPageClient() {
             </p>
             <button
               onClick={() => router.push('/login')}
-              className='group relative inline-flex w-full justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 py-3.5 text-base font-semibold text-white shadow-lg shadow-green-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/40 hover:-translate-y-0.5 overflow-hidden'
+              className='group relative inline-flex w-full justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-emerald-600 hover:from-primary-700 hover:to-emerald-700 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 overflow-hidden'
             >
               <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
               返回登录 →
@@ -337,9 +337,9 @@ function RegisterPageClient() {
           )}
 
           {success && (
-            <div className='flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 animate-slide-down'>
-              <CheckCircle className='h-4 w-4 text-green-600 dark:text-green-400 shrink-0' />
-              <p className='text-sm text-green-600 dark:text-green-400'>
+            <div className='flex items-center gap-2 p-3 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800/50 animate-slide-down'>
+              <CheckCircle className='h-4 w-4 text-primary-600 dark:text-primary-400 shrink-0' />
+              <p className='text-sm text-primary-600 dark:text-primary-400'>
                 {success}
               </p>
             </div>

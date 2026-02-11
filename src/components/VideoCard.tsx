@@ -513,12 +513,11 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       } else if (rateNum >= 7.0) {
         // 中高分：蓝色
         return {
-          bgColor:
-            'bg-linear-to-br from-primary-500 via-primary-600 to-primary-700',
-          ringColor: 'ring-2 ring-primary-400/40',
-          shadowColor: 'shadow-md shadow-primary-500/30',
+          bgColor: 'bg-linear-to-br from-blue-500 via-blue-600 to-blue-700',
+          ringColor: 'ring-2 ring-blue-400/40',
+          shadowColor: 'shadow-md shadow-blue-500/30',
           textColor: 'text-white',
-          glowClass: 'group-hover:shadow-primary-500/50',
+          glowClass: 'group-hover:shadow-blue-500/50',
         };
       } else if (rateNum >= 6.0) {
         // 中分：绿色
@@ -928,7 +927,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                   <PlayCircleIcon
                     size={50}
                     strokeWidth={0.8}
-                    className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-green-500 hover:scale-[1.1]'
+                    className='text-white fill-transparent transition-all duration-300 ease-out hover:fill-primary-500 hover:scale-[1.1]'
                     style={
                       {
                         WebkitUserSelect: 'none',
@@ -1118,7 +1117,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                   return false;
                 }}
               >
-                <span className='text-green-400'>✓</span>
+                <span className='text-primary-400'>✓</span>
                 <span>已完结</span>
               </div>
             )}
@@ -1131,7 +1130,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                 let statusText = remarks || '';
 
                 if (remarks?.includes('已上映')) {
-                  statusColor = 'text-green-400';
+                  statusColor = 'text-primary-400';
                 } else if (remarks?.includes('今日上映')) {
                   statusColor = 'text-yellow-400';
                 }
@@ -1207,7 +1206,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                   }}
                 >
                   <div
-                    className='bg-green-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md hover:bg-green-600 hover:scale-[1.1] transition-all duration-300 ease-out'
+                    className='bg-primary-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md hover:bg-primary-600 hover:scale-[1.1] transition-all duration-300 ease-out'
                     style={
                       {
                         WebkitUserSelect: 'none',
@@ -1407,7 +1406,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               }}
             >
               <div
-                className='h-full bg-green-500 transition-all duration-500 ease-out'
+                className='h-full bg-primary-500 transition-all duration-500 ease-out'
                 style={
                   {
                     width: `${progress}%`,
@@ -1450,10 +1449,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               }
             >
               {/* 背景高亮效果 */}
-              <div className='absolute inset-0 bg-linear-to-r from-transparent via-green-50/0 to-transparent dark:via-green-900/0 group-hover:via-green-50/50 dark:group-hover:via-green-900/30 transition-all duration-300 rounded-md'></div>
+              <div className='absolute inset-0 bg-linear-to-r from-transparent via-primary-50/0 to-transparent dark:via-primary-900/0 group-hover:via-primary-50/50 dark:group-hover:via-primary-900/30 transition-all duration-300 rounded-md'></div>
 
               <span
-                className='block text-xs @[140px]:text-sm font-bold line-clamp-2 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out group-hover:scale-[1.02] peer relative z-10 group-hover:bg-linear-to-r group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 dark:group-hover:from-green-400 dark:group-hover:via-emerald-400 dark:group-hover:to-teal-400 group-hover:bg-clip-text group-hover:text-transparent group-hover:drop-shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
+                className='block text-xs @[140px]:text-sm font-bold line-clamp-2 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out group-hover:scale-[1.02] peer relative z-10 group-hover:bg-linear-to-r group-hover:from-primary-600 group-hover:via-emerald-600 group-hover:to-teal-600 dark:group-hover:from-primary-400 dark:group-hover:via-emerald-400 dark:group-hover:to-teal-400 group-hover:bg-clip-text group-hover:text-transparent group-hover:drop-shadow-[0_2px_8px_rgba(16,185,129,0.3)]'
                 style={
                   {
                     WebkitUserSelect: 'none',
@@ -1534,7 +1533,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                 // 根据主题颜色设置class
                 const colorClasses = {
                   green:
-                    'group-hover:border-green-500/80 group-hover:text-green-600 dark:group-hover:text-green-400 group-hover:shadow-green-500/20',
+                    'group-hover:border-primary-500/80 group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:shadow-primary-500/20',
                   orange:
                     'group-hover:border-orange-500/80 group-hover:text-orange-600 dark:group-hover:text-orange-400 group-hover:shadow-orange-500/20',
                   yellow:
@@ -1543,7 +1542,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
                 const bgGradient = {
                   green:
-                    'group-hover:via-green-50/80 dark:group-hover:via-green-500/20',
+                    'group-hover:via-primary-50/80 dark:group-hover:via-primary-500/20',
                   orange:
                     'group-hover:via-orange-50/80 dark:group-hover:via-orange-500/20',
                   yellow:
@@ -1552,7 +1551,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
                 const dotColor = {
                   green:
-                    'group-hover:bg-green-500 dark:group-hover:bg-green-400 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]',
+                    'group-hover:bg-primary-500 dark:group-hover:bg-primary-400 group-hover:shadow-[0_0_8px_rgba(16,185,129,0.6)]',
                   orange:
                     'group-hover:bg-orange-500 dark:group-hover:bg-orange-400 group-hover:shadow-[0_0_8px_rgba(249,115,22,0.6)]',
                   yellow:
@@ -1561,7 +1560,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
                 const iconColor = {
                   green:
-                    'group-hover:text-green-500 dark:group-hover:text-green-400',
+                    'group-hover:text-primary-500 dark:group-hover:text-primary-400',
                   orange:
                     'group-hover:text-orange-500 dark:group-hover:text-orange-400',
                   yellow:
@@ -1599,7 +1598,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                     >
                       {/* 背景渐变效果 */}
                       <span
-                        className={`absolute inset-0 bg-linear-to-r from-transparent via-green-50/0 to-transparent dark:via-green-500/0 transition-all duration-300 ${bgGradient}`}
+                        className={`absolute inset-0 bg-linear-to-r from-transparent via-primary-50/0 to-transparent dark:via-primary-500/0 transition-all duration-300 ${bgGradient}`}
                       ></span>
 
                       {/* 左侧装饰点 */}

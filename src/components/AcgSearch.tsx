@@ -155,7 +155,7 @@ export default function AcgSearch({
     return (
       <div className='flex items-center justify-center py-12'>
         <div className='text-center'>
-          <Loader2 className='mx-auto h-8 w-8 animate-spin text-green-600 dark:text-green-400' />
+          <Loader2 className='mx-auto h-8 w-8 animate-spin text-primary-600 dark:text-primary-400' />
           <p className='mt-4 text-sm text-gray-600 dark:text-gray-400'>
             正在搜索动漫资源...
           </p>
@@ -195,7 +195,7 @@ export default function AcgSearch({
         {allItems.map((item) => (
           <div
             key={item.guid}
-            className='p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-green-400 dark:hover:border-green-600 transition-colors'
+            className='p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary-400 dark:hover:border-primary-600 transition-colors'
           >
             {/* 标题 */}
             <div className='mb-2 font-medium text-gray-900 dark:text-gray-100'>
@@ -233,7 +233,7 @@ export default function AcgSearch({
             <div className='flex items-center gap-2'>
               <button
                 onClick={() => copyToClipboard(item.torrentUrl, item.guid)}
-                className='flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-600 text-white text-sm hover:bg-green-700 transition-colors'
+                className='flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary-600 text-white text-sm hover:bg-primary-700 transition-colors'
                 title='复制磁力链接'
               >
                 {copiedId === item.guid ? (
@@ -270,7 +270,7 @@ export default function AcgSearch({
           className='flex items-center justify-center py-8'
         >
           <div className='text-center'>
-            <Loader2 className='mx-auto h-6 w-6 animate-spin text-green-600 dark:text-green-400' />
+            <Loader2 className='mx-auto h-6 w-6 animate-spin text-primary-600 dark:text-primary-400' />
             <p className='mt-2 text-sm text-gray-600 dark:text-gray-400'>
               加载更多...
             </p>

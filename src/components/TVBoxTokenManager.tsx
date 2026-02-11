@@ -39,7 +39,7 @@ export function TVBoxTokenCell({ tvboxToken }: { tvboxToken?: string }) {
         title='复制完整Token'
       >
         <Copy
-          className={`w-3 h-3 ${copied ? 'text-green-600' : 'text-gray-400'}`}
+          className={`w-3 h-3 ${copied ? 'text-primary-600' : 'text-gray-400'}`}
         />
       </button>
     </div>
@@ -170,7 +170,7 @@ export function TVBoxTokenModal({
             <div
               className={`p-3 rounded-lg ${
                 message.type === 'success'
-                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
                   : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
               }`}
             >

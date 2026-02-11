@@ -868,7 +868,7 @@ function DoubanPageClient() {
       <PageLayout activePath='/douban'>
         <div className='flex items-center justify-center min-h-[50vh]'>
           <div className='flex flex-col items-center gap-4'>
-            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <div className='w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin' />
             <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
               正在进入分类...
             </p>
@@ -1028,16 +1028,16 @@ function DoubanPageClient() {
                   className='flex justify-center mt-12 py-8'
                 >
                   {isLoadingMore && (
-                    <div className='relative px-8 py-4 rounded-2xl bg-linear-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-green-200/50 dark:border-green-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+                    <div className='relative px-8 py-4 rounded-2xl bg-linear-to-r from-primary-50 via-emerald-50 to-teal-50 dark:from-primary-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-primary-200/50 dark:border-primary-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
                       {/* 动画背景 */}
-                      <div className='absolute inset-0 bg-linear-to-r from-green-400/10 via-emerald-400/10 to-teal-400/10 animate-pulse'></div>
+                      <div className='absolute inset-0 bg-linear-to-r from-primary-400/10 via-emerald-400/10 to-teal-400/10 animate-pulse'></div>
 
                       {/* 内容 */}
                       <div className='relative flex items-center gap-3'>
                         {/* 旋转圈 */}
                         <div className='relative'>
-                          <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-green-200 dark:border-green-800'></div>
-                          <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-green-500 dark:border-t-green-400'></div>
+                          <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-primary-200 dark:border-primary-800'></div>
+                          <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-primary-500 dark:border-t-primary-400'></div>
                         </div>
 
                         {/* 文字和点动画 */}
@@ -1172,7 +1172,7 @@ function DoubanPageClient() {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-20 md:bottom-6 right-6 z-500 w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${
+        className={`fixed bottom-20 md:bottom-6 right-6 z-500 w-12 h-12 bg-primary-500/90 hover:bg-primary-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${
           showBackToTop
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'

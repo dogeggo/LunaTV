@@ -64,7 +64,7 @@ const DownloadConfig: React.FC<DownloadConfigProps> = ({
         <div
           className={`p-4 rounded-lg ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
+              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-800 dark:text-primary-200 border border-primary-200 dark:border-primary-800'
               : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
           }`}
         >
@@ -108,7 +108,7 @@ const DownloadConfig: React.FC<DownloadConfigProps> = ({
           onClick={() => setEnabled(!enabled)}
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
             enabled
-              ? 'bg-green-600 dark:bg-green-600'
+              ? 'bg-primary-600 dark:bg-primary-600'
               : 'bg-gray-200 dark:bg-gray-700'
           }`}
         >

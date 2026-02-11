@@ -56,7 +56,7 @@ export function DownloadPanel() {
       case 'pause':
         return 'text-yellow-500';
       case 'done':
-        return 'text-green-500';
+        return 'text-primary-500';
       case 'error':
         return 'text-red-500';
       default:
@@ -236,7 +236,7 @@ export function DownloadPanel() {
                             task.status === 'downloading'
                               ? 'bg-linear-to-r from-primary-500 to-purple-600 animate-pulse'
                               : task.status === 'done'
-                                ? 'bg-green-500'
+                                ? 'bg-primary-500'
                                 : task.status === 'error'
                                   ? 'bg-red-500'
                                   : 'bg-gray-400'

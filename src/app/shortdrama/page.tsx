@@ -187,7 +187,7 @@ export default function ShortDramaPage() {
       <PageLayout activePath='/shortdrama'>
         <div className='flex items-center justify-center min-h-[50vh]'>
           <div className='flex flex-col items-center gap-4'>
-            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <div className='w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin' />
             <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
               正在进入短剧频道...
             </p>

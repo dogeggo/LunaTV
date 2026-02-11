@@ -163,8 +163,8 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
         <div
           className={`flex items-center space-x-2 p-3 rounded-lg ${
             message.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
-              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-800'
+              : 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-800'
           }`}
         >
           {message.type === 'success' ? (
@@ -182,7 +182,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
           <h3 className='text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2'>
             YouTube搜索配置
           </h3>
-          <div className='flex items-center space-x-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg'>
+          <div className='flex items-center space-x-2 text-sm text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-3 py-2 rounded-lg'>
             <svg className='h-4 w-4' fill='currentColor' viewBox='0 0 20 20'>
               <path
                 fillRule='evenodd'
@@ -213,7 +213,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
             <div
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 youtubeSettings.enabled
-                  ? 'bg-red-600'
+                  ? 'bg-primary-600'
                   : 'bg-gray-200 dark:bg-gray-600'
               }`}
             >
@@ -289,7 +289,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
                       apiKey: e.target.value,
                     }))
                   }
-                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
                   placeholder='AIzaSy...'
                 />
                 <div className='mt-2 text-xs text-gray-500 dark:text-gray-400'>
@@ -349,14 +349,14 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
                         • 每日免费配额10,000次请求，超出需申请
                       </p>
                     </div>
-                    <div className='mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded'>
-                      <p className='text-red-700 dark:text-red-300 text-xs'>
+                    <div className='mt-2 p-2 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded'>
+                      <p className='text-primary-700 dark:text-primary-300 text-xs'>
                         🚫 <span className='font-medium'>使用限制：</span>
                       </p>
-                      <p className='text-red-700 dark:text-red-300 text-xs'>
+                      <p className='text-primary-700 dark:text-primary-300 text-xs'>
                         • 中国大陆IP无法直接访问YouTube API
                       </p>
-                      <p className='text-red-700 dark:text-red-300 text-xs'>
+                      <p className='text-primary-700 dark:text-primary-300 text-xs'>
                         • 需要使用海外服务器或代理服务
                       </p>
                     </div>
@@ -395,7 +395,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
                     maxResults: parseInt(e.target.value),
                   }))
                 }
-                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500'
               />
               <p className='mt-1 text-xs text-gray-500 dark:text-gray-400'>
                 控制每次搜索返回的视频数量，建议10-50之间
@@ -419,7 +419,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
                         region.code,
                       )}
                       onChange={() => toggleRegion(region.code)}
-                      className='rounded border-gray-300 dark:border-gray-600 text-red-600 focus:ring-red-500'
+                      className='rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500'
                     />
                     <span className='text-sm text-gray-700 dark:text-gray-300'>
                       {region.name}
@@ -446,7 +446,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
                         category,
                       )}
                       onChange={() => toggleCategory(category)}
-                      className='rounded border-gray-300 dark:border-gray-600 text-red-600 focus:ring-red-500'
+                      className='rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500'
                     />
                     <span className='text-sm text-gray-700 dark:text-gray-300'>
                       {category}
@@ -465,7 +465,7 @@ const YouTubeConfig = ({ config, refreshConfig }: YouTubeConfigProps) => {
         <button
           onClick={handleSave}
           disabled={isLoading}
-          className='flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors'
+          className='flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors'
         >
           <svg
             className='h-4 w-4 mr-2'

@@ -185,7 +185,7 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
         <SectionTitle
           title='继续观看'
           icon={Clock}
-          iconColor='text-green-500'
+          iconColor='text-primary-500'
         />
         {!isLoading && playRecords.length > 0 && (
           <button

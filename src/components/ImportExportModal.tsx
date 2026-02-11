@@ -101,10 +101,10 @@ export default function ImportExportModal({
             mode === 'import'
               ? 'bg-linear-to-r from-primary-600 to-cyan-600'
               : mode === 'export'
-                ? 'bg-linear-to-r from-green-600 to-emerald-600'
+                ? 'bg-linear-to-r from-primary-600 to-emerald-600'
                 : result && result.failed > 0
                   ? 'bg-linear-to-r from-yellow-600 to-orange-600'
-                  : 'bg-linear-to-r from-green-600 to-emerald-600'
+                  : 'bg-linear-to-r from-primary-600 to-emerald-600'
           }`}
         >
           <div className='flex items-center justify-between'>
@@ -247,8 +247,8 @@ export default function ImportExportModal({
           {mode === 'export' && (
             <div className='space-y-3'>
               <div className='text-center py-6'>
-                <div className='inline-flex p-3 bg-green-100 dark:bg-green-900/40 rounded-full mb-3'>
-                  <CheckCircle className='w-12 h-12 text-green-600 dark:text-green-400' />
+                <div className='inline-flex p-3 bg-primary-100 dark:bg-primary-900/40 rounded-full mb-3'>
+                  <CheckCircle className='w-12 h-12 text-primary-600 dark:text-primary-400' />
                 </div>
                 <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-200 mb-1.5'>
                   准备导出
@@ -316,11 +316,11 @@ export default function ImportExportModal({
                 </div>
               </div>
 
-              <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3'>
-                <h4 className='font-semibold text-green-900 dark:text-green-200 mb-1.5 text-sm'>
+              <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3'>
+                <h4 className='font-semibold text-primary-900 dark:text-primary-200 mb-1.5 text-sm'>
                   📦 导出内容
                 </h4>
-                <ul className='text-xs text-green-800 dark:text-green-300 space-y-0.5'>
+                <ul className='text-xs text-primary-800 dark:text-primary-300 space-y-0.5'>
                   <li>• 视频源配置将导出为 JSON 格式</li>
                   <li>
                     • 文件名：
@@ -338,11 +338,11 @@ export default function ImportExportModal({
             <div className='space-y-3'>
               {/* 统计信息 - 更紧凑 */}
               <div className='grid grid-cols-3 gap-3'>
-                <div className='bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center'>
-                  <div className='text-2xl font-bold text-green-600 dark:text-green-400'>
+                <div className='bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3 text-center'>
+                  <div className='text-2xl font-bold text-primary-600 dark:text-primary-400'>
                     {result.success}
                   </div>
-                  <div className='text-xs text-green-700 dark:text-green-300 mt-0.5'>
+                  <div className='text-xs text-primary-700 dark:text-primary-300 mt-0.5'>
                     成功导入
                   </div>
                 </div>
@@ -372,14 +372,14 @@ export default function ImportExportModal({
                       key={index}
                       className={`flex items-start space-x-2.5 p-2.5 rounded-lg border ${
                         item.status === 'success'
-                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                          ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                           : item.status === 'skipped'
                             ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
                             : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                       }`}
                     >
                       {item.status === 'success' ? (
-                        <CheckCircle className='w-4 h-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5' />
+                        <CheckCircle className='w-4 h-4 text-primary-600 dark:text-primary-400 shrink-0 mt-0.5' />
                       ) : (
                         <AlertCircle
                           className={`w-4 h-4 shrink-0 mt-0.5 ${
@@ -417,7 +417,7 @@ export default function ImportExportModal({
           {mode === 'export' && (
             <button
               onClick={() => onExport?.(exportFormat)}
-              className='px-4 py-2 text-sm bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-medium'
+              className='px-4 py-2 text-sm bg-linear-to-r from-primary-600 to-emerald-600 text-white rounded-lg hover:from-primary-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg font-medium'
             >
               确认导出
             </button>

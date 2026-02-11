@@ -129,14 +129,14 @@ const PlayToolbar = ({
               className={`absolute inset-0 rounded-full blur-sm opacity-75 ${
                 isEpisodeSelectorCollapsed
                   ? 'bg-orange-400 animate-pulse'
-                  : 'bg-green-400'
+                  : 'bg-primary-400'
               }`}
             ></div>
             <div
               className={`relative w-2 h-2 rounded-full shadow-lg ${
                 isEpisodeSelectorCollapsed
                   ? 'bg-linear-to-br from-orange-400 to-orange-500'
-                  : 'bg-linear-to-br from-green-400 to-green-500'
+                  : 'bg-linear-to-br from-primary-400 to-primary-500'
               }`}
             ></div>
           </div>

@@ -1043,7 +1043,7 @@ export default function SkipController({
             </span>
             <button
               onClick={handleSkip}
-              className='px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition-colors'
+              className='px-3 py-1 bg-primary-600 hover:bg-primary-700 rounded text-sm font-medium transition-colors'
             >
               {currentSkipSegment.type === 'ending' && onNextEpisode
                 ? '下一集 ▶'
@@ -1155,8 +1155,8 @@ export default function SkipController({
 
             <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               {/* 片头设置 */}
-              <div className='space-y-4 bg-linear-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-xl border border-green-100/50 dark:border-green-800/50 backdrop-blur-sm'>
-                <h4 className='font-semibold text-gray-900 dark:text-gray-100 border-b border-green-200/50 dark:border-green-700/50 pb-2 flex items-center gap-2'>
+              <div className='space-y-4 bg-linear-to-br from-primary-50/50 to-emerald-50/50 dark:from-primary-900/20 dark:to-emerald-900/20 p-4 rounded-xl border border-primary-100/50 dark:border-primary-800/50 backdrop-blur-sm'>
+                <h4 className='font-semibold text-gray-900 dark:text-gray-100 border-b border-primary-200/50 dark:border-primary-700/50 pb-2 flex items-center gap-2'>
                   <span className='text-xl'>🎬</span>
                   片头设置
                 </h4>
@@ -1174,7 +1174,7 @@ export default function SkipController({
                         openingStart: e.target.value,
                       })
                     }
-                    className='w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all'
+                    className='w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all'
                     placeholder='0:00'
                   />
                   <p className='text-xs text-gray-500 dark:text-gray-400 mt-1.5'>
@@ -1195,7 +1195,7 @@ export default function SkipController({
                         openingEnd: e.target.value,
                       })
                     }
-                    className='w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all mb-2'
+                    className='w-full px-4 py-2.5 border border-gray-300/50 dark:border-gray-600/50 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-gray-100 backdrop-blur-sm focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all mb-2'
                     placeholder='1:30'
                   />
                   <button
@@ -1362,7 +1362,7 @@ export default function SkipController({
             <div className='flex space-x-3 mt-6'>
               <button
                 onClick={handleSaveBatchSettings}
-                className='flex-1 px-6 py-3 bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm'
+                className='flex-1 px-6 py-3 bg-linear-to-r from-primary-500 to-emerald-600 hover:from-primary-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 backdrop-blur-sm'
               >
                 💾 保存智能配置
               </button>
@@ -1501,7 +1501,7 @@ export default function SkipController({
                       {formatTime(segment.start)} - {formatTime(segment.end)}
                     </span>
                     {segment.autoSkip && (
-                      <span className='ml-1 px-1 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 rounded text-xs'>
+                      <span className='ml-1 px-1 bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 rounded text-xs'>
                         自动
                       </span>
                     )}

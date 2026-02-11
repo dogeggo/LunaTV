@@ -80,7 +80,7 @@ const PlayDetailsSection = ({
           {/* 关键信息行 */}
           <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 shrink-0'>
             {detail?.class && String(detail.class) !== '0' && (
-              <span className='text-green-600 font-semibold'>
+              <span className='text-primary-600 font-semibold'>
                 {detail.class}
               </span>
             )}
@@ -211,8 +211,8 @@ const PlayDetailsSection = ({
                           </span>
                         ))}
                     {bangumiDetails.total_episodes && (
-                      <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                        <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                      <span className='relative group bg-linear-to-r from-primary-500/90 to-emerald-500/90 dark:from-primary-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105'>
+                        <span className='absolute inset-0 bg-linear-to-r from-primary-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
                         <span className='relative'>
                           共{bangumiDetails.total_episodes}话
                         </span>
@@ -338,8 +338,8 @@ const PlayDetailsSection = ({
                           </span>
                         ))}
                     {movieDetails.episodes && (
-                      <span className='relative group bg-linear-to-r from-green-500/90 to-emerald-500/90 dark:from-green-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 hover:scale-105'>
-                        <span className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
+                      <span className='relative group bg-linear-to-r from-primary-500/90 to-emerald-500/90 dark:from-primary-600/90 dark:to-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-medium shadow-md hover:shadow-lg hover:shadow-primary-500/30 transition-all duration-300 hover:scale-105'>
+                        <span className='absolute inset-0 bg-linear-to-r from-primary-400 to-emerald-400 rounded-full opacity-0 group-hover:opacity-20 blur transition-opacity duration-300'></span>
                         <span className='relative'>
                           共{movieDetails.episodes}集
                         </span>
@@ -668,12 +668,12 @@ const PlayDetailsSection = ({
                       className={`relative ${
                         bangumiDetails
                           ? 'bg-linear-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600'
-                          : 'bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                          : 'bg-linear-to-r from-primary-500 to-emerald-500 hover:from-primary-600 hover:to-emerald-600'
                       } text-white text-xs font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 ease-out hover:scale-110 group/link`}
                     >
                       <div
                         className={`absolute inset-0 ${
-                          bangumiDetails ? 'bg-pink-400' : 'bg-green-400'
+                          bangumiDetails ? 'bg-pink-400' : 'bg-primary-400'
                         } rounded-full opacity-0 group-hover/link:opacity-30 blur transition-opacity duration-300`}
                       ></div>
                       <svg

@@ -346,7 +346,7 @@ export default function ReleaseCalendarPage() {
       <PageLayout activePath='/release-calendar'>
         <div className='flex items-center justify-center min-h-[50vh]'>
           <div className='flex flex-col items-center gap-4'>
-            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <div className='w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin' />
             <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
               正在进入发布日历...
             </p>
@@ -362,16 +362,16 @@ export default function ReleaseCalendarPage() {
         {/* Aurora Mesh Gradient Background */}
         <div className='absolute inset-0 -z-10'>
           {/* Light mode: Aurora mesh gradient */}
-          <div className='absolute inset-0 bg-linear-to-br from-primary-50 via-white to-purple-50 dark:hidden'></div>
-          <div className='absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob dark:hidden'></div>
-          <div className='absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 dark:hidden'></div>
-          <div className='absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 dark:hidden'></div>
+          <div className='absolute inset-0 bg-linear-to-br from-gray-50 via-white to-blue-50 dark:hidden'></div>
+          <div className='absolute top-0 -left-4 w-72 h-72 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob dark:hidden'></div>
+          <div className='absolute top-0 -right-4 w-72 h-72 bg-cyan-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 dark:hidden'></div>
+          <div className='absolute -bottom-8 left-20 w-72 h-72 bg-indigo-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 dark:hidden'></div>
 
           {/* Dark mode: Deep aurora mesh gradient */}
-          <div className='hidden dark:block absolute inset-0 bg-linear-to-br from-gray-900 via-primary-950 to-purple-950'></div>
-          <div className='hidden dark:block absolute top-0 -left-4 w-72 h-72 bg-purple-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob'></div>
-          <div className='hidden dark:block absolute top-0 -right-4 w-72 h-72 bg-cyan-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-2000'></div>
-          <div className='hidden dark:block absolute -bottom-8 left-20 w-72 h-72 bg-pink-700 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000'></div>
+          <div className='hidden dark:block absolute inset-0 bg-linear-to-br from-gray-900 via-gray-900 to-slate-900'></div>
+          <div className='hidden dark:block absolute top-0 -left-4 w-72 h-72 bg-blue-900/30 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob'></div>
+          <div className='hidden dark:block absolute top-0 -right-4 w-72 h-72 bg-cyan-900/30 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-2000'></div>
+          <div className='hidden dark:block absolute -bottom-8 left-20 w-72 h-72 bg-indigo-900/30 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-blob animation-delay-4000'></div>
 
           {/* Grain texture overlay */}
           <div
@@ -540,7 +540,7 @@ export default function ReleaseCalendarPage() {
               <button
                 onClick={handleRefreshClick}
                 disabled={loading}
-                className='flex items-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                className='flex items-center gap-2 px-4 py-2 bg-primary-600 dark:bg-primary-700 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 <svg
                   className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
@@ -572,7 +572,7 @@ export default function ReleaseCalendarPage() {
                   onClick={() => setViewMode('calendar')}
                   className={`px-3 py-2 rounded-lg transition-colors ${
                     viewMode === 'calendar'
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -582,7 +582,7 @@ export default function ReleaseCalendarPage() {
                   onClick={() => setViewMode('timeline')}
                   className={`px-3 py-2 rounded-lg transition-colors ${
                     viewMode === 'timeline'
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -683,7 +683,7 @@ export default function ReleaseCalendarPage() {
                           <div className='flex items-start justify-between mb-4'>
                             <div className='flex items-center gap-2'>
                               <div
-                                className={`p-2 rounded-lg ${item.type === 'movie' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'}`}
+                                className={`p-2 rounded-lg ${item.type === 'movie' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}
                               >
                                 {getTypeIcon(item.type)}
                               </div>
@@ -738,9 +738,9 @@ export default function ReleaseCalendarPage() {
                                 </span>
                               </div>
                               {item.episodes && (
-                                <div className='flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-md text-xs'>
-                                  <Tv className='w-3 h-3 text-green-600 dark:text-green-400' />
-                                  <span className='text-green-600 dark:text-green-400 font-medium'>
+                                <div className='flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 rounded-md text-xs'>
+                                  <Tv className='w-3 h-3 text-primary-600 dark:text-primary-400' />
+                                  <span className='text-primary-600 dark:text-primary-400 font-medium'>
                                     {item.episodes}集
                                   </span>
                                 </div>
@@ -749,11 +749,11 @@ export default function ReleaseCalendarPage() {
                           </div>
 
                           {/* 底部渐变效果 */}
-                          <div className='absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-primary-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
+                          <div className='absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-primary-500 via-blue-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
                         </div>
 
                         {/* 悬停效果遮罩 */}
-                        <div className='absolute inset-0 bg-linear-to-br from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none'></div>
+                        <div className='absolute inset-0 bg-linear-to-br from-primary-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none'></div>
                       </div>
                     );
                   })}
@@ -897,7 +897,7 @@ export default function ReleaseCalendarPage() {
                                         className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${
                                           item.type === 'movie'
                                             ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300'
-                                            : 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300'
+                                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300'
                                         }`}
                                         title={`${item.title} - ${item.director}`}
                                       >
@@ -1020,7 +1020,7 @@ export default function ReleaseCalendarPage() {
                                     className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
                                       item.type === 'movie'
                                         ? 'bg-amber-50 border border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:border-amber-800'
-                                        : 'bg-purple-50 border border-purple-200 hover:bg-purple-100 dark:bg-purple-900/20 dark:border-purple-800'
+                                        : 'bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-800'
                                     }`}
                                   >
                                     <div className='flex-1 min-w-0'>
@@ -1028,7 +1028,7 @@ export default function ReleaseCalendarPage() {
                                         className={`font-medium truncate ${
                                           item.type === 'movie'
                                             ? 'text-amber-900 dark:text-amber-100'
-                                            : 'text-purple-900 dark:text-purple-100'
+                                            : 'text-blue-900 dark:text-blue-100'
                                         }`}
                                       >
                                         {item.title}
@@ -1037,7 +1037,7 @@ export default function ReleaseCalendarPage() {
                                         className={`text-sm truncate ${
                                           item.type === 'movie'
                                             ? 'text-amber-700 dark:text-amber-300'
-                                            : 'text-purple-700 dark:text-purple-300'
+                                            : 'text-blue-700 dark:text-blue-300'
                                         }`}
                                       >
                                         {item.director} • {item.region}
@@ -1047,7 +1047,7 @@ export default function ReleaseCalendarPage() {
                                       className={`text-xs px-2 py-1 rounded-full ${
                                         item.type === 'movie'
                                           ? 'bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200'
-                                          : 'bg-purple-200 text-purple-800 dark:bg-purple-800 dark:text-purple-200'
+                                          : 'bg-blue-200 text-blue-800 dark:bg-blue-800 dark:text-blue-200'
                                       }`}
                                     >
                                       {item.type === 'movie'
@@ -1103,7 +1103,7 @@ export default function ReleaseCalendarPage() {
                                   {item.type === 'movie' ? (
                                     <Film className='w-4 h-4 text-amber-600' />
                                   ) : (
-                                    <Tv className='w-4 h-4 text-purple-600' />
+                                    <Tv className='w-4 h-4 text-blue-600' />
                                   )}
                                   <span className='text-sm font-medium text-gray-900 dark:text-white'>
                                     {item.title}
@@ -1128,7 +1128,7 @@ export default function ReleaseCalendarPage() {
               {viewMode === 'timeline' && (
                 <div className='relative'>
                   {/* 时间线主线 */}
-                  <div className='absolute left-8 top-0 bottom-0 w-0.5 bg-linear-to-b from-primary-500 via-purple-500 to-pink-500'></div>
+                  <div className='absolute left-8 top-0 bottom-0 w-0.5 bg-linear-to-b from-primary-500 via-blue-500 to-cyan-500'></div>
 
                   <div className='space-y-8'>
                     {Object.entries(
@@ -1198,7 +1198,7 @@ export default function ReleaseCalendarPage() {
                                     ? 'bg-linear-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-red-200 dark:border-red-800'
                                     : isPast
                                       ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                                      : 'bg-linear-to-r from-primary-50 to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20 border-primary-200 dark:border-primary-800'
+                                      : 'bg-linear-to-r from-primary-50 to-blue-50 dark:from-primary-900/20 dark:to-blue-900/20 border-primary-200 dark:border-primary-800'
                                 }`}
                               >
                                 <div className='flex items-center justify-between'>
@@ -1271,7 +1271,7 @@ export default function ReleaseCalendarPage() {
                                           className={`p-2 rounded-lg ${
                                             item.type === 'movie'
                                               ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
-                                              : 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+                                              : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
                                           }`}
                                         >
                                           {getTypeIcon(item.type)}
@@ -1280,7 +1280,7 @@ export default function ReleaseCalendarPage() {
                                           className={`text-xs px-2 py-1 rounded-full ${
                                             item.type === 'movie'
                                               ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                                              : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                           }`}
                                         >
                                           {getTypeLabel(item.type)}
@@ -1322,7 +1322,7 @@ export default function ReleaseCalendarPage() {
                                             {item.genre}
                                           </span>
                                           {item.episodes && (
-                                            <span className='inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs'>
+                                            <span className='inline-flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded text-xs'>
                                               <Tv className='w-3 h-3' />
                                               {item.episodes}集
                                             </span>
@@ -1331,7 +1331,7 @@ export default function ReleaseCalendarPage() {
                                       </div>
 
                                       {/* 悬停效果 */}
-                                      <div className='absolute inset-0 bg-linear-to-br from-primary-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg pointer-events-none'></div>
+                                      <div className='absolute inset-0 bg-linear-to-br from-primary-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg pointer-events-none'></div>
                                     </div>
                                   ))}
                                 </div>

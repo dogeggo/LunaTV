@@ -867,7 +867,7 @@ export const UserMenu: React.FC = () => {
                     ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                     : (authInfo?.role || 'user') === 'admin'
                       ? 'bg-primary-100 text-orange-800 dark:bg-primary-900/30 dark:text-orange-300'
-                      : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                      : 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300'
                 }`}
               >
                 {getRoleText(authInfo?.role || 'user')}
@@ -1158,7 +1158,7 @@ export const UserMenu: React.FC = () => {
                     checked={defaultAggregateSearch}
                     onChange={(e) => handleAggregateToggle(e.target.checked)}
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1182,7 +1182,7 @@ export const UserMenu: React.FC = () => {
                     checked={enableOptimization}
                     onChange={(e) => handleOptimizationToggle(e.target.checked)}
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1206,7 +1206,7 @@ export const UserMenu: React.FC = () => {
                     checked={fluidSearch}
                     onChange={(e) => handleFluidSearchToggle(e.target.checked)}
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1232,7 +1232,7 @@ export const UserMenu: React.FC = () => {
                       handleLiveDirectConnectToggle(e.target.checked)
                     }
                   />
-                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                  <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                 </div>
               </label>
@@ -1259,10 +1259,10 @@ export const UserMenu: React.FC = () => {
                   const colorClasses = {
                     green: {
                       selected:
-                        'border-transparent bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-2 ring-green-400/60 dark:ring-green-500/50 shadow-[0_0_15px_-3px_rgba(34,197,94,0.4)] dark:shadow-[0_0_15px_-3px_rgba(34,197,94,0.3)]',
-                      icon: 'bg-linear-to-br from-green-100 to-emerald-100 dark:from-green-800/50 dark:to-emerald-800/50',
-                      check: 'text-green-500',
-                      label: 'text-green-700 dark:text-green-300',
+                        'border-transparent bg-linear-to-r from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 ring-2 ring-primary-400/60 dark:ring-primary-500/50 shadow-[0_0_15px_-3px_rgba(34,197,94,0.4)] dark:shadow-[0_0_15px_-3px_rgba(34,197,94,0.3)]',
+                      icon: 'bg-linear-to-br from-primary-100 to-emerald-100 dark:from-primary-800/50 dark:to-emerald-800/50',
+                      check: 'text-primary-500',
+                      label: 'text-primary-700 dark:text-primary-300',
                     },
                     blue: {
                       selected:
@@ -1382,7 +1382,7 @@ export const UserMenu: React.FC = () => {
                         handleEnableAutoSkipToggle(e.target.checked)
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1408,7 +1408,7 @@ export const UserMenu: React.FC = () => {
                         handleEnableAutoNextEpisodeToggle(e.target.checked)
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1434,7 +1434,7 @@ export const UserMenu: React.FC = () => {
                         handleRequireClearConfirmationToggle(e.target.checked)
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1473,7 +1473,7 @@ export const UserMenu: React.FC = () => {
                         )
                       }
                     />
-                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-700'></div>
+                    <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-primary-500 transition-colors dark:bg-gray-700'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
                   </div>
                 </label>
@@ -1498,7 +1498,7 @@ export const UserMenu: React.FC = () => {
                         type='number'
                         min='0'
                         max='100'
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100'
                         value={continueWatchingMinProgress}
                         onChange={(e) => {
                           const value = Math.max(
@@ -1519,7 +1519,7 @@ export const UserMenu: React.FC = () => {
                         type='number'
                         min='0'
                         max='100'
-                        className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100'
+                        className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100'
                         value={continueWatchingMaxProgress}
                         onChange={(e) => {
                           const value = Math.max(
@@ -1569,19 +1569,19 @@ export const UserMenu: React.FC = () => {
                   onClick={() => handleDownloadFormatChange('TS')}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
                     downloadFormat === 'TS'
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                       : 'border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/15'
                   }`}
                 >
                   <div className='flex flex-col items-center gap-2'>
                     <div
-                      className={`text-2xl ${downloadFormat === 'TS' ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}
+                      className={`text-2xl ${downloadFormat === 'TS' ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'}`}
                     >
                       📦
                     </div>
                     <div className='text-center'>
                       <div
-                        className={`text-sm font-semibold ${downloadFormat === 'TS' ? 'text-green-700 dark:text-green-300' : 'text-gray-900 dark:text-gray-100'}`}
+                        className={`text-sm font-semibold ${downloadFormat === 'TS' ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-100'}`}
                       >
                         TS格式
                       </div>
@@ -1590,7 +1590,7 @@ export const UserMenu: React.FC = () => {
                       </div>
                     </div>
                     {downloadFormat === 'TS' && (
-                      <div className='w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center'>
+                      <div className='w-5 h-5 rounded-full bg-primary-500 text-white flex items-center justify-center'>
                         <svg
                           className='w-3 h-3'
                           fill='currentColor'
@@ -1727,7 +1727,7 @@ export const UserMenu: React.FC = () => {
               </label>
               <input
                 type='password'
-                className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
                 placeholder='请输入新密码'
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -1742,7 +1742,7 @@ export const UserMenu: React.FC = () => {
               </label>
               <input
                 type='password'
-                className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
+                className='w-full px-3 py-2 border border-gray-300 dark:border-white/10 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400'
                 placeholder='请再次输入新密码'
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -1769,7 +1769,7 @@ export const UserMenu: React.FC = () => {
             </button>
             <button
               onClick={handleSubmitChangePassword}
-              className='flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               disabled={passwordLoading || !newPassword || !confirmPassword}
             >
               {passwordLoading ? '修改中...' : '确认修改'}

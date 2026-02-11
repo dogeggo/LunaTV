@@ -342,7 +342,7 @@ export const VirtualDoubanGrid = React.forwardRef<
           </div>
         ) : containerWidth <= 100 ? (
           <div className='flex justify-center items-center h-40'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500'></div>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500'></div>
             <span className='ml-2 text-sm text-gray-500'>
               初始化虚拟滑动... ({Math.round(containerWidth)}px)
             </span>
@@ -410,16 +410,16 @@ export const VirtualDoubanGrid = React.forwardRef<
         {/* 加载更多指示器 */}
         {containerWidth > 100 && (isVirtualLoadingMore || isLoadingMore) && (
           <div className='flex justify-center mt-8 py-8'>
-            <div className='relative px-8 py-4 rounded-2xl bg-linear-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-green-200/50 dark:border-green-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
+            <div className='relative px-8 py-4 rounded-2xl bg-linear-to-r from-primary-50 via-emerald-50 to-teal-50 dark:from-primary-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-primary-200/50 dark:border-primary-700/50 shadow-lg backdrop-blur-sm overflow-hidden'>
               {/* 动画背景 */}
-              <div className='absolute inset-0 bg-linear-to-r from-green-400/10 via-emerald-400/10 to-teal-400/10 animate-pulse'></div>
+              <div className='absolute inset-0 bg-linear-to-r from-primary-400/10 via-emerald-400/10 to-teal-400/10 animate-pulse'></div>
 
               {/* 内容 */}
               <div className='relative flex items-center gap-3'>
                 {/* 旋转圈 */}
                 <div className='relative'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-green-200 dark:border-green-800'></div>
-                  <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-green-500 dark:border-t-green-400'></div>
+                  <div className='animate-spin rounded-full h-8 w-8 border-[3px] border-primary-200 dark:border-primary-800'></div>
+                  <div className='absolute inset-0 animate-spin rounded-full h-8 w-8 border-[3px] border-transparent border-t-primary-500 dark:border-t-primary-400'></div>
                 </div>
 
                 {/* 文字和点动画 */}

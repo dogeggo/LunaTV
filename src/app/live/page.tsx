@@ -1912,7 +1912,7 @@ function LivePageClient() {
       <PageLayout activePath='/live'>
         <div className='flex items-center justify-center min-h-[50vh]'>
           <div className='flex flex-col items-center gap-4'>
-            <div className='w-12 h-12 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin' />
+            <div className='w-12 h-12 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin' />
             <p className='text-gray-500 dark:text-gray-400 animate-pulse'>
               正在进入直播频道...
             </p>
@@ -1929,15 +1929,15 @@ function LivePageClient() {
           <div className='text-center max-w-md mx-auto px-6'>
             {/* 动画直播图标 */}
             <div className='relative mb-8'>
-              <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
+              <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-primary-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
                 <div className='text-white text-4xl'>📺</div>
                 {/* 旋转光环 */}
-                <div className='absolute -inset-2 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
+                <div className='absolute -inset-2 bg-linear-to-r from-primary-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
               </div>
 
               {/* 浮动粒子效果 */}
               <div className='absolute top-0 left-0 w-full h-full pointer-events-none'>
-                <div className='absolute top-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-bounce'></div>
+                <div className='absolute top-2 left-2 w-2 h-2 bg-primary-400 rounded-full animate-bounce'></div>
                 <div
                   className='absolute top-4 right-4 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce'
                   style={{ animationDelay: '0.5s' }}
@@ -1955,21 +1955,21 @@ function LivePageClient() {
                 <div
                   className={`w-3 h-3 rounded-full transition-all duration-500 ${
                     loadingStage === 'loading'
-                      ? 'bg-green-500 scale-125'
-                      : 'bg-green-500'
+                      ? 'bg-primary-500 scale-125'
+                      : 'bg-primary-500'
                   }`}
                 ></div>
                 <div
                   className={`w-3 h-3 rounded-full transition-all duration-500 ${
                     loadingStage === 'fetching'
-                      ? 'bg-green-500 scale-125'
-                      : 'bg-green-500'
+                      ? 'bg-primary-500 scale-125'
+                      : 'bg-primary-500'
                   }`}
                 ></div>
                 <div
                   className={`w-3 h-3 rounded-full transition-all duration-500 ${
                     loadingStage === 'ready'
-                      ? 'bg-green-500 scale-125'
+                      ? 'bg-primary-500 scale-125'
                       : 'bg-gray-300'
                   }`}
                 ></div>
@@ -1978,7 +1978,7 @@ function LivePageClient() {
               {/* 进度条 */}
               <div className='w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden'>
                 <div
-                  className='h-full bg-linear-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-1000 ease-out'
+                  className='h-full bg-linear-to-r from-primary-500 to-emerald-600 rounded-full transition-all duration-1000 ease-out'
                   style={{
                     width:
                       loadingStage === 'loading'
@@ -2126,10 +2126,10 @@ function LivePageClient() {
                 >
                   {directPlaybackEnabled ? (
                     <>
-                      <span className='text-green-600 dark:text-green-400'>
+                      <span className='text-primary-600 dark:text-primary-400'>
                         ⚡
                       </span>
-                      <span className='text-green-700 dark:text-green-300'>
+                      <span className='text-primary-700 dark:text-primary-300'>
                         直连{playbackMode === 'proxy' ? '(降级)' : ''}
                       </span>
                     </>
@@ -2182,7 +2182,7 @@ function LivePageClient() {
                 className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full transition-all duration-200 ${
                   isChannelListCollapsed
                     ? 'bg-orange-400 animate-pulse'
-                    : 'bg-green-400'
+                    : 'bg-primary-400'
                 }`}
               ></div>
             </button>
@@ -2288,9 +2288,9 @@ function LivePageClient() {
                   <div className='absolute inset-0 bg-black/85 backdrop-blur-sm rounded-xl overflow-hidden shadow-lg border border-white/0 dark:border-white/30 flex items-center justify-center z-500 transition-all duration-300'>
                     <div className='text-center max-w-md mx-auto px-6'>
                       <div className='relative mb-8'>
-                        <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
+                        <div className='relative mx-auto w-24 h-24 bg-linear-to-r from-primary-500 to-emerald-600 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-105 transition-transform duration-300'>
                           <div className='text-white text-4xl'>📺</div>
-                          <div className='absolute -inset-2 bg-linear-to-r from-green-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
+                          <div className='absolute -inset-2 bg-linear-to-r from-primary-500 to-emerald-600 rounded-2xl opacity-20 animate-spin'></div>
                         </div>
                       </div>
                       <div className='space-y-2'>
@@ -2320,8 +2320,8 @@ function LivePageClient() {
                     className={`flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-200 font-medium
                       ${
                         activeTab === 'channels'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-700 hover:text-green-600 bg-black/5 dark:bg-white/5 dark:text-gray-300 dark:hover:text-green-400 hover:bg-black/3 dark:hover:bg-white/3'
+                          ? 'text-primary-600 dark:text-primary-400'
+                          : 'text-gray-700 hover:text-primary-600 bg-black/5 dark:bg-white/5 dark:text-gray-300 dark:hover:text-primary-400 hover:bg-black/3 dark:hover:bg-white/3'
                       }
                     `.trim()}
                   >
@@ -2332,8 +2332,8 @@ function LivePageClient() {
                     className={`flex-1 py-3 px-6 text-center cursor-pointer transition-all duration-200 font-medium
                       ${
                         activeTab === 'sources'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-700 hover:text-green-600 bg-black/5 dark:bg-white/5 dark:text-gray-300 dark:hover:text-green-400 hover:bg-black/3 dark:hover:bg-white/3'
+                          ? 'text-primary-600 dark:text-primary-400'
+                          : 'text-gray-700 hover:text-primary-600 bg-black/5 dark:bg-white/5 dark:text-gray-300 dark:hover:text-primary-400 hover:bg-black/3 dark:hover:bg-white/3'
                       }
                     `.trim()}
                   >
@@ -2353,7 +2353,7 @@ function LivePageClient() {
                           placeholder='搜索频道...'
                           value={searchQuery}
                           onChange={(e) => handleSearchChange(e.target.value)}
-                          className='w-full pl-10 pr-8 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                          className='w-full pl-10 pr-8 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent'
                         />
                         {searchQuery && (
                           <button
@@ -2387,11 +2387,11 @@ function LivePageClient() {
                               className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all shrink-0 ${
                                 isSwitchingSource
                                   ? 'opacity-50 cursor-not-allowed border-gray-300 dark:border-gray-600'
-                                  : 'border-green-500 dark:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                  : 'border-primary-500 dark:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20'
                               }`}
                               disabled={isSwitchingSource}
                             >
-                              <Menu className='w-4 h-4 text-green-600 dark:text-green-400' />
+                              <Menu className='w-4 h-4 text-primary-600 dark:text-primary-400' />
                               <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
                                 全部分类
                               </span>
@@ -2419,7 +2419,7 @@ function LivePageClient() {
                                   allowScrollButtonsMobile
                                   sx={{
                                     '& .MuiTabs-indicator': {
-                                      backgroundColor: '#22c55e', // green-500
+                                      backgroundColor: '#22c55e', // primary-500
                                     },
                                     '& .MuiTab-root': {
                                       color: 'rgb(var(--tw-text-gray-700))',
@@ -2428,7 +2428,7 @@ function LivePageClient() {
                                       fontWeight: 500,
                                       textTransform: 'none',
                                       '&.Mui-selected': {
-                                        color: '#22c55e', // green-500
+                                        color: '#22c55e', // primary-500
                                       },
                                       '&.Mui-disabled': {
                                         color: 'rgb(var(--tw-text-gray-400))',
@@ -2437,7 +2437,7 @@ function LivePageClient() {
                                       '@media (prefers-color-scheme: dark)': {
                                         color: 'rgb(var(--tw-text-gray-300))',
                                         '&.Mui-selected': {
-                                          color: '#4ade80', // green-400
+                                          color: '#4ade80', // primary-400
                                         },
                                         '&.Mui-disabled': {
                                           color: 'rgb(var(--tw-text-gray-600))',
@@ -2486,7 +2486,7 @@ function LivePageClient() {
                                     isSwitchingSource
                                       ? 'opacity-50 cursor-not-allowed'
                                       : isActive
-                                        ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                                        ? 'bg-primary-100 dark:bg-primary-900/30 border border-primary-300 dark:border-primary-700'
                                         : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                                   }`}
                                 >
@@ -2615,7 +2615,7 @@ function LivePageClient() {
                                   isSwitchingSource
                                     ? 'opacity-50 cursor-not-allowed'
                                     : isActive
-                                      ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                                      ? 'bg-primary-100 dark:bg-primary-900/30 border border-primary-300 dark:border-primary-700'
                                       : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                               >
@@ -2745,7 +2745,7 @@ function LivePageClient() {
                           onChange={(e) =>
                             handleSourceSearchChange(e.target.value)
                           }
-                          className='w-full pl-10 pr-8 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent'
+                          className='w-full pl-10 pr-8 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent'
                         />
                         {sourceSearchQuery && (
                           <button
@@ -2784,7 +2784,7 @@ function LivePageClient() {
                             onChange={(e) =>
                               setAutoRefreshEnabled(e.target.checked)
                             }
-                            className='rounded text-green-500 focus:ring-green-500'
+                            className='rounded text-primary-500 focus:ring-primary-500'
                           />
                           <label
                             htmlFor='autoRefresh'
@@ -2830,7 +2830,7 @@ function LivePageClient() {
                                 );
                               }
                             }}
-                            className='rounded text-green-500 focus:ring-green-500'
+                            className='rounded text-primary-500 focus:ring-primary-500'
                           />
                           <label
                             htmlFor='directPlayback'
@@ -2868,7 +2868,7 @@ function LivePageClient() {
                               className={`flex items-start gap-3 px-2 py-3 rounded-lg transition-all select-none duration-200 relative
                                 ${
                                   isCurrentSource
-                                    ? 'bg-green-500/10 dark:bg-green-500/20 border-green-500/30 border'
+                                    ? 'bg-primary-500/10 dark:bg-primary-500/20 border-primary-500/30 border'
                                     : 'hover:bg-gray-200/50 dark:hover:bg-white/10 hover:scale-[1.02] cursor-pointer'
                                 }`.trim()}
                             >
@@ -2906,7 +2906,7 @@ function LivePageClient() {
 
                               {/* 当前标识 */}
                               {isCurrentSource && (
-                                <div className='absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full'></div>
+                                <div className='absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full'></div>
                               )}
                             </div>
                           );
@@ -3118,7 +3118,7 @@ function LivePageClient() {
                   className='w-full pl-10 pr-10 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600
                              bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
                              placeholder-gray-400 dark:placeholder-gray-500
-                             focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400
+                             focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400
                              transition-all'
                 />
                 {groupSearchQuery && (
@@ -3160,7 +3160,7 @@ function LivePageClient() {
                           className={`w-full px-4 py-3 rounded-lg text-left transition-all duration-200
                                       active:scale-[0.98] ${
                                         isSelected
-                                          ? 'bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700'
+                                          ? 'bg-primary-100 dark:bg-primary-900/30 border border-primary-300 dark:border-primary-700'
                                           : 'hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600'
                                       }`}
                         >
@@ -3169,7 +3169,7 @@ function LivePageClient() {
                               <div
                                 className={`w-2 h-2 rounded-full transition-colors ${
                                   isSelected
-                                    ? 'bg-green-500'
+                                    ? 'bg-primary-500'
                                     : 'bg-gray-300 dark:bg-gray-600'
                                 }`}
                               ></div>

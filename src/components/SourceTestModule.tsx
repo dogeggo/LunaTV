@@ -432,7 +432,7 @@ export default function SourceTestModule() {
           <ArrowPathIcon className='w-4 h-4 animate-spin text-primary-500' />
         );
       case 'success':
-        return <CheckCircleIcon className='w-4 h-4 text-green-500' />;
+        return <CheckCircleIcon className='w-4 h-4 text-primary-500' />;
       case 'error':
         return <XCircleIcon className='w-4 h-4 text-red-500' />;
       case 'timeout':
@@ -559,7 +559,7 @@ export default function SourceTestModule() {
               disabled={
                 isTestingAll || !searchKeyword.trim() || sources.length === 0
               }
-              className='px-4 sm:px-6 py-2.5 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700
+              className='px-4 sm:px-6 py-2.5 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700
                        disabled:bg-gray-400 disabled:cursor-not-allowed
                        flex items-center justify-center gap-2 whitespace-nowrap transition-colors'
             >
@@ -590,7 +590,7 @@ export default function SourceTestModule() {
               </div>
             </div>
             <div className='text-center'>
-              <div className='text-2xl font-bold text-green-600'>
+              <div className='text-2xl font-bold text-primary-600'>
                 {stats.success}
               </div>
               <div className='text-sm text-gray-600 dark:text-gray-400'>
@@ -631,7 +631,7 @@ export default function SourceTestModule() {
                   启用源 ({stats.enabledTotal})
                 </h4>
                 <div className='flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm'>
-                  <span className='text-green-600'>
+                  <span className='text-primary-600'>
                     成功: {stats.enabledSuccess}
                   </span>
                   <span className='text-red-600'>
@@ -650,7 +650,7 @@ export default function SourceTestModule() {
                   禁用源 ({stats.disabledTotal})
                 </h4>
                 <div className='flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm'>
-                  <span className='text-green-600'>
+                  <span className='text-primary-600'>
                     成功: {stats.disabledSuccess}
                   </span>
                   <span className='text-red-600'>
@@ -755,7 +755,7 @@ export default function SourceTestModule() {
                           {result.responseTime && `${result.responseTime}ms`}
                         </div>
                         {result.status === 'success' && (
-                          <div className='text-sm text-green-600 font-medium'>
+                          <div className='text-sm text-primary-600 font-medium'>
                             {typeof result.resultCount === 'number'
                               ? result.resultCount
                               : result.results.length}{' '}
@@ -824,7 +824,7 @@ export default function SourceTestModule() {
                       onClick={() => toggleSource(source)}
                       className={`px-3 py-2 sm:py-1 text-sm rounded-lg transition-colors ${
                         source.disabled
-                          ? 'bg-green-600 hover:bg-green-700 text-white'
+                          ? 'bg-primary-600 hover:bg-primary-700 text-white'
                           : 'bg-red-600 hover:bg-red-700 text-white'
                       }`}
                     >
@@ -842,7 +842,7 @@ export default function SourceTestModule() {
                           `响应时间: ${result.responseTime}ms`}
                       </div>
                       {result.status === 'success' && (
-                        <div className='text-green-600 font-medium'>
+                        <div className='text-primary-600 font-medium'>
                           {typeof result.resultCount === 'number'
                             ? result.resultCount
                             : result.results.length}{' '}

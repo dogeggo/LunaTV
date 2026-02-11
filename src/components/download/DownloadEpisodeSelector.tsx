@@ -141,7 +141,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
             <div className='flex items-center gap-1 sm:gap-2 shrink-0 ml-2'>
               <button
                 onClick={handleSelectAll}
-                className='px-2 sm:px-3 py-1.5 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/20 rounded-md transition-colors active:scale-95'
+                className='px-2 sm:px-3 py-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 dark:text-primary-400 dark:hover:text-primary-300 dark:hover:bg-primary-900/20 rounded-md transition-colors active:scale-95'
               >
                 全选
               </button>
@@ -186,7 +186,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
                         className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all whitespace-nowrap active:scale-95
                         ${
                           isActive
-                            ? 'bg-green-500 text-white shadow-md'
+                            ? 'bg-primary-500 text-white shadow-md'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                         }
                       `.trim()}
@@ -199,7 +199,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
               </div>
               {/* 向上/向下按钮 */}
               <button
-                className='shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-gray-700 hover:text-green-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-green-400 dark:hover:bg-gray-700 transition-colors active:scale-95'
+                className='shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-gray-700 hover:text-primary-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-primary-400 dark:hover:bg-gray-700 transition-colors active:scale-95'
                 onClick={() => setDescending((prev) => !prev)}
               >
                 <svg
@@ -239,7 +239,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
                     className={`h-10 min-w-10 px-3 py-2 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 whitespace-nowrap font-mono relative
                     ${
                       isSelected
-                        ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 dark:bg-green-600'
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25 dark:bg-primary-600'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                     }
                   `.trim()}
@@ -283,7 +283,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
                   )}
                 </>
               ) : (
-                <span className='font-medium text-green-600 dark:text-green-400'>
+                <span className='font-medium text-primary-600 dark:text-primary-400'>
                   {selectedEpisodes.size} 集
                 </span>
               )}
@@ -298,7 +298,7 @@ const DownloadEpisodeSelector: React.FC<DownloadEpisodeSelectorProps> = ({
               <button
                 onClick={handleDownload}
                 disabled={selectedEpisodes.size === 0}
-                className='flex-1 sm:flex-none px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-500 active:scale-95'
+                className='flex-1 sm:flex-none px-4 py-2 sm:py-2.5 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary-500 active:scale-95'
               >
                 下载 {selectedEpisodes.size > 0 && `(${selectedEpisodes.size})`}
               </button>

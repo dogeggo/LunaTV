@@ -37,10 +37,10 @@ const BackToTopButton = memo(function BackToTopButton({
       aria-label='返回顶部'
     >
       {/* 渐变背景 */}
-      <div className='absolute inset-0 bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 group-hover:from-green-600 group-hover:via-emerald-600 group-hover:to-teal-600 transition-all duration-300'></div>
+      <div className='absolute inset-0 bg-linear-to-r from-primary-500 via-emerald-500 to-teal-500 group-hover:from-primary-600 group-hover:via-emerald-600 group-hover:to-teal-600 transition-all duration-300'></div>
 
       {/* 发光效果 */}
-      <div className='absolute inset-0 bg-linear-to-r from-green-400 to-emerald-400 opacity-0 group-hover:opacity-50 blur-md transition-all duration-300'></div>
+      <div className='absolute inset-0 bg-linear-to-r from-primary-400 to-emerald-400 opacity-0 group-hover:opacity-50 blur-md transition-all duration-300'></div>
 
       {/* 脉冲光环 */}
       <div className='absolute inset-0 rounded-full border-2 border-white/30 animate-ping group-hover:opacity-0 transition-opacity duration-300'></div>

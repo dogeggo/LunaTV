@@ -69,8 +69,8 @@ export function TelegramWelcomeModal() {
         {/* 标题 */}
         <div className='p-6 border-b border-gray-200 dark:border-gray-700'>
           <div className='flex items-center gap-3 mb-2'>
-            <div className='p-2 bg-green-100 dark:bg-green-900/30 rounded-full'>
-              <CheckCircle2 className='w-6 h-6 text-green-600 dark:text-green-400' />
+            <div className='p-2 bg-primary-100 dark:bg-primary-900/30 rounded-full'>
+              <CheckCircle2 className='w-6 h-6 text-primary-600 dark:text-primary-400' />
             </div>
             <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
               欢迎加入！
@@ -167,7 +167,7 @@ export function TelegramWelcomeModal() {
         <div className='p-6 border-t border-gray-200 dark:border-gray-700'>
           <button
             onClick={() => setShow(false)}
-            className='w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors'
+            className='w-full px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors'
           >
             我已记住，开始使用
           </button>

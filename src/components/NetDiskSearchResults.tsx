@@ -51,7 +51,7 @@ const CLOUD_TYPES = {
   },
   uc: {
     name: 'UC网盘',
-    color: 'bg-green-500',
+    color: 'bg-primary-500',
     icon: '🌐',
     domain: 'drive.uc.cn',
   },
@@ -539,7 +539,7 @@ export default function NetDiskSearchResults({
                                 }
                                 className={`p-1 transition-colors shrink-0 ${
                                   copiedItems[`url-${linkKey}`]
-                                    ? 'text-green-500'
+                                    ? 'text-primary-500'
                                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                 }`}
                                 title={
@@ -611,7 +611,7 @@ export default function NetDiskSearchResults({
                                     }
                                     className={`p-1 transition-colors ${
                                       copiedItems[`pwd-${linkKey}`]
-                                        ? 'text-green-500'
+                                        ? 'text-primary-500'
                                         : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                                     }`}
                                     title={

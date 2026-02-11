@@ -52,7 +52,7 @@ const CACHE_TYPES: CacheType[] = [
     name: '豆瓣数据',
     description: '电影/电视剧详情、分类、推荐等数据缓存',
     icon: FilmIcon,
-    color: 'text-green-600 bg-green-100',
+    color: 'text-primary-600 bg-primary-100',
   },
   {
     key: 'shortdrama',
