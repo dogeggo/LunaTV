@@ -35,6 +35,8 @@ import {
 
 import PageLayout from '@/components/PageLayout';
 
+import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
+
 // 🚀 性能优化：使用动态导入延迟加载重型组件，显著提升导航响应速度
 const EpgScrollableRow = dynamic(
   () => import(/* webpackPreload: false */ '@/components/EpgScrollableRow'),
@@ -88,6 +90,13 @@ function LivePageClient() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const { stopNavigation } = useNavigationLoading();
+
+  // 播放页挂载后关闭导航加载提示
+  useEffect(() => {
+    stopNavigation();
+  }, [stopNavigation]);
 
   // 直播源相关
   const [liveSources, setLiveSources] = useState<LiveSource[]>([]);

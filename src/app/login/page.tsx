@@ -20,9 +20,12 @@ import {
 import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
+import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
+
 function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { startNavigation, isNavigating } = useNavigationLoading();
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +130,7 @@ function LoginPageClient() {
           console.log('记录登入时间失败:', error);
           // 登入时间记录失败不影响正常登录流程
         }
+        startNavigation('正在加载...');
         const redirect = searchParams.get('redirect') || '/';
         router.replace(redirect);
       } else if (res.status === 401) {
@@ -198,14 +202,14 @@ function LoginPageClient() {
       )}
 
       {/* 渐变叠加层 */}
-      <div className='absolute inset-0 bg-gradient-to-br from-purple-600/40 via-primary-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-primary-900/40 dark:to-pink-900/50' />
-      <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30' />
+      <div className='absolute inset-0 bg-linear-to-br from-purple-600/40 via-primary-600/30 to-pink-500/40 dark:from-purple-900/50 dark:via-primary-900/40 dark:to-pink-900/50' />
+      <div className='absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-black/30' />
 
       <div className='absolute top-3 right-3 sm:top-4 sm:right-4 z-20'>
         <ThemeToggle />
       </div>
       <div
-        className='relative z-10 w-full max-w-md rounded-2xl sm:rounded-3xl bg-gradient-to-br from-white/95 via-white/85 to-white/75 dark:from-zinc-900/95 dark:via-zinc-900/85 dark:to-zinc-900/75 backdrop-blur-2xl shadow-[0_20px_80px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-6 sm:p-10 border border-white/50 dark:border-zinc-700/50 animate-fade-in hover:shadow-[0_25px_100px_rgba(0,0,0,0.4)] transition-shadow duration-500'
+        className='relative z-10 w-full max-w-md rounded-2xl sm:rounded-3xl bg-linear-to-br from-white/95 via-white/85 to-white/75 dark:from-zinc-900/95 dark:via-zinc-900/85 dark:to-zinc-900/75 backdrop-blur-2xl shadow-[0_20px_80px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)] p-6 sm:p-10 border border-white/50 dark:border-zinc-700/50 animate-fade-in hover:shadow-[0_25px_100px_rgba(0,0,0,0.4)] transition-shadow duration-500'
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
         }}
@@ -220,18 +224,18 @@ function LoginPageClient() {
           }
         `}</style>
         {/* 装饰性光效 */}
-        <div className='absolute -top-20 -left-20 w-40 h-40 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse' />
+        <div className='absolute -top-20 -left-20 w-40 h-40 bg-linear-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse' />
         <div
-          className='absolute -bottom-20 -right-20 w-40 h-40 bg-gradient-to-br from-primary-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse'
+          className='absolute -bottom-20 -right-20 w-40 h-40 bg-linear-to-br from-primary-400/30 to-cyan-400/30 rounded-full blur-3xl animate-pulse'
           style={{ animationDelay: '1s' }}
         />
 
         {/* 标题区域 */}
         <div className='text-center mb-6 sm:mb-8'>
-          <div className='inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-primary-500 to-emerald-600 shadow-lg shadow-primary-500/50 dark:shadow-primary-500/30'>
+          <div className='inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-linear-to-br from-primary-500 to-emerald-600 shadow-lg shadow-primary-500/50 dark:shadow-primary-500/30'>
             <Sparkles className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
           </div>
-          <h1 className='text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-emerald-600 to-teal-600 dark:from-primary-400 dark:via-emerald-400 dark:to-teal-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
+          <h1 className='text-transparent bg-clip-text bg-linear-to-r from-primary-600 via-emerald-600 to-teal-600 dark:from-primary-400 dark:via-emerald-400 dark:to-teal-400 tracking-tight text-3xl sm:text-4xl font-extrabold mb-2 drop-shadow-sm'>
             {siteName}
           </h1>
           <p className='text-gray-600 dark:text-gray-400 text-xs sm:text-sm font-medium'>
@@ -300,12 +304,17 @@ function LoginPageClient() {
           {/* 登录按钮 */}
           <button
             type='submit'
-            disabled={!password || loading || (shouldAskUsername && !username)}
-            className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary-600 to-emerald-600 hover:from-primary-700 hover:to-emerald-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
+            disabled={
+              !password ||
+              loading ||
+              (shouldAskUsername && !username) ||
+              isNavigating
+            }
+            className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-linear-to-r from-primary-600 to-emerald-600 hover:from-primary-700 hover:to-emerald-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
           >
-            <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
+            <span className='absolute inset-0 w-full h-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
             <Lock className='h-4 w-4 sm:h-5 sm:w-5' />
-            {loading ? '登录中...' : '立即登录'}
+            {loading ? '登录中...' : isNavigating ? '正在进入...' : '立即登录'}
           </button>
 
           {/* 注册链接 - 仅在非 localStorage 模式下显示 */}
@@ -316,7 +325,7 @@ function LoginPageClient() {
               </p>
               <a
                 href='/register'
-                className='group flex items-center justify-center gap-1.5 sm:gap-2 w-full px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-gradient-to-r from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 border border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400 text-xs sm:text-sm font-semibold hover:from-primary-100 hover:to-emerald-100 dark:hover:from-primary-900/30 dark:hover:to-emerald-900/30 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-100'
+                className='group flex items-center justify-center gap-1.5 sm:gap-2 w-full px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg bg-linear-to-r from-primary-50 to-emerald-50 dark:from-primary-900/20 dark:to-emerald-900/20 border border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400 text-xs sm:text-sm font-semibold hover:from-primary-100 hover:to-emerald-100 dark:hover:from-primary-900/30 dark:hover:to-emerald-900/30 hover:border-primary-300 dark:hover:border-primary-700 transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-100'
               >
                 <UserPlus className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
                 <span>立即注册</span>
@@ -361,9 +370,9 @@ function LoginPageClient() {
             <button
               onClick={handleTelegramLogin}
               disabled={telegramLoading || !telegramUsername.trim()}
-              className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-gradient-to-r from-primary-600 to-cyan-600 hover:from-primary-700 hover:to-cyan-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
+              className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-linear-to-r from-primary-600 to-cyan-600 hover:from-primary-700 hover:to-cyan-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
             >
-              <span className='absolute inset-0 w-full h-full bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
+              <span className='absolute inset-0 w-full h-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
               <Send className='h-4 w-4 sm:h-5 sm:w-5' />
               {telegramLoading ? '正在打开 Telegram...' : '通过 Telegram 登录'}
             </button>
