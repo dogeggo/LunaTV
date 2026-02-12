@@ -131,13 +131,14 @@ function LoginPageClient() {
         router.replace(redirect);
       } else if (res.status === 401) {
         setError('密码错误');
+        setLoading(false);
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? '服务器错误');
+        setLoading(false);
       }
     } catch (_error) {
       setError('网络错误，请稍后重试');
-    } finally {
       setLoading(false);
     }
   };
