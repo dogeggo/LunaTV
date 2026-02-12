@@ -24,7 +24,8 @@
 
 .artplayer-plugin-liquid-glass.art-control-show .art-settings {
   bottom: calc(
-    var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding)
+    var(--art-control-height) + var(--art-bottom-gap) + var(--art-padding) +
+      10px
   );
 }
 

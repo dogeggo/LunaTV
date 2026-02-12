@@ -868,11 +868,19 @@ const PlayStatsPage: React.FC = () => {
                     总观看时长
                   </div>
                 </div>
-                <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
-                  <div className='text-2xl font-bold text-purple-800 dark:text-purple-300'>
+                <div className='p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800'>
+                  <div className='text-2xl font-bold text-teal-800 dark:text-teal-300'>
+                    {statsData.totalMovies}
+                  </div>
+                  <div className='text-sm text-teal-600 dark:text-teal-400'>
+                    总播观影数
+                  </div>
+                </div>
+                <div className='p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800'>
+                  <div className='text-2xl font-bold text-pink-800 dark:text-pink-300'>
                     {statsData.totalPlays}
                   </div>
-                  <div className='text-sm text-purple-600 dark:text-purple-400'>
+                  <div className='text-sm text-pink-600 dark:text-pink-400'>
                     总播放次数
                   </div>
                 </div>
@@ -884,14 +892,14 @@ const PlayStatsPage: React.FC = () => {
                     人均观看时长
                   </div>
                 </div>
-                <div className='p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800'>
+                {/* <div className='p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800'>
                   <div className='text-2xl font-bold text-indigo-800 dark:text-indigo-300'>
                     {Math.round(statsData.avgPlaysPerUser)}
                   </div>
                   <div className='text-sm text-indigo-600 dark:text-indigo-400'>
                     人均播放次数
                   </div>
-                </div>
+                </div> */}
                 <div className='p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800'>
                   <div className='text-2xl font-bold text-red-800 dark:text-red-300'>
                     {statsData.registrationStats.todayNewUsers}
@@ -1221,6 +1229,14 @@ const PlayStatsPage: React.FC = () => {
                             </div>
                             <div className='text-right leading-tight'>
                               <div className='text-xs font-medium text-gray-900 dark:text-gray-100'>
+                                {userStat.totalMovies}
+                              </div>
+                              <div className='text-xs text-gray-500 dark:text-gray-400'>
+                                总观影数
+                              </div>
+                            </div>
+                            <div className='text-right leading-tight'>
+                              <div className='text-xs font-medium text-gray-900 dark:text-gray-100'>
                                 {userStat.totalPlays}
                               </div>
                               <div className='text-xs text-gray-500 dark:text-gray-400'>
@@ -1382,11 +1398,11 @@ const PlayStatsPage: React.FC = () => {
             <>
               {/* 个人统计概览 */}
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-8'>
-                <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800'>
-                  <div className='text-2xl font-bold text-primary-800 dark:text-primary-300'>
+                <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
+                  <div className='text-2xl font-bold text-purple-800 dark:text-purple-300'>
                     {formatTime(userStats.totalWatchTime)}
                   </div>
-                  <div className='text-sm text-primary-600 dark:text-primary-400'>
+                  <div className='text-sm text-purple-600 dark:text-purple-400'>
                     总观看时长
                   </div>
                 </div>
@@ -1398,19 +1414,19 @@ const PlayStatsPage: React.FC = () => {
                     注册天数
                   </div>
                 </div>
-                <div className='p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800'>
-                  <div className='text-2xl font-bold text-orange-800 dark:text-orange-300'>
+                <div className='p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border border-teal-200 dark:border-teal-800'>
+                  <div className='text-2xl font-bold text-teal-800 dark:text-teal-300'>
                     {userStats.loginCount || 0}
                   </div>
-                  <div className='text-sm text-orange-600 dark:text-orange-400'>
+                  <div className='text-sm text-teal-600 dark:text-teal-400'>
                     登录次数
                   </div>
                 </div>
-                <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
-                  <div className='text-2xl font-bold text-purple-800 dark:text-purple-300'>
+                <div className='p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800'>
+                  <div className='text-2xl font-bold text-pink-800 dark:text-pink-300'>
                     {userStats.totalMovies || 0}
                   </div>
-                  <div className='text-sm text-purple-600 dark:text-purple-400'>
+                  <div className='text-sm text-pink-600 dark:text-pink-400'>
                     观看影片
                   </div>
                 </div>
@@ -1462,6 +1478,39 @@ const PlayStatsPage: React.FC = () => {
                     常用来源
                   </div>
                 </div>
+
+                {/* 继续观看提醒 */}
+                <div
+                  className={`p-4 rounded-lg border transition-all ${
+                    (watchingUpdates?.continueWatchingCount || 0) > 0
+                      ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800'
+                      : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+                  }`}
+                >
+                  <div
+                    className={`text-2xl font-bold ${
+                      (watchingUpdates?.continueWatchingCount || 0) > 0
+                        ? 'text-cyan-800 dark:text-cyan-300'
+                        : 'text-gray-800 dark:text-gray-300'
+                    }`}
+                  >
+                    {watchingUpdates?.continueWatchingCount || 0}
+                  </div>
+                  <div
+                    className={`text-sm ${
+                      (watchingUpdates?.continueWatchingCount || 0) > 0
+                        ? 'text-cyan-600 dark:text-cyan-400'
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    继续观看
+                  </div>
+                  {(watchingUpdates?.continueWatchingCount || 0) > 0 && (
+                    <div className='text-xs text-cyan-500 dark:text-cyan-400 mt-1'>
+                      有剧集待续看！
+                    </div>
+                  )}
+                </div>
                 {/* 新集数更新 */}
                 <div
                   className={`p-4 rounded-lg border transition-all ${
@@ -1491,39 +1540,6 @@ const PlayStatsPage: React.FC = () => {
                   {(watchingUpdates?.updatedCount || 0) > 0 && (
                     <div className='text-xs text-red-500 dark:text-red-400 mt-1'>
                       有新集数发布！
-                    </div>
-                  )}
-                </div>
-
-                {/* 继续观看提醒 */}
-                <div
-                  className={`p-4 rounded-lg border transition-all ${
-                    (watchingUpdates?.continueWatchingCount || 0) > 0
-                      ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
-                      : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
-                  }`}
-                >
-                  <div
-                    className={`text-2xl font-bold ${
-                      (watchingUpdates?.continueWatchingCount || 0) > 0
-                        ? 'text-primary-800 dark:text-primary-300'
-                        : 'text-gray-800 dark:text-gray-300'
-                    }`}
-                  >
-                    {watchingUpdates?.continueWatchingCount || 0}
-                  </div>
-                  <div
-                    className={`text-sm ${
-                      (watchingUpdates?.continueWatchingCount || 0) > 0
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-600 dark:text-gray-400'
-                    }`}
-                  >
-                    继续观看
-                  </div>
-                  {(watchingUpdates?.continueWatchingCount || 0) > 0 && (
-                    <div className='text-xs text-primary-500 dark:text-primary-400 mt-1'>
-                      有剧集待续看！
                     </div>
                   )}
                 </div>

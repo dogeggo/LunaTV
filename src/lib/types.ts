@@ -395,22 +395,11 @@ export interface UserStat {
 export interface PlayStatsResult {
   totalUsers: number; // 总用户数
   totalWatchTime: number; // 全站总观看时间
+  totalMovies: number;
   totalPlays: number; // 全站总播放次数
   avgWatchTimePerUser: number; // 用户平均观看时长
   avgPlaysPerUser: number; // 用户平均播放次数
-  userStats: Array<{
-    username: string;
-    totalWatchTime: number;
-    totalPlays: number;
-    lastPlayTime: number;
-    recentRecords: PlayRecord[];
-    avgWatchTime: number;
-    mostWatchedSource: string;
-    registrationDays: number; // 注册天数
-    lastLoginTime: number; // 最后登录时间
-    loginCount: number; // 登入次数
-    createdAt: number; // 用户创建时间
-  }>; // 每个用户的统计
+  userStats: Array<UserStat>; // 每个用户的统计
   topSources: Array<{
     // 热门来源统计（前5名）
     source: string;

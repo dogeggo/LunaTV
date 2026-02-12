@@ -345,6 +345,8 @@ function LivePageClient() {
   // 播放器引用
   const artPlayerRef = useRef<any>(null);
   const artRef = useRef<HTMLDivElement | null>(null);
+  // 追踪 HLS 错误重试定时器，确保组件卸载时能清理
+  const hlsRetryTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // 分组标签滚动相关
   const groupContainerRef = useRef<HTMLDivElement>(null);
@@ -957,6 +959,10 @@ function LivePageClient() {
     // 重置不支持的类型状态
     setUnsupportedType(null);
 
+    // 清理所有 HLS 错误重试定时器
+    hlsRetryTimersRef.current.forEach(clearTimeout);
+    hlsRetryTimersRef.current = [];
+
     if (artPlayerRef.current) {
       try {
         // 先暂停播放
@@ -1497,13 +1503,14 @@ function LivePageClient() {
 
         // 使用指数退避重试策略
         if (keyLoadErrorCountRef.current <= 2) {
-          setTimeout(() => {
+          const timerId = setTimeout(() => {
             try {
               hls.startLoad();
             } catch (e) {
               console.warn('Failed to restart load after key error:', e);
             }
           }, 1000 * keyLoadErrorCountRef.current);
+          hlsRetryTimersRef.current.push(timerId);
         }
         return;
       }
@@ -1556,13 +1563,14 @@ function LivePageClient() {
             // 根据具体的网络错误类型进行处理
             if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR) {
               console.log('Manifest load error, attempting reload...');
-              setTimeout(() => {
+              const timerId = setTimeout(() => {
                 try {
                   hls.loadSource(url);
                 } catch (e) {
                   console.error('Failed to reload source:', e);
                 }
               }, 2000);
+              hlsRetryTimersRef.current.push(timerId);
             } else {
               try {
                 safeStartLoad(hls, 'network-error');
@@ -1827,6 +1835,20 @@ function LivePageClient() {
     };
 
     loadAndInit();
+
+    // 清理函数：当依赖变化或组件卸载时，停止 HLS 加载并销毁播放器
+    return () => {
+      // 先停止 HLS 网络请求，防止后台继续加载直播流
+      if (artPlayerRef.current?.video?.hls) {
+        try {
+          artPlayerRef.current.video.hls.stopLoad();
+          artPlayerRef.current.video.hls.detachMedia();
+        } catch (e) {
+          console.warn('useEffect cleanup: 停止HLS加载出错:', e);
+        }
+      }
+      cleanupPlayer();
+    };
   }, [Hls, videoUrl, currentChannel, loading, directPlaybackEnabled]);
 
   // 统一的资源清理和生命周期管理

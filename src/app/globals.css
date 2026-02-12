@@ -385,12 +385,10 @@ div[data-media-provider] video {
   transition: all 0.3s ease-in-out;
 }
 
-/* 移动端隐藏弹幕配置按钮 - 使用设置面板简化配置 */
-/* 桌面端保留完整配置按钮 - 提供更多高级选项 */
-@media (max-width: 1080px), (hover: none) {
-  .artplayer-plugin-danmuku .apd-config {
-    display: none !important;
-  }
+/* 移动端弹幕配置按钮 - 通过JS点击切换面板显示 */
+/* 确保移动端也能显示弹幕配置按钮 */
+.artplayer-plugin-danmuku .apd-config {
+  display: flex !important;
 }
 
 /* 修复桌面端弹幕配置弹窗hover不稳定问题 */

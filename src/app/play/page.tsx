@@ -4185,6 +4185,7 @@ function PlayPageClient() {
               /* 避免与插件内层背景叠加导致双层黑底 */
               background: transparent !important;
               backdrop-filter: none !important;
+              bottom: 100px !important; /* 距离底部控制栏80px */
             }
             
             /* 全屏模式下的特殊优化 */
@@ -4192,7 +4193,7 @@ function PlayPageClient() {
               /* 全屏时使用固定定位并调整位置 */
               position: fixed !important;
               top: auto !important;
-              bottom: 80px !important; /* 距离底部控制栏80px */
+              bottom: 100px !important; /* 距离底部控制栏80px */
               right: 20px !important; /* 距离右边20px */
               left: auto !important;
               z-index: 2147483647 !important;
@@ -4709,22 +4710,25 @@ function PlayPageClient() {
               currentIdRef.current,
             );
             const record = allRecords[key];
-            if (record) {
-              const play_time =
-                record.index - 1 == currentEpisodeIndexRef.current
-                  ? record.play_time
-                  : 0;
-              const duration = artPlayerRef.current.duration || 0;
-              const current = artPlayerRef.current.currentTime || 0;
-              let target = play_time > current ? play_time : current;
-              if (duration && target >= duration - 2) {
-                target = Math.max(0, duration - 5);
-              }
-              if (target > current) {
-                artPlayerRef.current.currentTime = target;
-              }
-              console.log('成功恢复播放进度到:', target, record);
+            const recodeTime =
+              record && record.index - 1 == currentEpisodeIndexRef.current
+                ? record.play_time
+                : 0;
+            const recodeDuration =
+              record && record.index - 1 == currentEpisodeIndexRef.current
+                ? record.total_time
+                : 0;
+            const duration =
+              artPlayerRef.current.duration || recodeDuration || 0;
+            const currentTime = artPlayerRef.current.currentTime || 0;
+            let playerTime = currentTime > 1 ? currentTime : recodeTime;
+            if (duration && playerTime >= duration - 2) {
+              playerTime = Math.max(0, duration - 5);
             }
+            if (Math.abs(playerTime - artPlayerRef.current.currentTime) > 1) {
+              artPlayerRef.current.currentTime = playerTime;
+            }
+            console.log('成功恢复播放进度到:', currentTime, playerTime);
           } catch (err) {
             console.warn('恢复播放进度失败:', err);
           }

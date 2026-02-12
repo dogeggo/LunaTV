@@ -3,7 +3,7 @@
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { loadConfig } from '@/lib/config';
 import { db } from '@/lib/db';
-import { UserStat } from '@/lib/types';
+import { PlayStatsResult, UserStat } from '@/lib/types';
 
 import { calculateRegistrationDays } from '@/app/api/user/my-stats/route';
 
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     ).getTime();
     let todayNewUsers = 0;
     let totalRegisteredUsers = 0;
+    let totalMovies = 0;
     const registrationData: Record<string, number> = {};
 
     // 计算近7天的日期范围
@@ -100,13 +101,16 @@ export async function GET(request: NextRequest) {
             dailyData[dateKey].watchTime += record.play_time || 0;
             dailyData[dateKey].plays += 1;
           }
+          const sourceName = record.source_name || '未知来源';
+          sourceCount[sourceName] = (sourceCount[sourceName] || 0) + 1;
         });
         dbUserStat.registrationDays = registrationDays;
         dbUserStat.createdAt = userCreatedAt;
         userStats.push(dbUserStat);
         // 累计全站统计
-        totalWatchTime += dbUserStat.totalWatchTime;
-        totalPlays += dbUserStat.totalPlays;
+        totalWatchTime += dbUserStat.totalWatchTime || 0;
+        totalPlays += dbUserStat.totalPlays || 0;
+        totalMovies += dbUserStat.totalMovies || 0;
       } catch (_error) {
         console.log('获取用户统计数据错误.', _error);
       }
@@ -162,9 +166,10 @@ export async function GET(request: NextRequest) {
         .length,
     };
 
-    const result = {
+    const result: PlayStatsResult = {
       totalUsers: allUsers.length,
       totalWatchTime,
+      totalMovies,
       totalPlays,
       avgWatchTimePerUser:
         allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
