@@ -19,9 +19,7 @@ export default function NavigationLoading() {
         <div className='flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-gray-900/80 dark:bg-white/15 backdrop-blur-lg shadow-lg border border-white/10'>
           <div className='w-4 h-4 rounded-full border-2 border-primary-400/30 border-t-primary-400 animate-spin' />
           <span className='text-white text-xs font-medium whitespace-nowrap'>
-            {navigationTitle
-              ? `正在加载「${navigationTitle}」`
-              : '正在进入播放页...'}
+            {navigationTitle ? `正在加载「${navigationTitle}」` : '正在加载...'}
           </span>
         </div>
       </div>

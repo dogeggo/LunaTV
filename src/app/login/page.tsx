@@ -20,12 +20,9 @@ import {
 import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
-
 function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { startNavigation, isNavigating } = useNavigationLoading();
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +127,6 @@ function LoginPageClient() {
           console.log('记录登入时间失败:', error);
           // 登入时间记录失败不影响正常登录流程
         }
-        startNavigation('正在加载...');
         const redirect = searchParams.get('redirect') || '/';
         router.replace(redirect);
       } else if (res.status === 401) {
@@ -304,17 +300,12 @@ function LoginPageClient() {
           {/* 登录按钮 */}
           <button
             type='submit'
-            disabled={
-              !password ||
-              loading ||
-              (shouldAskUsername && !username) ||
-              isNavigating
-            }
+            disabled={!password || loading || (shouldAskUsername && !username)}
             className='group relative inline-flex w-full justify-center items-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-linear-to-r from-primary-600 to-emerald-600 hover:from-primary-700 hover:to-emerald-700 py-2.5 sm:py-3.5 text-sm sm:text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-lg overflow-hidden active:scale-95'
           >
             <span className='absolute inset-0 w-full h-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000' />
             <Lock className='h-4 w-4 sm:h-5 sm:w-5' />
-            {loading ? '登录中...' : isNavigating ? '正在进入...' : '立即登录'}
+            {loading ? '登录中...' : '立即登录'}
           </button>
 
           {/* 注册链接 - 仅在非 localStorage 模式下显示 */}

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type MouseEvent, type ReactNode, startTransition } from 'react';
 
+import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
+
 interface FastLinkProps {
   href: string;
   children: ReactNode;
@@ -57,11 +59,15 @@ export function FastLink({
 }: FastLinkProps) {
   const router = useRouter();
 
+  const { startNavigation } = useNavigationLoading();
+
   // Handle click events
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     // Call custom onClick handler if provided
     onClick?.(e);
-
+    if (href == '/live') {
+      startNavigation('');
+    }
     // Respect modifier keys for opening in new tabs
     const isModifiedClick =
       e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || target === '_blank';
@@ -92,7 +98,6 @@ export function FastLink({
       });
       return;
     }
-
     // Mode 3: Default - standard Next.js navigation
     router.push(href);
   };
