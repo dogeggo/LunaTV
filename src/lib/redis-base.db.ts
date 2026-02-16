@@ -862,34 +862,28 @@ export abstract class BaseRedisStorage implements IStorage {
       const playRecords = await this.getAllPlayRecords(userName);
       const records = Object.values(playRecords);
       // 即使没有播放记录，也要获取登入统计
-      let userStat: UserStat = {
-        username: userName,
-        loginCount: 0,
-        firstLoginTime: 0,
-        lastLoginTime: 0,
-      };
-
+      let userStat: UserStat = { username: userName };
       try {
         const loginStatsKey = `user_login_stats:${userName}`;
         const storedLoginStats = await this.client.get(loginStatsKey);
         if (storedLoginStats) {
           userStat = JSON.parse(storedLoginStats);
+          if (!userStat.username) {
+            userStat = await this.updateUserStats(userName);
+          }
         }
       } catch (error) {
         console.error(`获取用户 ${userName} 登入统计失败:`, error);
       }
-      if (!userStat.username) {
-        this.updateUserStats(userName);
-      }
+
       // 计算统计数据
       const totalWatchTime = userStat.totalWatchTime || 0;
       const totalPlays = userStat.totalPlays || 0;
       const lastPlayTime = userStat.lastPlayTime || 0;
+      const firstWatchDate = userStat.firstWatchDate || 0;
 
       const userMovieHis = `user_movie_his:${userName}`;
       const totalMovies = await this.client.sCard(userMovieHis);
-      // 计算首次观看时间
-      const firstWatchDate = userStat.firstWatchDate;
 
       // 最近10条记录，按时间排序
       const recentRecords = records
@@ -926,9 +920,9 @@ export abstract class BaseRedisStorage implements IStorage {
         totalMovies,
         firstWatchDate,
         // 登入统计字段
-        loginCount: userStat.loginCount,
-        firstLoginTime: userStat.firstLoginTime,
-        lastLoginTime: userStat.lastLoginTime,
+        loginCount: userStat.loginCount || 0,
+        firstLoginTime: userStat.firstLoginTime || 0,
+        lastLoginTime: userStat.lastLoginTime || 0,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -955,7 +949,7 @@ export abstract class BaseRedisStorage implements IStorage {
   async updateUserStats(
     username: string,
     playRecord?: PlayRecord,
-  ): Promise<void> {
+  ): Promise<UserStat> {
     try {
       const loginStatsKey = `user_login_stats:${username}`;
 
@@ -1021,6 +1015,7 @@ export abstract class BaseRedisStorage implements IStorage {
       }
       // 保存更新后的统计数据
       await this.client.set(loginStatsKey, JSON.stringify(userStat));
+      return userStat;
     } catch (error) {
       console.error(`更新用户 ${username}  统计失败:`, error);
       throw error;
@@ -1067,10 +1062,7 @@ export async function updateWatchTime(
       // 如果进度增加过大（可能是快进），限制增量
       if (watchTimeIncrement > 300) {
         // 超过5分钟认为是快进
-        watchTimeIncrement = Math.min(
-          watchTimeIncrement,
-          Math.floor(timeSinceLastUpdate / 1000) + 60,
-        );
+        watchTimeIncrement = 60;
         console.log(
           `检测到快进操作: ${record.title} 第${record.index}集 - 进度增加: ${record.play_time - lastProgress}s, 限制增量为: ${watchTimeIncrement}s`,
         );

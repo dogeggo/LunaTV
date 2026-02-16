@@ -204,7 +204,7 @@ export interface IStorage {
   // 播放统计相关
   getUserStat(userName: string): Promise<UserStat>;
   // 登入统计相关
-  updateUserStats(username: string, playRecord?: PlayRecord): Promise<void>;
+  updateUserStats(username: string, playRecord?: PlayRecord): Promise<UserStat>;
 }
 
 // 搜索结果数据结构
