@@ -389,7 +389,6 @@ async function cleanupInactiveUsers() {
             ),
           ])) as {
             lastLoginTime?: number;
-            firstLoginTime?: number;
             loginCount?: number;
             [key: string]: any;
           };
@@ -400,8 +399,7 @@ async function cleanupInactiveUsers() {
         // 🔥 简化逻辑：只检查最后登入时间是否超过阈值
         // 适用于所有用户类型（普通、Telegram、OIDC）
         // 因为所有用户注册时都会自动记录登入时间，不存在"从未登入"的情况
-        const lastLoginTime =
-          userStats.lastLoginTime || userStats.firstLoginTime || 0;
+        const lastLoginTime = userStats.lastLoginTime || 0;
 
         // 删除条件：有登入记录且最后登入时间超过阈值
         const shouldDelete = lastLoginTime > 0 && lastLoginTime < cutoffTime;

@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         skipConfigs: await db.getAllSkipConfigs(username),
         // V2用户信息（包含 oidcSub, role, tags, enabledApis 等）
         userInfo: await db.getUserInfo(username),
-        // 登录统计（loginCount, firstLoginTime, lastLoginTime）
+        // 登录统计（loginCount, lastLoginTime）
         loginStats: await getUserLoginStats(username),
         // 用户密码（V1兼容，通过验证空密码来检查用户是否存在，然后获取密码）
         password: await getUserPassword(username),
@@ -147,7 +147,6 @@ async function getUserPassword(username: string): Promise<string | null> {
 // 辅助函数：获取用户登录统计（通过数据库直接访问）
 async function getUserLoginStats(username: string): Promise<{
   loginCount: number;
-  firstLoginTime: number;
   lastLoginTime: number;
 } | null> {
   try {

@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 导入登录统计（恢复 loginCount, firstLoginTime, lastLoginTime）
+      // 导入登录统计（恢复 loginCount, lastLoginTime）
       if (user.loginStats) {
         try {
           const storage = (db as any).storage;

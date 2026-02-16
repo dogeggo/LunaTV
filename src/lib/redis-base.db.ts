@@ -862,20 +862,16 @@ export abstract class BaseRedisStorage implements IStorage {
       const playRecords = await this.getAllPlayRecords(userName);
       const records = Object.values(playRecords);
       // 即使没有播放记录，也要获取登入统计
-      let userStat: UserStat = { username: userName };
+      let userStat: UserStat;
       try {
         const loginStatsKey = `user_login_stats:${userName}`;
         const storedLoginStats = await this.client.get(loginStatsKey);
-        if (storedLoginStats) {
-          userStat = JSON.parse(storedLoginStats);
-          if (records.length > 0 && !userStat.totalWatchTime) {
-            userStat = await this.updateUserStats(userName);
-          }
-        }
+        userStat = storedLoginStats
+          ? JSON.parse(storedLoginStats)
+          : { username: userName };
       } catch (error) {
         console.error(`获取用户 ${userName} 登入统计失败:`, error);
       }
-
       // 计算统计数据
       const totalWatchTime = userStat.totalWatchTime || 0;
       const totalPlays = userStat.totalPlays || 0;
@@ -921,7 +917,6 @@ export abstract class BaseRedisStorage implements IStorage {
         firstWatchDate,
         // 登入统计字段
         loginCount: userStat.loginCount || 0,
-        firstLoginTime: userStat.firstLoginTime || 0,
         lastLoginTime: userStat.lastLoginTime || 0,
       };
     } catch (error) {
@@ -939,7 +934,6 @@ export abstract class BaseRedisStorage implements IStorage {
         firstWatchDate: Date.now(),
         // 登入统计字段
         loginCount: 0,
-        firstLoginTime: 0,
         lastLoginTime: 0,
       };
     }
@@ -967,9 +961,6 @@ export abstract class BaseRedisStorage implements IStorage {
       if (!userStat.lastLoginTime) {
         userStat.lastLoginTime = ct;
         userStat.loginCount = 1;
-      }
-      if (!userStat.firstLoginTime) {
-        userStat.firstLoginTime = ct;
       }
       if (ct - userStat.lastLoginTime > 4 * 60 * 60 * 1000) {
         userStat.loginCount = (userStat.loginCount || 0) + 1;

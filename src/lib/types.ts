@@ -389,7 +389,6 @@ export interface UserStat {
   // 新增LunaTV-alpha的高级统计字段
   totalMovies?: number; // 观看影片总数（去重）
   firstWatchDate?: number; // 首次观看时间戳
-  firstLoginTime?: number; // 首次登入时间戳（新增）
 }
 
 // 全站播放统计数据结构

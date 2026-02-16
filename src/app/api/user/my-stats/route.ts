@@ -71,18 +71,6 @@ export async function GET(request: NextRequest) {
     let userCreatedAt = user?.createdAt || Date.now();
     // 增强统计数据：添加注册天数和登录天数计算
     const registrationDays = calculateRegistrationDays(userCreatedAt);
-    // 登入天数从登入时间计算，而不是观看时间
-    const firstLoginTime =
-      userStats.firstLoginTime || userStats.lastLoginTime || 0;
-
-    console.log('注册天数计算:', {
-      userCreatedAt,
-      userCreatedAtDate: new Date(userCreatedAt),
-      registrationDays,
-      firstLoginTime: firstLoginTime,
-      firstLoginTimeDate: firstLoginTime ? new Date(firstLoginTime) : null,
-      calculationSource: firstLoginTime > 0 ? '基于登入时间' : '无登入记录',
-    });
 
     const enhancedStats = {
       ...userStats,
@@ -94,8 +82,6 @@ export async function GET(request: NextRequest) {
       registrationDays,
       // 确保包含登入次数
       loginCount: userStats.loginCount ?? 0,
-      // 确保包含登入时间（兼容已有字段）
-      firstLoginTime: firstLoginTime,
       lastLoginTime: userStats.lastLoginTime ?? 0,
     };
 
