@@ -101,24 +101,12 @@ export async function GET(request: NextRequest) {
             dailyData[dateKey].plays += 1;
           }
         });
-
-        const userStat = {
-          username: dbUserStat.username,
-          totalWatchTime: dbUserStat.totalWatchTime,
-          totalPlays: dbUserStat.totalPlays,
-          lastPlayTime: dbUserStat.lastPlayTime,
-          recentRecords: dbUserStat.recentRecords,
-          avgWatchTime: dbUserStat.avgWatchTime,
-          mostWatchedSource: dbUserStat.mostWatchedSource,
-          lastLoginTime: dbUserStat.lastLoginTime,
-          loginCount: dbUserStat.loginCount,
-          registrationDays,
-          createdAt: userCreatedAt,
-        };
-        userStats.push(userStat);
+        dbUserStat.registrationDays = registrationDays;
+        dbUserStat.createdAt = userCreatedAt;
+        userStats.push(dbUserStat);
         // 累计全站统计
-        totalWatchTime += userStat.totalWatchTime;
-        totalPlays += userStat.totalPlays;
+        totalWatchTime += dbUserStat.totalWatchTime;
+        totalPlays += dbUserStat.totalPlays;
       } catch (_error) {
         console.log('获取用户统计数据错误.', _error);
       }

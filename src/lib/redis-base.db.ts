@@ -868,7 +868,7 @@ export abstract class BaseRedisStorage implements IStorage {
         const storedLoginStats = await this.client.get(loginStatsKey);
         if (storedLoginStats) {
           userStat = JSON.parse(storedLoginStats);
-          if (!userStat.username) {
+          if (records.length > 0 && !userStat.totalWatchTime) {
             userStat = await this.updateUserStats(userName);
           }
         }
@@ -985,9 +985,9 @@ export abstract class BaseRedisStorage implements IStorage {
         const records = Object.values(userPlayRecords);
         if (records.length !== 0) {
           if (!userStat.totalWatchTime) {
-            records.forEach((record) => {
-              userStat.totalWatchTime += record.play_time || 0;
-            });
+            userStat.totalWatchTime = records.reduce((sum, record) => {
+              return sum + (record.play_time || 0);
+            }, 0);
           }
           if (!userStat.totalPlays) {
             userStat.totalPlays = records.length;
