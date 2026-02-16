@@ -861,64 +861,54 @@ export abstract class BaseRedisStorage implements IStorage {
       // 获取用户所有播放记录
       const playRecords = await this.getAllPlayRecords(userName);
       const records = Object.values(playRecords);
-      // 即使没有播放记录，也要获取登入统计
-      let userStat: UserStat;
-      try {
-        const loginStatsKey = `user_login_stats:${userName}`;
-        const storedLoginStats = await this.client.get(loginStatsKey);
-        userStat = storedLoginStats
-          ? JSON.parse(storedLoginStats)
-          : { username: userName };
-      } catch (error) {
-        console.error(`获取用户 ${userName} 登入统计失败:`, error);
-      }
+      const loginStatsKey = `user_login_stats:${userName}`;
+      const storedLoginStats = await this.client.get(loginStatsKey);
+      let userStat: UserStat = storedLoginStats
+        ? JSON.parse(storedLoginStats)
+        : { username: userName };
+
       // 计算统计数据
       const totalWatchTime = userStat.totalWatchTime || 0;
       const totalPlays = userStat.totalPlays || 0;
-      const lastPlayTime = userStat.lastPlayTime || 0;
-      const firstWatchDate = userStat.firstWatchDate || 0;
 
       const userMovieHis = `user_movie_his:${userName}`;
-      const totalMovies = await this.client.sCard(userMovieHis);
-
-      // 最近10条记录，按时间排序
-      const recentRecords = records
-        .sort((a, b) => (b.save_time || 0) - (a.save_time || 0))
-        .slice(0, 10);
+      userStat.totalMovies = await this.client.sCard(userMovieHis);
 
       // 平均观看时长
-      const avgWatchTime = totalPlays > 0 ? totalWatchTime / totalPlays : 0;
-
-      // 最常观看的来源
-      const sourceMap = new Map<string, number>();
-      records.forEach((record) => {
-        const sourceName = record.source_name || '未知来源';
-        const count = sourceMap.get(sourceName) || 0;
-        sourceMap.set(sourceName, count + 1);
-      });
-
-      const mostWatchedSource =
-        sourceMap.size > 0
-          ? Array.from(sourceMap.entries()).reduce((a, b) =>
-              a[1] > b[1] ? a : b,
-            )[0]
-          : '';
-
-      return {
-        username: userName,
-        totalWatchTime,
-        totalPlays,
-        lastPlayTime,
-        recentRecords,
-        avgWatchTime,
-        mostWatchedSource,
-        // 新增字段
-        totalMovies,
-        firstWatchDate,
-        // 登入统计字段
-        loginCount: userStat.loginCount || 0,
-        lastLoginTime: userStat.lastLoginTime || 0,
+      userStat.avgWatchTime = totalPlays > 0 ? totalWatchTime / totalPlays : 0;
+      if (records.length > 0) {
+        // 最近10条记录，按时间排序
+        userStat.recentRecords = records
+          .sort((a, b) => (b.save_time || 0) - (a.save_time || 0))
+          .slice(0, 10);
+        // 最常观看的来源
+        const sourceMap = new Map<string, number>();
+        records.forEach((record) => {
+          const sourceName = record.source_name || '未知来源';
+          const count = sourceMap.get(sourceName) || 0;
+          sourceMap.set(sourceName, count + 1);
+        });
+        userStat.mostWatchedSource =
+          sourceMap.size > 0
+            ? Array.from(sourceMap.entries()).reduce((a, b) =>
+                a[1] > b[1] ? a : b,
+              )[0]
+            : '';
+      }
+      const enhancedStats = {
+        ...userStat,
+        totalWatchTime: totalWatchTime,
+        totalPlays: totalPlays,
+        lastPlayTime: userStat.lastPlayTime ?? userStat.lastLoginTime ?? 0,
+        mostWatchedSource: userStat.mostWatchedSource ?? '',
+        recentRecords: userStat.recentRecords ?? [],
+        totalMovies: userStat.totalMovies ?? 0,
+        firstWatchDate:
+          userStat.firstWatchDate ?? userStat.lastPlayTime ?? Date.now(),
+        loginCount: userStat.loginCount ?? 0,
+        lastLoginTime: userStat.lastLoginTime ?? 0,
       };
+      return enhancedStats;
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
       return {

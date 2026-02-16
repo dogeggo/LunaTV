@@ -59,10 +59,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: '用户已被封禁' }, { status: 401 });
       }
     }
-
     // 获取用户个人统计数据
     const userStats = await db.getUserStat(authInfo.username);
-
     // 对于所有用户（包括站长），都尝试从配置中获取创建时间
     const user = config.UserConfig.Users.find(
       (u) => u.username === authInfo.username,
@@ -71,21 +69,9 @@ export async function GET(request: NextRequest) {
     let userCreatedAt = user?.createdAt || Date.now();
     // 增强统计数据：添加注册天数和登录天数计算
     const registrationDays = calculateRegistrationDays(userCreatedAt);
-
-    const enhancedStats = {
-      ...userStats,
-      // 确保新字段有默认值
-      totalMovies: userStats.totalMovies ?? 0,
-      firstWatchDate:
-        userStats.firstWatchDate ?? userStats.lastPlayTime ?? Date.now(),
-      // 注册天数计算（基于真实的用户创建时间）
-      registrationDays,
-      // 确保包含登入次数
-      loginCount: userStats.loginCount ?? 0,
-      lastLoginTime: userStats.lastLoginTime ?? 0,
-    };
-
-    return NextResponse.json(enhancedStats, { status: 200 });
+    userStats.registrationDays = registrationDays;
+    userStats.createdAt = userCreatedAt;
+    return NextResponse.json(userStats, { status: 200 });
   } catch (err) {
     console.error('获取用户个人统计失败:', err);
     return NextResponse.json(
