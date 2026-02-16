@@ -862,7 +862,7 @@ export abstract class BaseRedisStorage implements IStorage {
       const playRecords = await this.getAllPlayRecords(userName);
       const records = Object.values(playRecords);
       // 即使没有播放记录，也要获取登入统计
-      let userStats: UserStat = {
+      let userStat: UserStat = {
         username: userName,
         loginCount: 0,
         firstLoginTime: 0,
@@ -873,21 +873,23 @@ export abstract class BaseRedisStorage implements IStorage {
         const loginStatsKey = `user_login_stats:${userName}`;
         const storedLoginStats = await this.client.get(loginStatsKey);
         if (storedLoginStats) {
-          userStats = JSON.parse(storedLoginStats);
+          userStat = JSON.parse(storedLoginStats);
         }
       } catch (error) {
         console.error(`获取用户 ${userName} 登入统计失败:`, error);
       }
-
+      if (!userStat.username) {
+        this.updateUserStats(userName);
+      }
       // 计算统计数据
-      const totalWatchTime = userStats.totalWatchTime || 0;
-      const totalPlays = userStats.totalPlays || 0;
-      const lastPlayTime = userStats.lastPlayTime || 0;
+      const totalWatchTime = userStat.totalWatchTime || 0;
+      const totalPlays = userStat.totalPlays || 0;
+      const lastPlayTime = userStat.lastPlayTime || 0;
 
       const userMovieHis = `user_movie_his:${userName}`;
       const totalMovies = await this.client.sCard(userMovieHis);
       // 计算首次观看时间
-      const firstWatchDate = userStats.firstWatchDate;
+      const firstWatchDate = userStat.firstWatchDate;
 
       // 最近10条记录，按时间排序
       const recentRecords = records
@@ -924,9 +926,9 @@ export abstract class BaseRedisStorage implements IStorage {
         totalMovies,
         firstWatchDate,
         // 登入统计字段
-        loginCount: userStats.loginCount,
-        firstLoginTime: userStats.firstLoginTime,
-        lastLoginTime: userStats.lastLoginTime,
+        loginCount: userStat.loginCount,
+        firstLoginTime: userStat.firstLoginTime,
+        lastLoginTime: userStat.lastLoginTime,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -1004,7 +1006,7 @@ export abstract class BaseRedisStorage implements IStorage {
           if (!userStat.totalMovies) {
             userStat.totalMovies = new Set(
               records
-                .filter((r) => r.play_time + 10 * 60 >= r.total_time)
+                .filter((r) => r.play_time >= r.total_time * 0.9)
                 .map((r) => `${r.title}_${r.year}`),
             ).size;
           }

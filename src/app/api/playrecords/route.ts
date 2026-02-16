@@ -117,7 +117,13 @@ export async function POST(request: NextRequest) {
       last_tj_time: existingRecord?.last_tj_time ?? Date.now(),
       original_episodes: originalEpisodes,
     } as PlayRecord;
-    if (finalRecord.play_time + 10 * 60 >= finalRecord.total_time) {
+    const timeCon = finalRecord.play_time >= finalRecord.total_time * 0.9;
+    if (
+      (timeCon && finalRecord.total_episodes == 1) ||
+      (timeCon &&
+        finalRecord.total_episodes > 1 &&
+        finalRecord.index >= finalRecord.total_episodes * 0.9)
+    ) {
       const movieKey = `${record.title}_${record.year}`;
       const userMovieHis = `user_movie_his:${authInfo.username}`;
       await db.getClient().sAdd(userMovieHis, movieKey);
