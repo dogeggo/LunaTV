@@ -1001,26 +1001,26 @@ export abstract class BaseRedisStorage implements IStorage {
               ...records.map((r) => r.save_time || Date.now()),
             );
           }
-          userStat.totalMovies = new Set(
-            records
-              .filter((r) => r.play_time + 10 * 60 >= r.total_time)
-              .map((r) => `${r.title}_${r.year}`),
-          ).size;
+          if (!userStat.totalMovies) {
+            userStat.totalMovies = new Set(
+              records
+                .filter((r) => r.play_time + 10 * 60 >= r.total_time)
+                .map((r) => `${r.title}_${r.year}`),
+            ).size;
+          }
         }
       }
       if (playRecord) {
         await updateWatchTime(playRecord, userStat);
-        if (ct - userStat.lastPlayTime > 60 * 1000) {
+        if (ct - userStat.lastPlayTime > 3 * 60 * 1000) {
           userStat.totalPlays += 1;
         }
         userStat.lastPlayTime = ct;
       }
       // 保存更新后的统计数据
       await this.client.set(loginStatsKey, JSON.stringify(userStat));
-
-      console.log(`用户 ${username} 统计已更新:`, userStat);
     } catch (error) {
-      console.error(`更新用户 ${username} 统计失败:`, error);
+      console.error(`更新用户 ${username}  统计失败:`, error);
       throw error;
     }
   }
@@ -1075,7 +1075,7 @@ export async function updateWatchTime(
       }
     }
     console.log(
-      `观看时间增量计算: ${record.title} 第${record.index}集 - 增量: ${watchTimeIncrement}s`,
+      `用户(${userStat.username})观看时间增量计算: ${record.title} 第${record.index}集 - 增量: ${watchTimeIncrement}s`,
     );
     // 只要有观看时间增量就更新统计数据
     if (watchTimeIncrement > 0) {
