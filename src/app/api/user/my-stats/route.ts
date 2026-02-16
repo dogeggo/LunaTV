@@ -142,6 +142,7 @@ export async function PUT(request: NextRequest) {
       console.error('保存登入统计失败:', saveError);
       // 即使保存失败也返回成功，因为登录本身是成功的
     }
+    return NextResponse.json({}, { status: 200 });
   } catch (error) {
     console.error('PUT /api/user/my-stats - 记录登入时间失败:', error);
   }
