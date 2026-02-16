@@ -16,7 +16,7 @@
 
 import { getAuthInfoFromBrowserCookie } from './auth';
 import type { PlayRecord } from './types';
-import { EpisodeSkipConfig, UserPlayStat } from './types';
+import { EpisodeSkipConfig, UserStat } from './types';
 import { forceClearWatchingUpdatesCache } from './watching-updates';
 
 // 重新导出类型以保持API兼容性
@@ -34,7 +34,7 @@ function triggerGlobalError(message: string) {
 }
 
 // 为了向后兼容，保留UserStats类型别名
-export type UserStats = UserPlayStat;
+export type UserStats = UserStat;
 
 // ---- 收藏类型 ----
 export interface Favorite {
@@ -943,14 +943,6 @@ export async function savePlayRecord(
           console.warn('清除缓存失败:', cacheError);
         }
       }
-      // 🔧 优化：移除每次保存后的同步请求，因为我们已经使用乐观更新
-      // 缓存已在 line 848-850 更新，不需要每次都从服务器 GET 最新数据
-      // 只在更新集数时才需要同步（上面的 if 块已处理）
-
-      // 异步更新用户统计数据（不阻塞主流程）
-      // updateUserStats(record).catch((err) => {
-      //   console.warn('更新用户统计数据失败:', err);
-      // });
     } catch (err) {
       await handleDatabaseOperationFailure('playRecords', err);
       throw err;
@@ -973,11 +965,6 @@ export async function savePlayRecord(
         detail: allRecords,
       }),
     );
-
-    // 异步更新用户统计数据（不阻塞主流程）
-    // updateUserStats(record).catch((err) => {
-    //   console.warn('更新用户统计数据失败:', err);
-    // });
   } catch (err) {
     console.error('保存播放记录失败:', err);
     throw err;

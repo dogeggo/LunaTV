@@ -2,13 +2,15 @@
 
 import { createClient, RedisClientType } from 'redis';
 
+import { db } from '@/lib/db';
+
 import { AdminConfig } from './admin.types';
 import {
   EpisodeSkipConfig,
   Favorite,
   IStorage,
   PlayRecord,
-  UserPlayStat,
+  UserStat,
 } from './types';
 
 // 搜索历史最大条数
@@ -173,6 +175,9 @@ export abstract class BaseRedisStorage implements IStorage {
     this.client = createRedisClient(config, globalSymbol);
     this.withRetry = createRetryWrapper(config.clientName, () => this.client);
   }
+  getClient(): RedisClientType {
+    return this.client;
+  }
 
   // ---------- 播放记录 ----------
   // 使用 Hash 结构存储所有播放记录，提升性能
@@ -190,7 +195,7 @@ export abstract class BaseRedisStorage implements IStorage {
     return val ? (JSON.parse(val) as PlayRecord) : null;
   }
 
-  async setPlayRecord(
+  async savePlayRecord(
     userName: string,
     key: string,
     record: PlayRecord,
@@ -206,7 +211,6 @@ export abstract class BaseRedisStorage implements IStorage {
     const allRecords = await this.withRetry(() =>
       this.client.hGetAll(this.prHashKey(userName)),
     );
-
     const result: Record<string, PlayRecord> = {};
     for (const [key, value] of Object.entries(allRecords)) {
       if (value) {
@@ -852,74 +856,38 @@ export abstract class BaseRedisStorage implements IStorage {
     }
   }
   // 获取用户播放统计
-  async getUserPlayStat(userName: string): Promise<UserPlayStat> {
+  async getUserStat(userName: string): Promise<UserStat> {
     try {
       // 获取用户所有播放记录
       const playRecords = await this.getAllPlayRecords(userName);
       const records = Object.values(playRecords);
+      // 即使没有播放记录，也要获取登入统计
+      let userStats: UserStat = {
+        username: userName,
+        loginCount: 0,
+        firstLoginTime: 0,
+        lastLoginTime: 0,
+      };
 
-      if (records.length === 0) {
-        // 即使没有播放记录，也要获取登入统计
-        let loginStats = {
-          loginCount: 0,
-          firstLoginTime: 0,
-          lastLoginTime: 0,
-          lastLoginDate: 0,
-        };
-
-        try {
-          const loginStatsKey = `user_login_stats:${userName}`;
-          const storedLoginStats = await this.client.get(loginStatsKey);
-          if (storedLoginStats) {
-            const parsed = JSON.parse(storedLoginStats);
-            loginStats = {
-              loginCount: parsed.loginCount || 0,
-              firstLoginTime: parsed.firstLoginTime || 0,
-              lastLoginTime: parsed.lastLoginTime || 0,
-              lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0,
-            };
-          }
-        } catch (error) {
-          console.error(`获取用户 ${userName} 登入统计失败:`, error);
+      try {
+        const loginStatsKey = `user_login_stats:${userName}`;
+        const storedLoginStats = await this.client.get(loginStatsKey);
+        if (storedLoginStats) {
+          userStats = JSON.parse(storedLoginStats);
         }
-
-        return {
-          username: userName,
-          totalWatchTime: 0,
-          totalPlays: 0,
-          lastPlayTime: 0,
-          recentRecords: [],
-          avgWatchTime: 0,
-          mostWatchedSource: '',
-          // 新增字段
-          totalMovies: 0,
-          firstWatchDate: Date.now(),
-          lastUpdateTime: Date.now(),
-          // 登入统计字段
-          loginCount: loginStats.loginCount,
-          firstLoginTime: loginStats.firstLoginTime,
-          lastLoginTime: loginStats.lastLoginTime,
-          lastLoginDate: loginStats.lastLoginDate,
-        };
+      } catch (error) {
+        console.error(`获取用户 ${userName} 登入统计失败:`, error);
       }
 
       // 计算统计数据
-      const totalWatchTime = records.reduce(
-        (sum, record) => sum + (record.play_time || 0),
-        0,
-      );
-      const totalPlays = records.length;
-      const lastPlayTime = Math.max(...records.map((r) => r.save_time || 0));
+      const totalWatchTime = userStats.totalWatchTime || 0;
+      const totalPlays = userStats.totalPlays || 0;
+      const lastPlayTime = userStats.lastPlayTime || 0;
 
-      // 计算观看影片总数（去重）
-      const totalMovies = new Set(
-        records.map((r) => `${r.title}_${r.source_name}_${r.year}`),
-      ).size;
-
+      const userMovieHis = `user_movie_his:${userName}`;
+      const totalMovies = await this.client.sCard(userMovieHis);
       // 计算首次观看时间
-      const firstWatchDate = Math.min(
-        ...records.map((r) => r.save_time || Date.now()),
-      );
+      const firstWatchDate = userStats.firstWatchDate;
 
       // 最近10条记录，按时间排序
       const recentRecords = records
@@ -944,30 +912,6 @@ export abstract class BaseRedisStorage implements IStorage {
             )[0]
           : '';
 
-      // 获取登入统计数据
-      let loginStats = {
-        loginCount: 0,
-        firstLoginTime: 0,
-        lastLoginTime: 0,
-        lastLoginDate: 0,
-      };
-
-      try {
-        const loginStatsKey = `user_login_stats:${userName}`;
-        const storedLoginStats = await this.client.get(loginStatsKey);
-        if (storedLoginStats) {
-          const parsed = JSON.parse(storedLoginStats);
-          loginStats = {
-            loginCount: parsed.loginCount || 0,
-            firstLoginTime: parsed.firstLoginTime || 0,
-            lastLoginTime: parsed.lastLoginTime || 0,
-            lastLoginDate: parsed.lastLoginDate || parsed.lastLoginTime || 0,
-          };
-        }
-      } catch (error) {
-        console.error(`获取用户 ${userName} 登入统计失败:`, error);
-      }
-
       return {
         username: userName,
         totalWatchTime,
@@ -979,12 +923,10 @@ export abstract class BaseRedisStorage implements IStorage {
         // 新增字段
         totalMovies,
         firstWatchDate,
-        lastUpdateTime: Date.now(),
         // 登入统计字段
-        loginCount: loginStats.loginCount,
-        firstLoginTime: loginStats.firstLoginTime,
-        lastLoginTime: loginStats.lastLoginTime,
-        lastLoginDate: loginStats.lastLoginDate,
+        loginCount: userStats.loginCount,
+        firstLoginTime: userStats.firstLoginTime,
+        lastLoginTime: userStats.lastLoginTime,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -999,72 +941,147 @@ export abstract class BaseRedisStorage implements IStorage {
         // 新增字段
         totalMovies: 0,
         firstWatchDate: Date.now(),
-        lastUpdateTime: Date.now(),
         // 登入统计字段
         loginCount: 0,
         firstLoginTime: 0,
         lastLoginTime: 0,
-        lastLoginDate: 0,
       };
     }
   }
 
-  // 更新播放统计（当用户播放时调用）
-  async updatePlayStatistics(
-    _userName: string,
-    _source: string,
-    _id: string,
-    _watchTime: number,
+  // 更新用户统计
+  async updateUserStats(
+    username: string,
+    playRecord?: PlayRecord,
   ): Promise<void> {
     try {
-      // 清除全站统计缓存，下次查询时重新计算
-      await this.deleteCache('play_stats_summary');
-
-      // 这里可以添加更多实时统计更新逻辑
-      // 比如更新用户统计缓存、内容热度等
-      // 暂时只是清除缓存，实际统计在查询时重新计算
-    } catch (error) {
-      console.error('更新播放统计失败:', error);
-    }
-  }
-
-  // 更新用户登入统计
-  async updateUserLoginStats(
-    userName: string,
-    loginTime: number,
-    isFirstLogin?: boolean,
-  ): Promise<void> {
-    try {
-      const loginStatsKey = `user_login_stats:${userName}`;
+      const loginStatsKey = `user_login_stats:${username}`;
 
       // 获取当前登入统计数据
       const currentStats = await this.client.get(loginStatsKey);
-      const loginStats = currentStats
+      const userStat: UserStat = currentStats
         ? JSON.parse(currentStats)
         : {
-            loginCount: 0,
-            firstLoginTime: null,
-            lastLoginTime: null,
-            lastLoginDate: null,
+            username,
           };
-
-      // 更新统计数据
-      loginStats.loginCount = (loginStats.loginCount || 0) + 1;
-      loginStats.lastLoginTime = loginTime;
-      loginStats.lastLoginDate = loginTime; // 保持兼容性
-
-      // 如果是首次登入，记录首次登入时间
-      if (isFirstLogin || !loginStats.firstLoginTime) {
-        loginStats.firstLoginTime = loginTime;
+      if (!userStat.username) {
+        userStat.username = username;
       }
-
+      const ct = Date.now();
+      if (!userStat.lastLoginTime) {
+        userStat.lastLoginTime = ct;
+        userStat.loginCount = 1;
+      }
+      if (!userStat.firstLoginTime) {
+        userStat.firstLoginTime = ct;
+      }
+      if (ct - userStat.lastLoginTime > 4 * 60 * 60 * 1000) {
+        userStat.loginCount = (userStat.loginCount || 0) + 1;
+        userStat.lastLoginTime = ct;
+      }
+      if (
+        !userStat.totalWatchTime ||
+        !userStat.totalPlays ||
+        !userStat.firstWatchDate ||
+        !userStat.totalMovies
+      ) {
+        const userPlayRecords = await db.getAllPlayRecords(userStat.username);
+        const records = Object.values(userPlayRecords);
+        if (records.length !== 0) {
+          if (!userStat.totalWatchTime) {
+            records.forEach((record) => {
+              userStat.totalWatchTime += record.play_time || 0;
+            });
+          }
+          if (!userStat.totalPlays) {
+            userStat.totalPlays = records.length;
+          }
+          if (!userStat.firstWatchDate) {
+            userStat.firstWatchDate = Math.min(
+              ...records.map((r) => r.save_time || Date.now()),
+            );
+          }
+          userStat.totalMovies = new Set(
+            records
+              .filter((r) => r.play_time + 10 * 60 >= r.total_time)
+              .map((r) => `${r.title}_${r.year}`),
+          ).size;
+        }
+      }
+      if (playRecord) {
+        await updateWatchTime(playRecord, userStat);
+        if (ct - userStat.lastPlayTime > 60 * 1000) {
+          userStat.totalPlays += 1;
+        }
+        userStat.lastPlayTime = ct;
+      }
       // 保存更新后的统计数据
-      await this.client.set(loginStatsKey, JSON.stringify(loginStats));
+      await this.client.set(loginStatsKey, JSON.stringify(userStat));
 
-      console.log(`用户 ${userName} 登入统计已更新:`, loginStats);
+      console.log(`用户 ${username} 统计已更新:`, userStat);
     } catch (error) {
-      console.error(`更新用户 ${userName} 登入统计失败:`, error);
+      console.error(`更新用户 ${username} 统计失败:`, error);
       throw error;
     }
+  }
+}
+
+/**
+ * 更新用户统计数据
+ * 智能计算观看时间增量，支持防刷机制
+ */
+export async function updateWatchTime(
+  record: PlayRecord,
+  userStat: UserStat,
+): Promise<void> {
+  if (!record.key) return;
+  try {
+    const existingRecord = await db.getPlayRecord(
+      userStat.username,
+      record.key,
+    );
+    if (!existingRecord) return;
+    // 获取上次播放进度和更新时间
+    const lastProgress = existingRecord.play_time;
+    const lastUpdateTime = existingRecord.last_tj_time;
+
+    // 计算观看时间增量
+    let watchTimeIncrement = 0;
+    const currentTime = Date.now();
+    const timeSinceLastUpdate = currentTime - lastUpdateTime;
+
+    // 放宽更新条件：只要有实际播放进度变化就更新
+    if (timeSinceLastUpdate < 10 * 1000) {
+      console.log(
+        `跳过统计数据更新: 时间间隔过短 (${Math.floor(timeSinceLastUpdate / 1000)}s)`,
+      );
+      return;
+    }
+
+    // 改进的观看时间计算逻辑
+    if (record.play_time > lastProgress) {
+      // 正常播放进度增加
+      watchTimeIncrement = record.play_time - lastProgress;
+      // 如果进度增加过大（可能是快进），限制增量
+      if (watchTimeIncrement > 300) {
+        // 超过5分钟认为是快进
+        watchTimeIncrement = Math.min(
+          watchTimeIncrement,
+          Math.floor(timeSinceLastUpdate / 1000) + 60,
+        );
+        console.log(
+          `检测到快进操作: ${record.title} 第${record.index}集 - 进度增加: ${record.play_time - lastProgress}s, 限制增量为: ${watchTimeIncrement}s`,
+        );
+      }
+    }
+    console.log(
+      `观看时间增量计算: ${record.title} 第${record.index}集 - 增量: ${watchTimeIncrement}s`,
+    );
+    // 只要有观看时间增量就更新统计数据
+    if (watchTimeIncrement > 0) {
+      userStat.totalWatchTime += watchTimeIncrement;
+    }
+  } catch (error) {
+    console.error('更新用户统计数据失败:', error);
   }
 }

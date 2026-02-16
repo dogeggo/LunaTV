@@ -10,7 +10,6 @@ import CacheCleaner from '../components/CacheCleaner';
 import { DownloadPanel } from '../components/download/DownloadPanel';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import QueryProvider from '../components/QueryProvider';
-import { SessionTracker } from '../components/SessionTracker';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { DownloadProvider } from '../contexts/DownloadContext';
@@ -115,7 +114,6 @@ export default async function RootLayout({
             <DownloadProvider>
               <SiteProvider siteName={siteName} announcement={announcement}>
                 <CacheCleaner />
-                <SessionTracker />
                 {children}
                 <GlobalErrorIndicator />
               </SiteProvider>

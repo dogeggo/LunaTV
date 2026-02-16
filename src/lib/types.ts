@@ -1,7 +1,10 @@
+import { RedisClientType } from 'redis';
+
 import { AdminConfig } from './admin.types';
 
 // 播放记录数据结构
 export interface PlayRecord {
+  key?: string;
   title: string;
   source_name: string;
   cover: string;
@@ -15,6 +18,7 @@ export interface PlayRecord {
   search_title: string; // 搜索时使用的标题
   remarks?: string; // 备注信息（如"已完结"、"更新至20集"等）
   douban_id?: number; // 豆瓣ID（用于准确识别视频）
+  last_tj_time?: number;
 }
 
 // 收藏数据结构
@@ -91,9 +95,11 @@ export interface ShortDramaResponse<T> {
 
 // 存储接口
 export interface IStorage {
+  getClient(): RedisClientType;
+
   // 播放记录相关
   getPlayRecord(userName: string, key: string): Promise<PlayRecord | null>;
-  setPlayRecord(
+  savePlayRecord(
     userName: string,
     key: string,
     record: PlayRecord,
@@ -123,6 +129,8 @@ export interface IStorage {
     oidcSub?: string,
     enabledApis?: string[],
   ): Promise<Record<string, string>>;
+
+  getUserByOidcSub(oidcSub: string): Promise<string | null>;
 
   getUserInfo(userName: string): Promise<{
     username: string;
@@ -163,6 +171,27 @@ export interface IStorage {
     userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }>;
 
+  // 剧集跳过配置（新版，多片段支持）
+  getEpisodeSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+  ): Promise<EpisodeSkipConfig | null>;
+  saveEpisodeSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+    config: EpisodeSkipConfig,
+  ): Promise<void>;
+  deleteEpisodeSkipConfig(
+    userName: string,
+    source: string,
+    id: string,
+  ): Promise<void>;
+  getAllEpisodeSkipConfigs(
+    userName: string,
+  ): Promise<{ [key: string]: EpisodeSkipConfig }>;
+
   // 数据清理相关
   clearAllData(): Promise<void>;
 
@@ -173,20 +202,9 @@ export interface IStorage {
   clearExpiredCache(prefix?: string): Promise<void>;
 
   // 播放统计相关
-  getUserPlayStat(userName: string): Promise<UserPlayStat>;
-  updatePlayStatistics(
-    userName: string,
-    source: string,
-    id: string,
-    watchTime: number,
-  ): Promise<void>;
-
+  getUserStat(userName: string): Promise<UserStat>;
   // 登入统计相关
-  updateUserLoginStats(
-    userName: string,
-    loginTime: number,
-    isFirstLogin?: boolean,
-  ): Promise<void>;
+  updateUserStats(username: string, playRecord?: PlayRecord): Promise<void>;
 }
 
 // 搜索结果数据结构
@@ -356,24 +374,22 @@ export interface EpisodeSkipConfig {
 }
 
 // 用户播放统计数据结构
-export interface UserPlayStat {
+export interface UserStat {
   username: string; // 用户名
-  totalWatchTime: number; // 总观看时间（秒）
-  totalPlays: number; // 总播放次数
-  lastPlayTime: number; // 最后播放时间戳
-  recentRecords: PlayRecord[]; // 最近播放记录（最多10条）
-  avgWatchTime: number; // 平均每次观看时长
-  mostWatchedSource: string; // 最常观看的来源
-
+  totalWatchTime?: number; // 总观看时间（秒）
+  totalPlays?: number; // 总播放次数
+  lastPlayTime?: number; // 最后播放时间戳
+  recentRecords?: PlayRecord[]; // 最近播放记录（最多10条）
+  avgWatchTime?: number; // 平均每次观看时长
+  mostWatchedSource?: string; // 最常观看的来源
+  lastLoginTime?: number; // 最后登入时间戳
+  loginCount?: number; // 登入次数（新增）
+  registrationDays?: number;
+  createdAt?: number;
   // 新增LunaTV-alpha的高级统计字段
   totalMovies?: number; // 观看影片总数（去重）
   firstWatchDate?: number; // 首次观看时间戳
-  lastUpdateTime?: number; // 最后更新时间戳
-  createdAt?: number; // 注册时间戳
-  lastLoginDate?: number; // 最后登录时间（已有字段）
-  lastLoginTime?: number; // 最后登入时间戳（新增，与lastLoginDate统一概念）
   firstLoginTime?: number; // 首次登入时间戳（新增）
-  loginCount?: number; // 登入次数（新增）
 }
 
 // 全站播放统计数据结构

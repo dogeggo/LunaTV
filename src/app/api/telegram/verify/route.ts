@@ -351,7 +351,7 @@ export async function GET(request: Request) {
         `[Verify ${requestId}] Recording login time for user:`,
         username,
       );
-      await db.updateUserLoginStats(username, Date.now(), isNewUser);
+      await db.updateUserStats(username);
       console.log(`[Verify ${requestId}] Login time recorded successfully`);
     } catch (error) {
       console.log(`[Verify ${requestId}] 记录登入时间失败:`, error);

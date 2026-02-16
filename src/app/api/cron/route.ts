@@ -245,7 +245,7 @@ async function refreshRecordAndFavorites() {
 
             const episodeCount = detail.episodes?.length || 0;
             if (episodeCount > 0 && episodeCount !== record.total_episodes) {
-              await db.savePlayRecord(userName, source, id, {
+              await db.savePlayRecord(userName, key, {
                 title: detail.title || record.title,
                 source_name: record.source_name,
                 cover: detail.poster || record.cover,
@@ -383,7 +383,7 @@ async function cleanupInactiveUsers() {
         let userStats;
         try {
           userStats = (await Promise.race([
-            db.getUserPlayStat(user.username),
+            db.getUserStat(user.username),
             new Promise((_, reject) =>
               setTimeout(() => reject(new Error('getUserPlayStat超时')), 5000),
             ),
@@ -401,10 +401,7 @@ async function cleanupInactiveUsers() {
         // 适用于所有用户类型（普通、Telegram、OIDC）
         // 因为所有用户注册时都会自动记录登入时间，不存在"从未登入"的情况
         const lastLoginTime =
-          userStats.lastLoginTime ||
-          userStats.lastLoginDate ||
-          userStats.firstLoginTime ||
-          0;
+          userStats.lastLoginTime || userStats.firstLoginTime || 0;
 
         // 删除条件：有登入记录且最后登入时间超过阈值
         const shouldDelete = lastLoginTime > 0 && lastLoginTime < cutoffTime;

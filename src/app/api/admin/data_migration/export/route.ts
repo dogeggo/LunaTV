@@ -149,7 +149,6 @@ async function getUserLoginStats(username: string): Promise<{
   loginCount: number;
   firstLoginTime: number;
   lastLoginTime: number;
-  lastLoginDate: number;
 } | null> {
   try {
     const storage = (db as any).storage;

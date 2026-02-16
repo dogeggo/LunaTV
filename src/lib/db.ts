@@ -6,7 +6,7 @@ import {
   Favorite,
   IStorage,
   PlayRecord,
-  UserPlayStat,
+  UserStat,
 } from './types';
 
 // storage type 常量: 'localstorage' | 'redis' 默认 'localstorage'
@@ -53,24 +53,24 @@ export class DbManager {
     this.storage = getStorage();
   }
 
+  getClient() {
+    return this.storage.getClient();
+  }
+
   // 播放记录相关方法
   async getPlayRecord(
     userName: string,
-    source: string,
-    id: string,
+    key: string,
   ): Promise<PlayRecord | null> {
-    const key = generateStorageKey(source, id);
     return this.storage.getPlayRecord(userName, key);
   }
 
   async savePlayRecord(
     userName: string,
-    source: string,
-    id: string,
+    key: string,
     record: PlayRecord,
   ): Promise<void> {
-    const key = generateStorageKey(source, id);
-    await this.storage.setPlayRecord(userName, key, record);
+    await this.storage.savePlayRecord(userName, key, record);
   }
 
   async getAllPlayRecords(userName: string): Promise<{
@@ -168,10 +168,7 @@ export class DbManager {
   }
 
   async getUserByOidcSub(oidcSub: string): Promise<string | null> {
-    if (typeof (this.storage as any).getUserByOidcSub === 'function') {
-      return (this.storage as any).getUserByOidcSub(oidcSub);
-    }
-    return null;
+    return this.storage.getUserByOidcSub(oidcSub);
   }
 
   async getUserInfo(userName: string): Promise<{
@@ -201,24 +198,16 @@ export class DbManager {
 
   // 获取全部用户名
   async getAllUserName(): Promise<string[]> {
-    if (typeof (this.storage as any).getAllUsers === 'function') {
-      return (this.storage as any).getAllUsers();
-    }
-    return [];
+    return this.storage.getAllUsers();
   }
 
   // ---------- 管理员配置 ----------
   async getAdminConfig(): Promise<AdminConfig | null> {
-    if (typeof (this.storage as any).getAdminConfig === 'function') {
-      return (this.storage as any).getAdminConfig();
-    }
-    return null;
+    return this.storage.getAdminConfig();
   }
 
   async saveAdminConfig(config: AdminConfig): Promise<void> {
-    if (typeof (this.storage as any).setAdminConfig === 'function') {
-      await (this.storage as any).setAdminConfig(config);
-    }
+    await this.storage.setAdminConfig(config);
   }
 
   // ---------- 跳过片头片尾配置 ----------
@@ -227,10 +216,7 @@ export class DbManager {
     source: string,
     id: string,
   ): Promise<EpisodeSkipConfig | null> {
-    if (typeof (this.storage as any).getSkipConfig === 'function') {
-      return (this.storage as any).getSkipConfig(userName, source, id);
-    }
-    return null;
+    return this.storage.getSkipConfig(userName, source, id);
   }
 
   async setSkipConfig(
@@ -239,9 +225,7 @@ export class DbManager {
     id: string,
     config: EpisodeSkipConfig,
   ): Promise<void> {
-    if (typeof (this.storage as any).setSkipConfig === 'function') {
-      await (this.storage as any).setSkipConfig(userName, source, id, config);
-    }
+    await this.storage.setSkipConfig(userName, source, id, config);
   }
 
   async deleteSkipConfig(
@@ -249,18 +233,13 @@ export class DbManager {
     source: string,
     id: string,
   ): Promise<void> {
-    if (typeof (this.storage as any).deleteSkipConfig === 'function') {
-      await (this.storage as any).deleteSkipConfig(userName, source, id);
-    }
+    await this.storage.deleteSkipConfig(userName, source, id);
   }
 
   async getAllSkipConfigs(
     userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }> {
-    if (typeof (this.storage as any).getAllSkipConfigs === 'function') {
-      return (this.storage as any).getAllSkipConfigs(userName);
-    }
-    return {};
+    return this.storage.getAllSkipConfigs(userName);
   }
 
   // ---------- 剧集跳过配置（新版，多片段支持）----------
@@ -269,10 +248,7 @@ export class DbManager {
     source: string,
     id: string,
   ): Promise<EpisodeSkipConfig | null> {
-    if (typeof (this.storage as any).getEpisodeSkipConfig === 'function') {
-      return (this.storage as any).getEpisodeSkipConfig(userName, source, id);
-    }
-    return null;
+    return this.storage.getEpisodeSkipConfig(userName, source, id);
   }
 
   async saveEpisodeSkipConfig(
@@ -281,14 +257,7 @@ export class DbManager {
     id: string,
     config: EpisodeSkipConfig,
   ): Promise<void> {
-    if (typeof (this.storage as any).saveEpisodeSkipConfig === 'function') {
-      await (this.storage as any).saveEpisodeSkipConfig(
-        userName,
-        source,
-        id,
-        config,
-      );
-    }
+    await this.storage.saveEpisodeSkipConfig(userName, source, id, config);
   }
 
   async deleteEpisodeSkipConfig(
@@ -296,35 +265,23 @@ export class DbManager {
     source: string,
     id: string,
   ): Promise<void> {
-    if (typeof (this.storage as any).deleteEpisodeSkipConfig === 'function') {
-      await (this.storage as any).deleteEpisodeSkipConfig(userName, source, id);
-    }
+    await this.storage.deleteEpisodeSkipConfig(userName, source, id);
   }
 
   async getAllEpisodeSkipConfigs(
     userName: string,
   ): Promise<{ [key: string]: EpisodeSkipConfig }> {
-    if (typeof (this.storage as any).getAllEpisodeSkipConfigs === 'function') {
-      return (this.storage as any).getAllEpisodeSkipConfigs(userName);
-    }
-    return {};
+    return this.storage.getAllEpisodeSkipConfigs(userName);
   }
 
   // ---------- 数据清理 ----------
   async clearAllData(): Promise<void> {
-    if (typeof (this.storage as any).clearAllData === 'function') {
-      await (this.storage as any).clearAllData();
-    } else {
-      throw new Error('存储类型不支持清空数据操作');
-    }
+    await this.storage.clearAllData();
   }
 
   // ---------- 通用缓存方法 ----------
   async getCache(key: string): Promise<any | null> {
-    if (typeof this.storage.getCache === 'function') {
-      return await this.storage.getCache(key);
-    }
-    return null;
+    return await this.storage.getCache(key);
   }
 
   async setCache(
@@ -332,73 +289,26 @@ export class DbManager {
     data: any,
     expireSeconds?: number,
   ): Promise<void> {
-    if (typeof this.storage.setCache === 'function') {
-      await this.storage.setCache(key, data, expireSeconds);
-    }
+    await this.storage.setCache(key, data, expireSeconds);
   }
 
   async deleteCache(key: string): Promise<void> {
-    if (typeof this.storage.deleteCache === 'function') {
-      await this.storage.deleteCache(key);
-    }
+    await this.storage.deleteCache(key);
   }
 
   async clearExpiredCache(prefix?: string): Promise<void> {
-    if (typeof this.storage.clearExpiredCache === 'function') {
-      await this.storage.clearExpiredCache(prefix);
-    }
+    await this.storage.clearExpiredCache(prefix);
   }
 
-  async getUserPlayStat(userName: string): Promise<UserPlayStat> {
-    if (typeof (this.storage as any).getUserPlayStat === 'function') {
-      return (this.storage as any).getUserPlayStat(userName);
-    }
-    // 如果存储不支持统计功能，返回默认值
-    return {
-      username: userName,
-      totalWatchTime: 0,
-      totalPlays: 0,
-      lastPlayTime: 0,
-      recentRecords: [],
-      avgWatchTime: 0,
-      mostWatchedSource: '',
-    };
+  async getUserStat(userName: string): Promise<UserStat> {
+    return this.storage.getUserStat(userName);
   }
 
-  async updatePlayStatistics(
-    _userName: string,
-    _source: string,
-    _id: string,
-    _watchTime: number,
+  async updateUserStats(
+    username: string,
+    playRecord?: PlayRecord,
   ): Promise<void> {
-    if (typeof (this.storage as any).updatePlayStatistics === 'function') {
-      await (this.storage as any).updatePlayStatistics(
-        _userName,
-        _source,
-        _id,
-        _watchTime,
-      );
-    }
-  }
-
-  async updateUserLoginStats(
-    userName: string,
-    loginTime: number,
-    isFirstLogin?: boolean,
-  ): Promise<void> {
-    if (typeof (this.storage as any).updateUserLoginStats === 'function') {
-      await (this.storage as any).updateUserLoginStats(
-        userName,
-        loginTime,
-        isFirstLogin,
-      );
-    }
-  }
-
-  // 检查存储类型是否支持统计功能
-  isStatsSupported(): boolean {
-    const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
-    return storageType !== 'localstorage';
+    await this.storage.updateUserStats(username, playRecord);
   }
 }
 

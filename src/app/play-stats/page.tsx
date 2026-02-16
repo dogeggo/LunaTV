@@ -6,13 +6,12 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
-import { PlayRecord, ReleaseCalendarItem } from '@/lib/types';
+import { PlayRecord, ReleaseCalendarItem, UserStat } from '@/lib/types';
 import { processImageUrl } from '@/lib/utils';
 import {
   checkWatchingUpdates,
   forceClearWatchingUpdatesCache,
   getDetailedWatchingUpdates,
-  markUpdatesAsViewed,
   type WatchingUpdate,
 } from '@/lib/watching-updates';
 
@@ -140,7 +139,7 @@ const PlayStatsPage: React.FC = () => {
   const router = useRouter();
   const DEFAULT_USER_STATS_PAGE_SIZE = 10;
   const [statsData, setStatsData] = useState<PlayStatsResult | null>(null);
-  const [userStats, setUserStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<UserStat>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
@@ -572,44 +571,6 @@ const PlayStatsPage: React.FC = () => {
     } else {
       console.log('条件不满足，不显示弹窗');
     }
-  };
-
-  // 测试函数：强制显示弹窗
-  const forceShowPopup = () => {
-    console.log('强制显示弹窗');
-    setShowWatchingUpdates(true);
-  };
-
-  // 关闭追番更新详情
-  const handleCloseWatchingUpdates = () => {
-    setShowWatchingUpdates(false);
-    markUpdatesAsViewed();
-    setWatchingUpdates((prev) =>
-      prev
-        ? {
-            ...prev,
-            hasUpdates: false,
-            updatedCount: 0,
-            continueWatchingCount: 0,
-          }
-        : null,
-    );
-  };
-
-  // 格式化更新时间
-  const formatLastUpdate = (timestamp: number): string => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / (1000 * 60));
-
-    if (minutes < 1) return '刚刚更新';
-    if (minutes < 60) return `${minutes}分钟前`;
-
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}小时前`;
-
-    const days = Math.floor(hours / 24);
-    return `${days}天前`;
   };
 
   // 监听滚动位置，显示/隐藏回到顶部按钮

@@ -123,13 +123,10 @@ function LoginPageClient() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ loginTime }),
           });
-          // 更新 localStorage 记录
-          localStorage.setItem('lastRecordedLogin', loginTime.toString());
         } catch (error) {
           console.log('记录登入时间失败:', error);
           // 登入时间记录失败不影响正常登录流程
         }
-
         const redirect = searchParams.get('redirect') || '/';
         router.replace(redirect);
       } else if (res.status === 401) {
