@@ -24,6 +24,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
+import { generateSearchVariants } from '@/lib/downstream';
 import { PlayRecord, SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8 } from '@/lib/utils';
 
@@ -2292,6 +2293,7 @@ function PlayPageClient() {
           setAvailableSources([]);
           return [];
         }
+        const searchVariants = generateSearchVariants(query);
         let filteredResults = results.filter((result: SearchResult) => {
           // 如果有 douban_id，优先使用 douban_id 精确匹配
           if (
@@ -2305,7 +2307,9 @@ function PlayPageClient() {
             .replaceAll(' ', '')
             .toLowerCase();
           const resultTitle = result.title.replaceAll(' ', '').toLowerCase();
-          const titleMatch = resultTitle === queryTitle;
+          const titleMatch =
+            resultTitle === queryTitle ||
+            searchVariants.some((v) => v.toLowerCase() === resultTitle);
           const vYear = Number(videoYearRef.current);
           const rYear = Number(result.year);
           const yearMatch =
