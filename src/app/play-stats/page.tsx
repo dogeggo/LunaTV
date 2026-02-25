@@ -873,7 +873,7 @@ const PlayStatsPage: React.FC = () => {
                     {statsData.totalMovies}
                   </div>
                   <div className='text-sm text-teal-600 dark:text-teal-400'>
-                    总播观影数
+                    总观影数
                   </div>
                 </div>
                 <div className='p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800'>

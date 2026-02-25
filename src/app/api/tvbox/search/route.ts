@@ -3,8 +3,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { loadConfig } from '@/lib/config';
-import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
+import { searchFromApi } from '@/lib/downstream';
 import { rankSearchResults } from '@/lib/search-ranking';
+import { generateSearchVariants } from '@/lib/utils';
 import { yellowWords } from '@/lib/yellow';
 
 export const runtime = 'nodejs';

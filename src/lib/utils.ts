@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import he from 'he';
 import Hls from 'hls.js';
+import stcasc, { ChineseType } from 'switch-chinese';
 import { twMerge } from 'tailwind-merge';
 
 /**
@@ -459,4 +460,170 @@ export function generateToken(length = 32): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+// 中文数字映射表（用于智能数字变体生成）
+const CHINESE_TO_ARABIC: { [key: string]: string } = {
+  一: '1',
+  二: '2',
+  三: '3',
+  四: '4',
+  五: '5',
+  六: '6',
+  七: '7',
+  八: '8',
+  九: '9',
+  十: '10',
+};
+const ARABIC_TO_CHINESE = [
+  '',
+  '一',
+  '二',
+  '三',
+  '四',
+  '五',
+  '六',
+  '七',
+  '八',
+  '九',
+  '十',
+];
+
+/**
+ * 智能生成数字变体（仅在检测到季/部/集数字格式时触发）
+ * - "极速车魂第3季" → "极速车魂第三季"
+ * - "中国奇谭第二季" → "中国奇谭2"
+ * @returns 单个变体或 null（不匹配则不生成）
+ */
+function generateNumberVariant(query: string): string | null {
+  // 模式1: "第X季/部/集/期" 格式（中文数字 → 阿拉伯数字）
+  const chinesePattern = /第([一二三四五六七八九十])(季|部|集|期)/;
+  const chineseMatch = chinesePattern.exec(query);
+  if (chineseMatch) {
+    const chineseNum = chineseMatch[1];
+    const arabicNum = CHINESE_TO_ARABIC[chineseNum];
+    if (arabicNum) {
+      // "中国奇谭第二季" → "中国奇谭2"
+      const base = query.replace(chineseMatch[0], '').trim();
+      if (base) {
+        return `${base}${arabicNum}`;
+      }
+    }
+  }
+
+  // 模式2: "第X季/部/集/期" 格式（阿拉伯数字 → 中文数字）
+  const arabicPattern = /第(\d+)(季|部|集|期)/;
+  const arabicMatch = arabicPattern.exec(query);
+  if (arabicMatch) {
+    const num = parseInt(arabicMatch[1]);
+    const suffix = arabicMatch[2];
+    if (num >= 1 && num <= 10) {
+      const chineseNum = ARABIC_TO_CHINESE[num];
+      // "极速车魂第3季" → "极速车魂第三季"
+      return query.replace(arabicMatch[0], `第${chineseNum}${suffix}`);
+    }
+  }
+
+  // 模式3: 末尾纯数字（如 "中国奇谭2" → "中国奇谭第二季"）
+  const endNumberMatch = query.match(/^(.+?)(\d+)$/);
+  if (endNumberMatch) {
+    const base = endNumberMatch[1].trim();
+    const num = parseInt(endNumberMatch[2]);
+    if (num >= 1 && num <= 10 && base) {
+      const chineseNum = ARABIC_TO_CHINESE[num];
+      return `${base}第${chineseNum}季`;
+    }
+  }
+
+  // 不匹配任何数字模式，返回 null（不生成变体）
+  return null;
+}
+
+// 创建模块级别的繁简转换器实例
+const converter = stcasc();
+/**
+ * 智能生成搜索变体（返回所有可用变体，避免遗漏）
+ *
+ * 策略：
+ * - 普通查询（无特殊字符）：只返回原始查询
+ * - 数字查询（第X季/末尾数字）：追加数字变体
+ * - 标点查询（中文冒号等）：追加标点变体
+ * - 空格查询（多词搜索）：追加空格变体
+ * - 繁体输入：追加简体变体
+ *
+ * @param originalQuery 原始查询
+ * @returns 按优先级排序的搜索变体数组（去重）
+ */
+export function generateSearchVariants(originalQuery: string): string[] {
+  const trimmed = originalQuery.trim();
+  const variants: string[] = [];
+  const seen = new Set<string>();
+  const addVariant = (variant?: string | null) => {
+    if (!variant) {
+      return;
+    }
+    if (!seen.has(variant)) {
+      seen.add(variant);
+      variants.push(variant);
+    }
+  };
+
+  addVariant(trimmed);
+
+  // 1. 智能检测：空格变体（多词搜索）
+  if (trimmed.includes(' ')) {
+    const noSpaces = trimmed.replace(/\s+/g, '');
+    addVariant(noSpaces);
+  }
+
+  // 2. 智能检测：数字变体
+  const numberVariant = generateNumberVariant(trimmed);
+  if (numberVariant) {
+    const noSpaces = numberVariant.replace(/\s+/g, '');
+    addVariant(noSpaces);
+  }
+
+  // 3. 智能检测：中文标点变体（冒号等）
+  const punctuationVariant = generatePunctuationVariant(trimmed);
+  if (punctuationVariant) {
+    const noSpaces = punctuationVariant.replace(/\s+/g, '');
+    addVariant(noSpaces);
+  }
+
+  // 4. 繁体检测：如果是繁体输入，添加简体变体
+  const detectedType = converter.detect(trimmed);
+  if (detectedType !== ChineseType.SIMPLIFIED) {
+    const simplified = converter.simplized(trimmed);
+    if (simplified !== trimmed) {
+      const noSpaces = simplified.replace(/\s+/g, '');
+      addVariant(noSpaces);
+    }
+  }
+
+  // 5. 返回去重后的所有变体（至少包含原始查询）
+  return variants;
+}
+
+/**
+ * 智能生成标点变体（只返回最优的1个变体）
+ * @returns 单个变体或 null
+ */
+function generatePunctuationVariant(query: string): string | null {
+  // 中文冒号 → 空格（最常见的匹配模式）
+  if (query.includes('：')) {
+    return query.replace(/：/g, '');
+  }
+
+  // 英文冒号 → 空格
+  if (query.includes(':')) {
+    return query.replace(/:/g, '');
+  }
+
+  // 中文书名号 → 去除
+  if (query.includes('《') || query.includes('》')) {
+    return query.replace(/[《》]/g, '');
+  }
+
+  // 不需要标点变体
+  return null;
 }

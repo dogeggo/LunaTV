@@ -24,8 +24,8 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanComments, getDoubanDetails } from '@/lib/douban-api';
-import { generateSearchVariants } from '@/lib/downstream';
 import { PlayRecord, SearchResult } from '@/lib/types';
+import { generateSearchVariants } from '@/lib/utils';
 import { getVideoResolutionFromM3u8 } from '@/lib/utils';
 
 import DownloadEpisodeSelector from '@/components/download/DownloadEpisodeSelector';

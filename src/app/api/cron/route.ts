@@ -4,13 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAvailableApiSites, loadConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
-import {
-  generateSearchVariants,
-  getDetailFromApi,
-  searchFromApi,
-} from '@/lib/downstream';
+import { getDetailFromApi, searchFromApi } from '@/lib/downstream';
 import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
+import { generateSearchVariants } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 

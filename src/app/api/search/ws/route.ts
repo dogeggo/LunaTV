@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
 import { getAvailableApiSites, loadConfig } from '@/lib/config';
-import { generateSearchVariants, searchFromApi } from '@/lib/downstream';
+import { searchFromApi } from '@/lib/downstream';
+import { generateSearchVariants } from '@/lib/utils';
 
 export const runtime = 'nodejs';
 
