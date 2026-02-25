@@ -1408,7 +1408,7 @@ const PlayStatsPage: React.FC = () => {
                 </div>
                 <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
                   <div className='text-2xl font-bold text-purple-800 dark:text-purple-300'>
-                    {userStats.totalMovies || userStats.totalPlays || 0}
+                    {userStats.totalMovies || 0}
                   </div>
                   <div className='text-sm text-purple-600 dark:text-purple-400'>
                     观看影片
@@ -2111,7 +2111,7 @@ const PlayStatsPage: React.FC = () => {
             </div>
             <div className='p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800'>
               <div className='text-2xl font-bold text-purple-800 dark:text-purple-300'>
-                {userStats.totalMovies || userStats.totalPlays || 0}
+                {userStats.totalMovies || 0}
               </div>
               <div className='text-sm text-purple-600 dark:text-purple-400'>
                 观看影片
