@@ -61,12 +61,6 @@ interface WatchingUpdatesCache {
   updatedSeries: WatchingUpdate['updatedSeries'];
 }
 
-interface _ExtendedPlayRecord extends PlayRecord {
-  id: string;
-  hasUpdate?: boolean;
-  newEpisodes?: number;
-}
-
 // 全局事件监听器
 const updateListeners = new Set<(hasUpdates: boolean) => void>();
 

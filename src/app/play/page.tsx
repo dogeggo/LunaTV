@@ -70,11 +70,6 @@ function PlayPageClient() {
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<SearchResult | null>(null);
 
-  const [pendingPreferSources, setPendingPreferSources] = useState<
-    SearchResult[] | null
-  >(null);
-  const preferTestRunIdRef = useRef(0);
-
   // 收藏状态
   const [favorited, setFavorited] = useState(false);
 
@@ -732,17 +727,14 @@ function PlayPageClient() {
   const filteredSources = availableSources.filter((source) => {
     // 必须有集数数据
     if (!source.episodes || source.episodes.length < 1) return false;
-
     // 如果当前有 detail，只显示集数相近的源（允许约30%的差异）
     if (detail && detail.episodes && detail.episodes.length > 0) {
       const currentEpisodes = detail.episodes.length;
       const sourceEpisodes = source.episodes.length;
       const tolerance = Math.max(5, Math.ceil(currentEpisodes * 0.3)); // 至少5集的容差
-
       // 在合理范围内
       return Math.abs(sourceEpisodes - currentEpisodes) <= tolerance;
     }
-
     return true;
   });
   // 上次使用的音量，默认 0.7
@@ -757,7 +749,9 @@ function PlayPageClient() {
   const [isSpeedTestRunning, setIsSpeedTestRunning] = useState(false);
   const [speedTestResetKey, setSpeedTestResetKey] = useState(0);
   const [pageLoadComplete, setPageLoadComplete] = useState(false);
+  const [speedTestComplete, setSpeedTestComplete] = useState(false);
 
+  const speedTestReady = pageLoadComplete && !loading;
   // 优选和测速开关
   const [optimizationEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -815,7 +809,6 @@ function PlayPageClient() {
 
   // 播放器就绪状态
   const [playerReady, setPlayerReady] = useState(false);
-  const speedTestReady = pageLoadComplete && playerReady && !loading;
 
   // Wake Lock 相关
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -1004,68 +997,6 @@ function PlayPageClient() {
     }
   };
 
-  // 播放源优选函数（针对旧iPad做极端保守优化）
-  const preferBestSource = async (
-    sources: SearchResult[],
-  ): Promise<SearchResult> => {
-    if (sources.length === 1) return sources[0];
-
-    // 使用全局统一的设备检测结果
-    const isIOS13 = isIOS13Global;
-
-    // 如果是iPad或iOS13+（包括新iPad在桌面模式下），使用极简策略避免崩溃
-    if (isIOS13) {
-      console.log('检测到iPad/iOS13+设备，使用无测速优选策略避免崩溃');
-
-      // 简单的源名称优先级排序，不进行实际测速
-      const sourcePreference = [
-        'ok',
-        'niuhu',
-        'ying',
-        'wasu',
-        'mgtv',
-        'iqiyi',
-        'youku',
-        'qq',
-      ];
-
-      const sortedSources = [...sources].sort((a, b) => {
-        const aIndex = sourcePreference.findIndex((name) =>
-          a.source_name?.toLowerCase().includes(name),
-        );
-        const bIndex = sourcePreference.findIndex((name) =>
-          b.source_name?.toLowerCase().includes(name),
-        );
-
-        // 如果都在优先级列表中，按优先级排序
-        if (aIndex !== -1 && bIndex !== -1) {
-          return aIndex - bIndex;
-        }
-        // 如果只有一个在优先级列表中，优先选择它
-        if (aIndex !== -1) return -1;
-        if (bIndex !== -1) return 1;
-
-        // 都不在优先级列表中，保持原始顺序
-        return 0;
-      });
-
-      console.log(
-        'iPad/iOS13+优选结果:',
-        sortedSources.map((s) => s.source_name),
-      );
-      return sortedSources[0];
-    }
-
-    // 移动设备使用轻量级测速（仅ping，不创建HLS）
-    // if (isMobile) {
-    //   console.log('移动设备使用轻量级优选');
-    //   return await lightweightPreference(sources);
-    // }
-
-    // 桌面设备使用原来的测速方法（控制并发）
-    return await fullSpeedTest(sources);
-  };
-
   // 轻量级优选：仅测试连通性，不创建video和HLS
   const lightweightPreference = async (
     sources: SearchResult[],
@@ -1111,13 +1042,22 @@ function PlayPageClient() {
   };
 
   // 完整测速（桌面设备）
-  const fullSpeedTest = async (
-    sources: SearchResult[],
-  ): Promise<SearchResult> => {
+  const fullSpeedTest = async (sources: SearchResult[]): Promise<void> => {
+    if (
+      !speedTestReady ||
+      isSpeedTestRunning ||
+      sourceSearchLoading ||
+      loading ||
+      sources.length === 0
+    ) {
+      return;
+    }
     // 桌面设备使用小批量并发，避免创建过多实例
     const concurrency = 2;
-
-    console.log(`开始测速: 共${sources.length}个源。`);
+    setIsSpeedTestRunning(true);
+    setPrecomputedVideoInfo(new Map());
+    setSpeedTestResetKey((prev) => prev + 1);
+    setSpeedTestComplete(true);
 
     const allResults: Array<{
       source: SearchResult;
@@ -1175,70 +1115,71 @@ function PlayPageClient() {
       }
     });
 
-    // 过滤出成功的结果用于优选计算
-    const successfulResults = allResults.filter(Boolean) as Array<{
-      source: SearchResult;
-      testResult: { quality: string; loadSpeed: string; pingTime: number };
-    }>;
-
     setPrecomputedVideoInfo(newVideoInfoMap);
+    setIsSpeedTestRunning(false);
 
-    if (successfulResults.length === 0) {
-      console.warn('所有播放源测速都失败，使用第一个播放源');
-      return sources[0];
-    }
+    // // 过滤出成功的结果用于优选计算
+    // const successfulResults = allResults.filter(Boolean) as Array<{
+    //   source: SearchResult;
+    //   testResult: { quality: string; loadSpeed: string; pingTime: number };
+    // }>;
 
-    // 找出所有有效速度的最大值，用于线性映射
-    const validSpeeds = successfulResults
-      .map((result) => {
-        const speedStr = result.testResult.loadSpeed;
-        if (speedStr === '未知' || speedStr === '测量中...') return 0;
+    // if (successfulResults.length === 0) {
+    //   console.warn('所有播放源测速都失败，使用第一个播放源');
+    //   return sources[0];
+    // }
 
-        const match = speedStr.match(/^([\d.]+)\s*(KB\/s|MB\/s)$/);
-        if (!match) return 0;
+    // // 找出所有有效速度的最大值，用于线性映射
+    // const validSpeeds = successfulResults
+    //   .map((result) => {
+    //     const speedStr = result.testResult.loadSpeed;
+    //     if (speedStr === '未知' || speedStr === '测量中...') return 0;
 
-        const value = parseFloat(match[1]);
-        const unit = match[2];
-        return unit === 'MB/s' ? value * 1024 : value; // 统一转换为 KB/s
-      })
-      .filter((speed) => speed > 0);
+    //     const match = speedStr.match(/^([\d.]+)\s*(KB\/s|MB\/s)$/);
+    //     if (!match) return 0;
 
-    const maxSpeed = validSpeeds.length > 0 ? Math.max(...validSpeeds) : 1024; // 默认1MB/s作为基准
+    //     const value = parseFloat(match[1]);
+    //     const unit = match[2];
+    //     return unit === 'MB/s' ? value * 1024 : value; // 统一转换为 KB/s
+    //   })
+    //   .filter((speed) => speed > 0);
 
-    // 找出所有有效延迟的最小值和最大值，用于线性映射
-    const validPings = successfulResults
-      .map((result) => result.testResult.pingTime)
-      .filter((ping) => ping > 0);
+    // const maxSpeed = validSpeeds.length > 0 ? Math.max(...validSpeeds) : 1024; // 默认1MB/s作为基准
 
-    const minPing = validPings.length > 0 ? Math.min(...validPings) : 50;
-    const maxPing = validPings.length > 0 ? Math.max(...validPings) : 1000;
+    // // 找出所有有效延迟的最小值和最大值，用于线性映射
+    // const validPings = successfulResults
+    //   .map((result) => result.testResult.pingTime)
+    //   .filter((ping) => ping > 0);
 
-    // 计算每个结果的评分
-    const resultsWithScore = successfulResults.map((result) => ({
-      ...result,
-      score: calculateSourceScore(
-        result.testResult,
-        maxSpeed,
-        minPing,
-        maxPing,
-      ),
-    }));
+    // const minPing = validPings.length > 0 ? Math.min(...validPings) : 50;
+    // const maxPing = validPings.length > 0 ? Math.max(...validPings) : 1000;
 
-    // 按综合评分排序，选择最佳播放源
-    resultsWithScore.sort((a, b) => b.score - a.score);
+    // // 计算每个结果的评分
+    // const resultsWithScore = successfulResults.map((result) => ({
+    //   ...result,
+    //   score: calculateSourceScore(
+    //     result.testResult,
+    //     maxSpeed,
+    //     minPing,
+    //     maxPing,
+    //   ),
+    // }));
 
-    console.log('播放源评分排序结果:');
-    resultsWithScore.forEach((result, index) => {
-      console.log(
-        `${index + 1}. ${
-          result.source.source_name
-        } - 评分: ${result.score.toFixed(2)} (${result.testResult.quality}, ${
-          result.testResult.loadSpeed
-        }, ${result.testResult.pingTime}ms)`,
-      );
-    });
+    // // 按综合评分排序，选择最佳播放源
+    // resultsWithScore.sort((a, b) => b.score - a.score);
 
-    return resultsWithScore[0].source;
+    // console.log('播放源评分排序结果:');
+    // resultsWithScore.forEach((result, index) => {
+    //   console.log(
+    //     `${index + 1}. ${
+    //       result.source.source_name
+    //     } - 评分: ${result.score.toFixed(2)} (${result.testResult.quality}, ${
+    //       result.testResult.loadSpeed
+    //     }, ${result.testResult.pingTime}ms)`,
+    //   );
+    // });
+
+    // return resultsWithScore[0].source;
   };
 
   // 计算播放源综合评分
@@ -1309,30 +1250,6 @@ function PlayPageClient() {
     score += pingScore * 0.2;
 
     return Math.round(score * 100) / 100; // 保留两位小数
-  };
-
-  const handleRetestSources = async () => {
-    if (
-      !speedTestReady ||
-      isSpeedTestRunning ||
-      sourceSearchLoading ||
-      loading ||
-      !!pendingPreferSources ||
-      filteredSources.length === 0
-    ) {
-      return;
-    }
-
-    setIsSpeedTestRunning(true);
-    try {
-      setPrecomputedVideoInfo(new Map());
-      setSpeedTestResetKey((prev) => prev + 1);
-      await fullSpeedTest(filteredSources);
-    } catch (error) {
-      console.error('重新测速失败:', error);
-    } finally {
-      setIsSpeedTestRunning(false);
-    }
   };
 
   // 更新视频地址
@@ -2497,7 +2414,6 @@ function PlayPageClient() {
       // 优先保留URL参数中的豆瓣ID，如果URL中没有则使用详情数据中的
       setVideoDoubanId(videoDoubanIdRef.current || detailData.douban_id || 0);
       setDetail(detailData);
-      setPendingPreferSources(searchResult);
       if (currentEpisodeIndex >= detailData.episodes.length) {
         setCurrentEpisodeIndex((prev) => (prev === 0 ? prev : 0));
       }
@@ -2528,33 +2444,15 @@ function PlayPageClient() {
   useEffect(() => {
     if (
       loading ||
-      !pendingPreferSources ||
       !optimizationEnabled ||
-      !speedTestReady
+      !speedTestReady ||
+      speedTestComplete ||
+      filteredSources.length === 0
     )
       return;
-
-    let canceled = false;
-    const runId = ++preferTestRunIdRef.current;
-
-    const runPreferTest = async () => {
-      try {
-        await preferBestSource(pendingPreferSources);
-      } catch (error) {
-        console.error('优选测速失败:', error);
-      } finally {
-        if (canceled || runId !== preferTestRunIdRef.current) return;
-        setPendingPreferSources(null);
-      }
-    };
-
-    runPreferTest();
-
-    return () => {
-      canceled = true;
-    };
+    fullSpeedTest(filteredSources);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, pendingPreferSources, optimizationEnabled, speedTestReady]);
+  }, [loading, optimizationEnabled, speedTestReady]);
 
   // 播放记录处理
   useEffect(() => {
@@ -2640,7 +2538,6 @@ function PlayPageClient() {
           console.warn('清空弹幕时出错，但继续换源:', error);
         }
       }
-      console.log('换源前当前播放时间:', currentPlayTime);
 
       const newDetail = availableSources.find(
         (source) => source.source === newSource && source.id === newId,
@@ -2660,9 +2557,6 @@ function PlayPageClient() {
           console.log(
             `⚠️ 当前集数(${currentEpisodeIndex})超出新源范围(${newDetail.episodes.length}集)，跳转到第${targetIndex + 1}集`,
           );
-        } else {
-          // 集数在范围内，保持不变
-          console.log(`✅ 换源保持当前集数: 第${targetIndex + 1}集`);
         }
       }
       const record: PlayRecord = await deletePlayRecord(
@@ -2685,7 +2579,7 @@ function PlayPageClient() {
       setCurrentSource(newSource);
       setCurrentId(newId);
 
-      await saveCurrentPlayProgress(record);
+      await saveCurrentPlayProgress(newDetail, record);
 
       setDetail(newDetail);
       // 🔥 只有当集数确实改变时才调用 setCurrentEpisodeIndex
@@ -2725,10 +2619,6 @@ function PlayPageClient() {
 
               // 🚀 优化大量弹幕的加载：分批处理，减少阻塞
               if (danmuData.length > 1000) {
-                console.log(
-                  `📊 检测到大量弹幕 (${danmuData.length}条)，启用分批加载`,
-                );
-
                 // 先加载前500条，快速显示
                 const firstBatch = danmuData.slice(0, 500);
                 plugin.load(firstBatch);
@@ -2764,7 +2654,6 @@ function PlayPageClient() {
                 plugin.load(danmuData);
                 console.log(`✅ 换源后弹幕加载完成: ${danmuData.length} 条`);
               }
-
               const loadTime = performance.now() - startTime;
               console.log(`⏱️ 弹幕加载耗时: ${loadTime.toFixed(2)}ms`);
             } else {
@@ -2778,7 +2667,6 @@ function PlayPageClient() {
     } catch (err) {
       // 重置换源标识
       isSourceChangingRef.current = false;
-
       // 隐藏换源加载状态
       setIsVideoLoading(false);
       setError(err instanceof Error ? err.message : '换源失败');
@@ -2945,18 +2833,22 @@ function PlayPageClient() {
   // 播放记录相关
   // ---------------------------------------------------------------------------
   // 保存播放进度
-  const saveCurrentPlayProgress = async (record?: PlayRecord) => {
+  const saveCurrentPlayProgress = async (
+    detail?: SearchResult,
+    record?: PlayRecord,
+  ) => {
     if (
       !artPlayerRef.current ||
       !currentSourceRef.current ||
       !currentIdRef.current ||
       !videoTitleRef.current ||
-      !detailRef.current?.source_name
+      !detailRef.current
     ) {
       return;
     }
-
+    const newDetail = detail ? detail : detailRef.current;
     const player = artPlayerRef.current;
+    const recordTime = record?.play_time || 0;
     const currentTime = record?.play_time || player.currentTime || 0;
     const duration = record?.total_time || player.duration || 0;
     if (currentTime < 5 || !duration) {
@@ -2973,7 +2865,7 @@ function PlayPageClient() {
           return records[key];
         })
         .catch(() => null);
-      const currentTotalEpisodes = detailRef.current?.episodes.length || 1;
+      const currentTotalEpisodes = newDetail.episodes.length || 1;
 
       // 尝试从换源列表中获取更准确的 remarks（搜索接口比详情接口更可能有 remarks）
       const sourceFromList = availableSourcesRef.current?.find(
@@ -2981,14 +2873,13 @@ function PlayPageClient() {
           s.source === currentSourceRef.current &&
           s.id === currentIdRef.current,
       );
-      const remarksToSave =
-        sourceFromList?.remarks || detailRef.current?.remarks;
+      const remarksToSave = sourceFromList?.remarks || newDetail.remarks;
 
       await savePlayRecord(currentSourceRef.current, currentIdRef.current, {
         title: videoTitleRef.current,
-        source_name: detailRef.current?.source_name || '',
-        year: detailRef.current?.year,
-        cover: detailRef.current?.poster || '',
+        source_name: newDetail.source_name || '',
+        year: newDetail.year,
+        cover: newDetail.poster || '',
         index: currentEpisodeIndexRef.current + 1, // 转换为1基索引
         total_episodes: currentTotalEpisodes,
         // 🔑 关键：不要在这里设置 original_episodes
@@ -2998,20 +2889,23 @@ function PlayPageClient() {
         // - 只有当用户看了新集数时才会更新
         // 这样避免了播放器传入错误的 original_episodes（可能是更新后的值）
         original_episodes: existingRecord?.original_episodes, // 只传递已有值，不自动填充
-        play_time: Math.floor(currentTime),
+        play_time: Math.floor(
+          recordTime > currentTime ? recordTime : currentTime,
+        ),
         total_time: Math.floor(duration),
         save_time: Date.now(),
         search_title: searchTitle,
         remarks: remarksToSave, // 优先使用搜索结果的 remarks，因为详情接口可能没有
-        douban_id:
-          videoDoubanIdRef.current || detailRef.current?.douban_id || undefined, // 添加豆瓣ID
+        douban_id: videoDoubanIdRef.current || newDetail.douban_id || undefined, // 添加豆瓣ID
       });
 
       lastSaveTimeRef.current = Date.now();
       console.log('播放进度已保存:', {
+        id: currentIdRef.current,
+        source: currentSourceRef.current,
         title: videoTitleRef.current,
         episode: currentEpisodeIndexRef.current + 1,
-        year: detailRef.current?.year,
+        year: newDetail.year,
         progress: `${Math.floor(currentTime)}/${Math.floor(duration)}`,
       });
     } catch (err) {
@@ -3404,6 +3298,27 @@ function PlayPageClient() {
             );
             // 换源时保持播放进度
             switchPromise = artPlayerRef.current.switchQuality(videoUrl);
+            try {
+              const allRecords = await getAllPlayRecords();
+              const key = generateStorageKey(currentSource, currentId);
+              const record = allRecords[key];
+              const play_time =
+                record && record.index - 1 == currentEpisodeIndexRef.current
+                  ? record.play_time
+                  : 0;
+              const duration = artPlayerRef.current.duration || 0;
+              const current = artPlayerRef.current.currentTime || 0;
+              let target = play_time > current ? play_time : current;
+              if (duration && target >= duration - 2) {
+                target = Math.max(0, duration - 5);
+              }
+              if (target > current) {
+                artPlayerRef.current.currentTime = target;
+              }
+              console.log('成功恢复播放进度到:', target);
+            } catch (err) {
+              console.warn('恢复播放进度失败:', err);
+            }
           }
 
           // 创建切换Promise
@@ -5248,7 +5163,6 @@ function PlayPageClient() {
     isSpeedTestRunning ||
     sourceSearchLoading ||
     loading ||
-    !!pendingPreferSources ||
     filteredSources.length === 0;
 
   const handleOpenNetdisk = () => {
@@ -5342,7 +5256,7 @@ function PlayPageClient() {
               downloadEnabled={downloadEnabled}
               onDownloadClick={() => setShowDownloadEpisodeSelector(true)}
               onDownloadPanelClick={() => setShowDownloadPanel(true)}
-              onRetest={handleRetestSources}
+              onRetest={() => fullSpeedTest(filteredSources)}
               retestDisabled={isRetestDisabled}
               isSpeedTestRunning={isSpeedTestRunning}
               isEpisodeSelectorCollapsed={isEpisodeSelectorCollapsed}
