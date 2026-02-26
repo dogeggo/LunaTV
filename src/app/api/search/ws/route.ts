@@ -156,6 +156,9 @@ export async function GET(request: NextRequest) {
 
       // 等待所有搜索完成
       await Promise.allSettled(searchPromises);
+      console.log(
+        `视频流式搜索完成. username = ${authInfo.username}, length = ${allResults.length}, query = ${query}, searchVariants = ${searchVariants}`,
+      );
     },
 
     cancel() {

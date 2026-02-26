@@ -125,18 +125,21 @@ async function downloadToCache(url: string, filePath: string, headers: any) {
   const tempPath = `${filePath}.tmp`;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    const response = isDoubanUrl(url)
-      ? await fetchDoubanWithAntiScraping(url, {
-          signal: controller.signal,
-          timeoutMs: 10000,
-        })
-      : await fetch(url, {
-          headers,
-          signal: controller.signal,
-        }).finally(() => {
-          clearTimeout(timeoutId);
-        });
+    let response: Response;
+    if (isDoubanUrl(url)) {
+      response = await fetchDoubanWithAntiScraping(url, {
+        signal: controller.signal,
+        timeoutMs: 10000,
+      });
+    } else {
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      response = await fetch(url, {
+        headers,
+        signal: controller.signal,
+      }).finally(() => {
+        clearTimeout(timeoutId);
+      });
+    }
     if (!response.ok || !response.body) {
       console.error(
         `[ImageCache] Failed to fetch source: ${response.status}, url = ${url}`,
@@ -168,7 +171,7 @@ async function downloadToCache(url: string, filePath: string, headers: any) {
       }
     }
   } catch (error) {
-    console.error(`[ImageCache] Download error:`, error);
+    console.error(`[ImageCache] Download error: url = ${url}`, error);
     if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     return false;
   }
