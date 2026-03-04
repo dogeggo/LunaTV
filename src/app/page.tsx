@@ -155,6 +155,27 @@ const homeReducer = (state: HomeState, action: HomeAction): HomeState => {
   }
 };
 
+const HOME_REQUEST_TIMEOUT_MS = 12000;
+const HOME_LOADING_GUARD_MS = 15000;
+
+const withTimeout = <T,>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  requestName: string,
+): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`${requestName} 请求超时（${timeoutMs}ms）`));
+    }, timeoutMs);
+
+    promise
+      .then(resolve)
+      .catch(reject)
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+  });
+
 function HomeClient() {
   useEffect(() => {
     setIsMounted(true);
@@ -206,6 +227,7 @@ function HomeClient() {
 
   // 🚀 Web Worker引用
   const workerRef = useRef<Worker | null>(null);
+  const loadingGuardRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 🎯 优化：缓存今日番剧计算
   const todayAnimes = useMemo(() => {
@@ -389,11 +411,37 @@ function HomeClient() {
         },
       });
 
-      const moviesPromise = getDoubanCategories({
-        kind: 'movie',
-        category: '热门',
-        type: '全部',
-      })
+      if (loadingGuardRef.current) {
+        clearTimeout(loadingGuardRef.current);
+      }
+
+      loadingGuardRef.current = setTimeout(() => {
+        console.warn(
+          `首页数据加载超过 ${HOME_LOADING_GUARD_MS}ms，强制结束加载态以保持页面可交互`,
+        );
+        dispatch({
+          type: 'SET_LOADING',
+          payload: {
+            movies: false,
+            tv: false,
+            variety: false,
+            anime: false,
+            shortDramas: false,
+            bangumi: false,
+            upcoming: false,
+          },
+        });
+      }, HOME_LOADING_GUARD_MS);
+
+      const moviesPromise = withTimeout(
+        getDoubanCategories({
+          kind: 'movie',
+          category: '热门',
+          type: '全部',
+        }),
+        HOME_REQUEST_TIMEOUT_MS,
+        '热门电影',
+      )
         .then((moviesData) => {
           if (moviesData?.code !== 200) return;
           const movies = moviesData.list;
@@ -441,11 +489,15 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { movies: false } }),
         );
 
-      const tvShowsPromise = getDoubanCategories({
-        kind: 'tv',
-        category: 'tv',
-        type: 'tv',
-      })
+      const tvShowsPromise = withTimeout(
+        getDoubanCategories({
+          kind: 'tv',
+          category: 'tv',
+          type: 'tv',
+        }),
+        HOME_REQUEST_TIMEOUT_MS,
+        '热门剧集',
+      )
         .then((tvShowsData) => {
           if (tvShowsData?.code !== 200) return;
           const tvShows = tvShowsData.list;
@@ -493,11 +545,15 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { tv: false } }),
         );
 
-      const varietyShowsPromise = getDoubanCategories({
-        kind: 'tv',
-        category: 'show',
-        type: 'show',
-      })
+      const varietyShowsPromise = withTimeout(
+        getDoubanCategories({
+          kind: 'tv',
+          category: 'show',
+          type: 'show',
+        }),
+        HOME_REQUEST_TIMEOUT_MS,
+        '热门综艺',
+      )
         .then((varietyShowsData) => {
           if (varietyShowsData?.code !== 200) return;
           const varietyShows = varietyShowsData.list;
@@ -538,11 +594,15 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { variety: false } }),
         );
 
-      const animePromise = getDoubanCategories({
-        kind: 'tv',
-        category: 'tv',
-        type: 'tv_animation',
-      })
+      const animePromise = withTimeout(
+        getDoubanCategories({
+          kind: 'tv',
+          category: 'tv',
+          type: 'tv_animation',
+        }),
+        HOME_REQUEST_TIMEOUT_MS,
+        '热门动漫',
+      )
         .then((animeData) => {
           if (animeData?.code !== 200) return;
           const animes = animeData.list;
@@ -583,7 +643,11 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { anime: false } }),
         );
 
-      const shortDramasPromise = getRecommendedShortDramas(15)
+      const shortDramasPromise = withTimeout(
+        getRecommendedShortDramas(15),
+        HOME_REQUEST_TIMEOUT_MS,
+        '热门短剧',
+      )
         .then((dramas) => {
           dispatch({
             type: 'SET_SHORT_DRAMAS_ERROR',
@@ -631,7 +695,11 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { shortDramas: false } }),
         );
 
-      const bangumiPromise = GetBangumiCalendarData()
+      const bangumiPromise = withTimeout(
+        GetBangumiCalendarData(),
+        HOME_REQUEST_TIMEOUT_MS,
+        'Bangumi 日历',
+      )
         .then((bangumiData) => {
           if (!Array.isArray(bangumiData)) return;
           dispatch({
@@ -646,7 +714,11 @@ function HomeClient() {
           dispatch({ type: 'SET_LOADING', payload: { bangumi: false } }),
         );
 
-      const upcomingPromise = fetch('/api/release-calendar?limit=100')
+      const upcomingPromise = withTimeout(
+        fetch('/api/release-calendar?limit=100'),
+        HOME_REQUEST_TIMEOUT_MS,
+        '即将上映',
+      )
         .then((res) => {
           if (!res.ok) {
             console.error('获取即将上映数据失败，状态码:', res.status);
@@ -732,11 +804,20 @@ function HomeClient() {
         bangumiPromise,
         upcomingPromise,
       ]);
+
+      if (loadingGuardRef.current) {
+        clearTimeout(loadingGuardRef.current);
+        loadingGuardRef.current = null;
+      }
     };
     fetchRecommendData();
 
     // 🚀 清理Web Worker
     return () => {
+      if (loadingGuardRef.current) {
+        clearTimeout(loadingGuardRef.current);
+        loadingGuardRef.current = null;
+      }
       if (workerRef.current) {
         workerRef.current.terminate();
         workerRef.current = null;

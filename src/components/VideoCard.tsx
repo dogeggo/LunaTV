@@ -37,6 +37,8 @@ import MobileActionSheet from '@/components/MobileActionSheet';
 
 import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
 
+const VIDEO_CARD_IMAGE_TIMEOUT_MS = 12000;
+
 export interface VideoCardProps {
   id?: string;
   source?: string;
@@ -158,6 +160,24 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const actualEpisodes = dynamicEpisodes;
     const actualYear = year;
     const actualQuery = query || '';
+
+    useEffect(() => {
+      setImageLoaded(false);
+    }, [actualPoster]);
+
+    useEffect(() => {
+      if (imageLoaded) return;
+
+      const timeoutId = setTimeout(() => {
+        startTransition(() => {
+          setImageLoaded(true);
+        });
+      }, VIDEO_CARD_IMAGE_TIMEOUT_MS);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
+    }, [imageLoaded, actualPoster]);
 
     const actualSearchType = useMemo(
       () =>
@@ -479,16 +499,6 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     });
 
     const scheduleImageLoaded = useCallback(() => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(
-          () => {
-            setImageLoaded(true);
-          },
-          { timeout: 1000 },
-        );
-        return;
-      }
-
       startTransition(() => {
         setImageLoaded(true);
       });
