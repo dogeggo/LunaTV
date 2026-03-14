@@ -7,6 +7,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, {
@@ -33,9 +34,15 @@ import { isSeriesCompleted, processImageUrl } from '@/lib/utils';
 import { useLongPress } from '@/hooks/useLongPress';
 
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
-import MobileActionSheet from '@/components/MobileActionSheet';
 
 import { useNavigationLoading } from '@/contexts/NavigationLoadingContext';
+
+const MobileActionSheet = dynamic(
+  () => import('@/components/MobileActionSheet'),
+  {
+    ssr: false,
+  },
+);
 
 export interface VideoCardProps {
   id?: string;
@@ -595,6 +602,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
     // 移动端操作菜单配置
     const mobileActions = useMemo(() => {
+      if (!showMobileActions) {
+        return [];
+      }
+
       const actions = [];
 
       // 播放操作（即将上映的内容不显示播放选项）
@@ -734,6 +745,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
       return actions;
     }, [
+      showMobileActions,
       config,
       from,
       actualSource,
@@ -1629,23 +1641,25 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         </div>
 
         {/* 操作菜单 - 支持右键和长按触发 */}
-        <MobileActionSheet
-          isOpen={showMobileActions}
-          onClose={() => setShowMobileActions(false)}
-          title={actualTitle}
-          poster={processImageUrl(actualPoster)}
-          actions={mobileActions}
-          sources={
-            isAggregate && dynamicSourceNames
-              ? Array.from(new Set(dynamicSourceNames))
-              : undefined
-          }
-          isAggregate={isAggregate}
-          sourceName={source_name}
-          currentEpisode={currentEpisode}
-          totalEpisodes={actualEpisodes}
-          origin={origin}
-        />
+        {showMobileActions && (
+          <MobileActionSheet
+            isOpen={showMobileActions}
+            onClose={() => setShowMobileActions(false)}
+            title={actualTitle}
+            poster={processImageUrl(actualPoster)}
+            actions={mobileActions}
+            sources={
+              isAggregate && dynamicSourceNames
+                ? Array.from(new Set(dynamicSourceNames))
+                : undefined
+            }
+            isAggregate={isAggregate}
+            sourceName={source_name}
+            currentEpisode={currentEpisode}
+            totalEpisodes={actualEpisodes}
+            origin={origin}
+          />
+        )}
       </>
     );
   },
