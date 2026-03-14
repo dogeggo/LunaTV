@@ -12,6 +12,7 @@ import {
   Trash2,
   Tv,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   Suspense,
@@ -51,7 +52,12 @@ import SectionTitle from '@/components/SectionTitle';
 import ShortDramaCard from '@/components/ShortDramaCard';
 import { useSite } from '@/components/SiteProvider';
 import SkeletonCard from '@/components/SkeletonCard';
-import VideoCard from '@/components/VideoCard';
+
+// 首页卡片数量多，改为单独分包，避免阻塞首屏交互与导航响应。
+const VideoCard = dynamic(() => import('@/components/VideoCard'), {
+  ssr: false,
+  loading: () => <SkeletonCard />,
+});
 
 // 🎯 优化：合并状态管理 - 使用 useReducer 减少重渲染
 interface HomeState {

@@ -3,6 +3,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Clock, Trash2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { PlayRecord } from '@/lib/db.client';
@@ -21,7 +22,12 @@ import {
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import ScrollableRow from '@/components/ScrollableRow';
 import SectionTitle from '@/components/SectionTitle';
-import VideoCard from '@/components/VideoCard';
+import SkeletonCard from '@/components/SkeletonCard';
+
+const VideoCard = dynamic(() => import('@/components/VideoCard'), {
+  ssr: false,
+  loading: () => <SkeletonCard />,
+});
 
 interface ContinueWatchingProps {
   className?: string;
@@ -50,10 +56,11 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
 
   const { data: allPlayRecords = {}, isLoading } = useQuery({
     queryKey: ['playRecords'],
-    queryFn: () => getAllPlayRecords(true),
+    queryFn: () => getAllPlayRecords(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnMount: 'always',
+    placeholderData: () =>
+      queryClient.getQueryData<Record<string, PlayRecord>>(['playRecords']),
   });
 
   const playRecords = useMemo<(PlayRecord & { key: string })[]>(() => {
