@@ -46,6 +46,22 @@ interface HeroBannerProps {
 }
 
 const RETRY_INTERVAL_MS = 10 * 60 * 1000;
+const BACKGROUND_WARMUP_DELAY_MS = 2000;
+const CURRENT_VIDEO_WARMUP_DELAY_MS = 2500;
+
+type ScheduledTask =
+  | { type: 'idle'; id: number }
+  | { type: 'timeout'; id: number }
+  | null;
+
+type IdleWindow = Window &
+  typeof globalThis & {
+    requestIdleCallback?: (
+      callback: () => void,
+      options?: { timeout: number },
+    ) => number;
+    cancelIdleCallback?: (id: number) => void;
+  };
 
 const toItemKey = (item: BannerItem) => String(item.douban_id ?? item.id);
 
@@ -76,6 +92,41 @@ const getImageUrl = (item: BannerItem) => {
 
 const getVideoFetchUrl = (doubanId: string | number) =>
   `/api/video-proxy?id=${doubanId}&carousel=1`;
+
+const scheduleBackgroundTask = (
+  callback: () => void,
+  timeout = BACKGROUND_WARMUP_DELAY_MS,
+): ScheduledTask => {
+  if (typeof window === 'undefined') return null;
+
+  const idleWindow = window as IdleWindow;
+  if (typeof idleWindow.requestIdleCallback === 'function') {
+    return {
+      type: 'idle',
+      id: idleWindow.requestIdleCallback(() => callback(), { timeout }),
+    };
+  }
+
+  return {
+    type: 'timeout',
+    id: window.setTimeout(callback, timeout),
+  };
+};
+
+const cancelScheduledTask = (task: ScheduledTask) => {
+  if (!task || typeof window === 'undefined') return;
+
+  const idleWindow = window as IdleWindow;
+  if (
+    task.type === 'idle' &&
+    typeof idleWindow.cancelIdleCallback === 'function'
+  ) {
+    idleWindow.cancelIdleCallback(task.id);
+    return;
+  }
+
+  window.clearTimeout(task.id);
+};
 
 const useCachedBlobUrl = (
   cacheName: string,
@@ -137,32 +188,36 @@ const useCachedBlobUrl = (
 
 const BannerImage = ({
   cacheKey,
+  src,
   alt,
   isPriority,
 }: {
   cacheKey: string | null;
+  src: string;
   alt: string;
   isPriority: boolean;
 }) => {
   const blobUrl = useCachedBlobUrl(HERO_IMAGE_CACHE, cacheKey, true);
-
-  if (!blobUrl) {
-    return (
-      <div className='absolute inset-0 bg-black/10 animate-pulse pointer-events-none' />
-    );
-  }
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imageSrc = blobUrl ?? src;
 
   return (
     <div className='absolute inset-0 pointer-events-none'>
+      {!imageLoaded && (
+        <div className='absolute inset-0 bg-black/10 animate-pulse pointer-events-none' />
+      )}
       <Image
-        src={blobUrl}
+        src={imageSrc}
         alt={alt}
         fill
-        className='object-cover object-center'
+        className={`object-cover object-center transition-opacity duration-700 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
         priority={isPriority}
         quality={85}
         sizes='100vw'
-        unoptimized={true}
+        unoptimized={imageSrc.startsWith('blob:')}
+        onLoad={() => setImageLoaded(true)}
       />
     </div>
   );
@@ -411,24 +466,22 @@ export default function HeroBanner({
     if (!items.length) return;
 
     const abortController = new AbortController();
-    const { signal } = abortController;
-
-    const warmupCache = async () => {
-      for (const item of items) {
-        if (signal.aborted) return;
-        await downloadImage(item, signal);
-        if (enableVideo) {
-          await downloadVideo(item, signal);
+    const scheduledTask = scheduleBackgroundTask(() => {
+      const warmupImages = async () => {
+        for (const item of items) {
+          if (abortController.signal.aborted) return;
+          await downloadImage(item, abortController.signal);
         }
-      }
-    };
+      };
 
-    void warmupCache();
+      void warmupImages();
+    });
 
     return () => {
       abortController.abort();
+      cancelScheduledTask(scheduledTask);
     };
-  }, [items, enableVideo, downloadImage, downloadVideo]);
+  }, [items, downloadImage]);
 
   useEffect(() => {
     if (!items.length) return;
@@ -436,10 +489,20 @@ export default function HeroBanner({
     const currentItem = items[currentIndex];
     if (!currentItem) return;
 
-    void downloadImage(currentItem);
-    if (enableVideo) {
-      void downloadVideo(currentItem);
-    }
+    const imageWarmupTask = scheduleBackgroundTask(() => {
+      void downloadImage(currentItem);
+    }, 300);
+    const videoWarmupTask =
+      enableVideo && currentItem.douban_id
+        ? scheduleBackgroundTask(() => {
+            void downloadVideo(currentItem);
+          }, CURRENT_VIDEO_WARMUP_DELAY_MS)
+        : null;
+
+    return () => {
+      cancelScheduledTask(imageWarmupTask);
+      cancelScheduledTask(videoWarmupTask);
+    };
   }, [currentIndex, items, enableVideo, downloadImage, downloadVideo]);
 
   useEffect(() => {
@@ -559,6 +622,7 @@ export default function HeroBanner({
             >
               <BannerImage
                 cacheKey={imageCacheKey}
+                src={imageUrl || processImageUrl(item.poster)}
                 alt={item.title}
                 isPriority={index === 0}
               />

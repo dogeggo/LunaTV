@@ -166,6 +166,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const actualYear = year;
     const actualQuery = query || '';
 
+    useEffect(() => {
+      setImageLoaded(false);
+    }, [actualPoster]);
+
     const actualSearchType = useMemo(
       () =>
         isAggregate
@@ -486,19 +490,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     });
 
     const scheduleImageLoaded = useCallback(() => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(
-          () => {
-            setImageLoaded(true);
-          },
-          { timeout: 1000 },
-        );
-        return;
-      }
-
-      startTransition(() => {
-        setImageLoaded(true);
-      });
+      setImageLoaded(true);
     }, []);
 
     // 根据评分获取徽章样式 - 使用 useMemo 缓存结果
