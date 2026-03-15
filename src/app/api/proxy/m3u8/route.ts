@@ -243,15 +243,11 @@ export async function GET(request: Request) {
         { status: 503 },
       );
     }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.error('M3U8 proxy error:', error);
-    }
+    console.error('M3U8 proxy error:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch m3u8',
-        details:
-          process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details: undefined,
       },
       { status: 500 },
     );
@@ -263,14 +259,12 @@ export async function GET(request: Request) {
       try {
         response.body?.cancel();
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Failed to close response body:', error);
-        }
+        console.warn('Failed to close response body:', error);
       }
     }
 
     // 定期打印统计信息
-    if (stats.requests % 100 === 0 && process.env.NODE_ENV === 'development') {
+    if (stats.requests % 100 === 0) {
       console.log(
         `M3U8 Proxy Stats - Requests: ${stats.requests}, Errors: ${stats.errors}, Avg Response Time: ${stats.avgResponseTime.toFixed(2)}ms, Total Bytes: ${(stats.totalBytes / 1024 / 1024).toFixed(2)}MB`,
       );

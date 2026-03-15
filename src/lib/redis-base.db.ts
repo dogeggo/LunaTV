@@ -952,15 +952,14 @@ export abstract class BaseRedisStorage implements IStorage {
         userStat.lastLoginTime = ct;
         userStat.loginCount = 1;
       }
-      if (ct - userStat.lastLoginTime > 4 * 60 * 60 * 1000) {
+      if (ct - userStat.lastLoginTime > 8 * 60 * 60 * 1000) {
         userStat.loginCount = (userStat.loginCount || 0) + 1;
         userStat.lastLoginTime = ct;
       }
       if (
         !userStat.totalWatchTime ||
         !userStat.totalPlays ||
-        !userStat.firstWatchDate ||
-        !userStat.totalMovies
+        !userStat.firstWatchDate
       ) {
         const userPlayRecords = await db.getAllPlayRecords(userStat.username);
         const records = Object.values(userPlayRecords);
@@ -978,18 +977,11 @@ export abstract class BaseRedisStorage implements IStorage {
               ...records.map((r) => r.save_time || Date.now()),
             );
           }
-          if (!userStat.totalMovies) {
-            userStat.totalMovies = new Set(
-              records
-                .filter((r) => r.play_time >= r.total_time * 0.9)
-                .map((r) => `${r.title}_${r.year}`),
-            ).size;
-          }
         }
       }
       if (playRecord) {
         await updateWatchTime(playRecord, userStat);
-        if (ct - userStat.lastPlayTime > 3 * 60 * 1000) {
+        if (ct - userStat.lastPlayTime > 10 * 60 * 1000) {
           userStat.totalPlays += 1;
         }
         userStat.lastPlayTime = ct;

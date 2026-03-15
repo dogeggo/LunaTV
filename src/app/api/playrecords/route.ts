@@ -117,7 +117,10 @@ export async function POST(request: NextRequest) {
       last_tj_time: existingRecord?.last_tj_time ?? Date.now(),
       original_episodes: originalEpisodes,
     } as PlayRecord;
-    const timeCon = finalRecord.play_time >= finalRecord.total_time * 0.9;
+    const timeCon =
+      finalRecord.play_time > 0 &&
+      finalRecord.total_time > 0 &&
+      finalRecord.play_time >= finalRecord.total_time * 0.8;
     if (
       (timeCon && finalRecord.total_episodes == 1) ||
       (timeCon &&
