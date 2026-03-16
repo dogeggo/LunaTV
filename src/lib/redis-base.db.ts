@@ -334,6 +334,10 @@ export abstract class BaseRedisStorage implements IStorage {
     // 删除用户登入统计数据
     const loginStatsKey = `user_login_stats:${userName}`;
     await this.withRetry(() => this.client.del(loginStatsKey));
+
+    // 删除历史影片
+    const userMovieHis = `user_movie_his:${userName}`;
+    await this.withRetry(() => this.client.del(userMovieHis));
   }
 
   // ---------- 用户相关（新版本 V2，支持 OIDC） ----------
