@@ -4509,8 +4509,11 @@ function PlayPageClient() {
           const duration = artPlayerRef.current?.duration || 0;
           const remainingTime = duration - currentTime;
           const isNearEnd = duration > 0 && remainingTime < 180; // 最后3分钟
-
-          if (!isNearEnd && !isSourceChangingRef.current) {
+          if (
+            !isNearEnd &&
+            !isSourceChangingRef.current &&
+            !isEpisodeChangingRef.current
+          ) {
             saveCurrentPlayProgress();
           }
         });
@@ -4560,7 +4563,13 @@ function PlayPageClient() {
             if (Math.abs(playerTime - artPlayerRef.current.currentTime) > 1) {
               artPlayerRef.current.currentTime = playerTime;
             }
-            console.log('成功恢复播放进度到:', currentTime, playerTime);
+            console.log(
+              '成功恢复播放进度到:',
+              currentTime,
+              playerTime,
+              record.index,
+              currentEpisodeIndexRef.current,
+            );
           } catch (err) {
             console.warn('恢复播放进度失败:', err);
           }
