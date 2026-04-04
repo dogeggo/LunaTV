@@ -25,6 +25,14 @@ function ensureStringArray(value: any[]): string[] {
   return value.map((item) => String(item));
 }
 
+function parseStoredJson<T>(value: unknown): T {
+  if (typeof value === 'string') {
+    return JSON.parse(value) as T;
+  }
+
+  return value as T;
+}
+
 // 连接配置接口
 export interface RedisConnectionConfig {
   url: string;
@@ -192,7 +200,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const val = await this.withRetry(() =>
       this.client.hGet(this.prHashKey(userName), key),
     );
-    return val ? (JSON.parse(val) as PlayRecord) : null;
+    return val ? parseStoredJson<PlayRecord>(val) : null;
   }
 
   async savePlayRecord(
@@ -214,7 +222,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const result: Record<string, PlayRecord> = {};
     for (const [key, value] of Object.entries(allRecords)) {
       if (value) {
-        result[key] = JSON.parse(value) as PlayRecord;
+        result[key] = parseStoredJson<PlayRecord>(value);
       }
     }
     return result;
@@ -234,7 +242,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const val = await this.withRetry(() =>
       this.client.hGet(this.favHashKey(userName), key),
     );
-    return val ? (JSON.parse(val) as Favorite) : null;
+    return val ? parseStoredJson<Favorite>(val) : null;
   }
 
   async setFavorite(
@@ -259,7 +267,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const result: Record<string, Favorite> = {};
     for (const [key, value] of Object.entries(allFavorites)) {
       if (value) {
-        result[key] = JSON.parse(value) as Favorite;
+        result[key] = parseStoredJson<Favorite>(value);
       }
     }
     return result;
@@ -581,7 +589,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const val = await this.withRetry(() =>
       this.client.get(this.adminConfigKey()),
     );
-    return val ? (JSON.parse(val) as AdminConfig) : null;
+    return val ? parseStoredJson<AdminConfig>(val) : null;
   }
 
   async setAdminConfig(config: AdminConfig): Promise<void> {
@@ -603,7 +611,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const val = await this.withRetry(() =>
       this.client.get(this.skipConfigKey(userName, source, id)),
     );
-    return val ? (JSON.parse(val) as EpisodeSkipConfig) : null;
+    return val ? parseStoredJson<EpisodeSkipConfig>(val) : null;
   }
 
   async setSkipConfig(
@@ -652,9 +660,7 @@ export abstract class BaseRedisStorage implements IStorage {
         const match = key.match(/^u:.+?:skip:(.+)$/);
         if (match) {
           const sourceAndId = match[1];
-          configs[sourceAndId] = JSON.parse(
-            value as string,
-          ) as EpisodeSkipConfig;
+          configs[sourceAndId] = parseStoredJson<EpisodeSkipConfig>(value);
         }
       }
     });
@@ -675,7 +681,7 @@ export abstract class BaseRedisStorage implements IStorage {
     const val = await this.withRetry(() =>
       this.client.get(this.episodeSkipConfigKey(userName, source, id)),
     );
-    return val ? (JSON.parse(val) as EpisodeSkipConfig) : null;
+    return val ? parseStoredJson<EpisodeSkipConfig>(val) : null;
   }
 
   async saveEpisodeSkipConfig(
@@ -724,9 +730,7 @@ export abstract class BaseRedisStorage implements IStorage {
         const match = key.match(/^u:.+?:episodeskip:(.+)$/);
         if (match) {
           const sourceAndId = match[1];
-          configs[sourceAndId] = JSON.parse(
-            value as string,
-          ) as EpisodeSkipConfig;
+          configs[sourceAndId] = parseStoredJson<EpisodeSkipConfig>(value);
         }
       }
     });
@@ -868,7 +872,7 @@ export abstract class BaseRedisStorage implements IStorage {
       const loginStatsKey = `user_login_stats:${userName}`;
       const storedLoginStats = await this.client.get(loginStatsKey);
       let userStat: UserStat = storedLoginStats
-        ? JSON.parse(storedLoginStats)
+        ? parseStoredJson<UserStat>(storedLoginStats)
         : { username: userName };
 
       // 计算统计数据
@@ -944,7 +948,7 @@ export abstract class BaseRedisStorage implements IStorage {
       // 获取当前登入统计数据
       const currentStats = await this.client.get(loginStatsKey);
       const userStat: UserStat = currentStats
-        ? JSON.parse(currentStats)
+        ? parseStoredJson<UserStat>(currentStats)
         : {
             username,
           };
