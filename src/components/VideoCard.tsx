@@ -19,6 +19,7 @@ import React, {
   useImperativeHandle,
   useMemo,
   useOptimistic,
+  useRef,
   useState,
 } from 'react';
 
@@ -108,6 +109,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const [favorited, setFavorited] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false); // 图片加载状态
     const [showMobileActions, setShowMobileActions] = useState(false);
+    const imageRef = useRef<HTMLImageElement | null>(null);
     const [searchFavorited, setSearchFavorited] = useState<boolean | null>(
       null,
     ); // 搜索结果的收藏状态
@@ -156,6 +158,10 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     // 使用 useMemo 缓存计算值，避免每次渲染重新计算
     const actualTitle = title;
     const actualPoster = poster;
+    const imageSrc = useMemo(
+      () => processImageUrl(actualPoster),
+      [actualPoster],
+    );
     // 为豆瓣内容生成收藏用的source和id（仅用于收藏，不用于播放）
     const actualSource =
       source || (from === 'douban' && douban_id ? 'douban' : '');
@@ -168,7 +174,7 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
     useEffect(() => {
       setImageLoaded(false);
-    }, [actualPoster]);
+    }, [imageSrc]);
 
     const actualSearchType = useMemo(
       () =>
@@ -490,8 +496,19 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     });
 
     const scheduleImageLoaded = useCallback(() => {
-      setImageLoaded(true);
+      setImageLoaded((prev) => (prev ? prev : true));
     }, []);
+
+    const syncCachedImageState = useCallback(() => {
+      const img = imageRef.current;
+      if (img?.complete && img.naturalWidth > 0) {
+        scheduleImageLoaded();
+      }
+    }, [scheduleImageLoaded]);
+
+    useEffect(() => {
+      syncCachedImageState();
+    }, [imageSrc, syncCachedImageState]);
 
     // 根据评分获取徽章样式 - 使用 useMemo 缓存结果
     const ratingBadgeStyle = useMemo(() => {
@@ -834,7 +851,14 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             {!imageLoaded && <ImagePlaceholder aspectRatio='aspect-[2/3]' />}
             {/* 图片 */}
             <Image
-              src={processImageUrl(actualPoster)}
+              key={imageSrc}
+              ref={(img) => {
+                imageRef.current = img;
+                if (img?.complete && img.naturalWidth > 0) {
+                  scheduleImageLoaded();
+                }
+              }}
+              src={imageSrc}
               alt={actualTitle}
               fill
               sizes='(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw'
@@ -844,10 +868,9 @@ const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
                   : 'opacity-0 blur-md scale-105'
               }`}
               referrerPolicy='no-referrer'
-              loading={priority ? undefined : 'lazy'}
-              priority={priority}
+              loading={priority ? 'eager' : 'lazy'}
               decoding='async'
-              fetchPriority={priority ? 'high' : 'low'}
+              fetchPriority={priority ? 'high' : undefined}
               quality={75}
               onLoad={() => {
                 scheduleImageLoaded();
