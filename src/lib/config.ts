@@ -346,10 +346,28 @@ export async function configSelfCheck(
   try {
     const dbUsers = await db.getAllUserName();
     const ownerUser = process.env.USERNAME;
+    const dbUserSet = new Set(dbUsers);
+
+    const staleUsers = (adminConfig.UserConfig.Users || [])
+      .filter(
+        (user) => user.username !== ownerUser && !dbUserSet.has(user.username),
+      )
+      .map((user) => user.username);
+
+    if (staleUsers.length > 0) {
+      hasChanges = true;
+      console.warn(
+        `检测到配置中的残留用户，已从内存配置移除: ${staleUsers.join(', ')}`,
+      );
+    }
 
     // 建立现有用户配置的索引，提高查找效率
     const existingUsersMap = new Map(
-      (adminConfig.UserConfig.Users || []).map((u) => [u.username, u]),
+      (adminConfig.UserConfig.Users || [])
+        .filter(
+          (user) => user.username === ownerUser || dbUserSet.has(user.username),
+        )
+        .map((u) => [u.username, u]),
     );
 
     // 创建用户列表：优先使用现有配置，只为新用户或配置缺失的用户查询数据库

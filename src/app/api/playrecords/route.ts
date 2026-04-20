@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const userMovieHisMap = new Map<string, string>();
+
 export async function POST(request: NextRequest) {
   try {
     // 从 cookie 获取用户信息
@@ -117,18 +119,20 @@ export async function POST(request: NextRequest) {
       last_tj_time: existingRecord?.last_tj_time ?? Date.now(),
       original_episodes: originalEpisodes,
     } as PlayRecord;
+    const userMovieHis = `user_movie_his:${authInfo.username}`;
     const timeCon =
       finalRecord.play_time > 0 &&
       finalRecord.total_time > 0 &&
       finalRecord.play_time >= finalRecord.total_time * 0.8;
     if (
-      (timeCon && finalRecord.total_episodes == 1) ||
-      (timeCon &&
-        finalRecord.total_episodes > 1 &&
-        finalRecord.index >= finalRecord.total_episodes * 0.9)
+      !userMovieHisMap.has(userMovieHis) &&
+      ((timeCon && finalRecord.total_episodes == 1) ||
+        (timeCon &&
+          finalRecord.total_episodes > 1 &&
+          finalRecord.index >= finalRecord.total_episodes * 0.9))
     ) {
       const movieKey = `${record.title}_${record.year}`;
-      const userMovieHis = `user_movie_his:${authInfo.username}`;
+      userMovieHisMap.set(userMovieHis, movieKey);
       await db.getClient().sAdd(userMovieHis, movieKey);
     }
     await db.updateUserStats(authInfo.username, finalRecord);
