@@ -7095,7 +7095,9 @@ function AdminPageClient() {
         setLoading(true);
       }
 
-      const response = await fetch(`/api/admin/config`);
+      const response = await fetch(`/api/admin/config`, {
+        cache: 'no-store',
+      });
 
       if (!response.ok) {
         const data = (await response.json()) as any;

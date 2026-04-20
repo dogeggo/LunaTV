@@ -393,17 +393,20 @@ async function cleanupInactiveUsers() {
           console.error(`  ❌ 获取用户统计失败: ${err}, 跳过该用户`);
           continue;
         }
-        // 🔥 简化逻辑：只检查最后登入时间是否超过阈值
-        // 适用于所有用户类型（普通、Telegram、OIDC）
-        // 因为所有用户注册时都会自动记录登入时间，不存在"从未登入"的情况
+        // 清理口径：优先使用最后登入时间；如果用户从未登入，则退回到注册时间。
+        // 这样可以清理长期未激活的账号，避免“待激活/尚未登录”的残留用户长期保留。
         const lastLoginTime = userStats.lastLoginTime || 0;
+        const createdAt = user.createdAt || 0;
+        const lastActiveTime = lastLoginTime > 0 ? lastLoginTime : createdAt;
+        const activityType = lastLoginTime > 0 ? '最后登入' : '注册时间';
 
-        // 删除条件：有登入记录且最后登入时间超过阈值
-        const shouldDelete = lastLoginTime > 0 && lastLoginTime < cutoffTime;
+        // 删除条件：最后活动时间早于阈值。
+        // 对从未登入的用户，最后活动时间即注册时间。
+        const shouldDelete = lastActiveTime > 0 && lastActiveTime < cutoffTime;
 
         if (shouldDelete) {
           console.log(
-            `🗑️ 删除非活跃用户: ${user.username} (最后登入: ${new Date(lastLoginTime).toISOString()}, 登入次数: ${userStats.loginCount || 0}, 阈值: ${inactiveUserDays}天)`,
+            `🗑️ 删除非活跃用户: ${user.username} (${activityType}: ${new Date(lastActiveTime).toISOString()}, 登入次数: ${userStats.loginCount || 0}, 阈值: ${inactiveUserDays}天)`,
           );
 
           // 从数据库删除用户数据
