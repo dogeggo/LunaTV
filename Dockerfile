@@ -40,7 +40,7 @@ FROM node:24-alpine AS runner
 # 安装 CA 证书以支持 HTTPS 请求
 RUN apk add --no-cache ca-certificates
 
-# 创建非 root 用户
+# 创建非 root 用户（保留用户与文件归属，运行时使用 root 以兼容宿主机挂载目录权限）
 RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S nextjs -G nodejs
 
 WORKDIR /app
@@ -63,10 +63,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 RUN mkdir -p /app/cache/image /app/cache/video && \
     chown -R nextjs:nodejs /app/cache
 
-# 切换到非特权用户
-USER nextjs
+# 使用 root 用户启动，避免宿主机挂载缓存目录权限导致写入失败
+USER root
 
 EXPOSE 3000
 
 # 使用自定义启动脚本，先预加载配置再启动服务器
-CMD ["node", "start.js"] 
+CMD ["node", "start.js"]
