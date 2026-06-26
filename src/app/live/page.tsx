@@ -120,6 +120,10 @@ function LivePageClient() {
 
   // 播放器相关
   const [videoUrl, setVideoUrl] = useState('');
+  const videoUrlRef = useRef('');
+  useEffect(() => {
+    videoUrlRef.current = videoUrl;
+  }, [videoUrl]);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [unsupportedType, setUnsupportedType] = useState<string | null>(null);
 
@@ -157,6 +161,9 @@ function LivePageClient() {
   );
   const corsSupportRef = useRef<Map<string, boolean>>(new Map());
   const [playbackMode, setPlaybackMode] = useState<'direct' | 'proxy'>('proxy');
+  const playbackModeRef = useRef<'direct' | 'proxy'>('proxy');
+  const [playbackRetryKey, setPlaybackRetryKey] = useState(0);
+  const forceProxyUrlsRef = useRef<Set<string>>(new Set());
 
   // 📊 CORS 检测统计（管理员用）
   const [corsStats, setCorsStats] = useState(() => {
@@ -861,9 +868,16 @@ function LivePageClient() {
 
   // 🚀 决定是否使用直连播放
   const shouldUseDirectPlayback = async (url: string): Promise<boolean> => {
+    if (forceProxyUrlsRef.current.has(url)) {
+      setPlaybackMode('proxy');
+      playbackModeRef.current = 'proxy';
+      return false;
+    }
+
     // 如果用户未启用直连模式，始终使用代理
     if (!directPlaybackEnabled) {
       setPlaybackMode('proxy');
+      playbackModeRef.current = 'proxy';
       return false;
     }
 
@@ -872,11 +886,53 @@ function LivePageClient() {
 
     if (supportsCORS) {
       setPlaybackMode('direct');
+      playbackModeRef.current = 'direct';
       return true;
     } else {
       setPlaybackMode('proxy');
+      playbackModeRef.current = 'proxy';
       return false;
     }
+  };
+
+  const fallbackToProxyPlayback = (
+    failedUrl: string,
+    reason: string,
+    hls?: Hls,
+  ) => {
+    if (playbackModeRef.current !== 'direct') return;
+    if (failedUrl !== videoUrlRef.current) return;
+
+    console.warn(`直播直连失败，切换到代理播放: ${reason}`);
+    forceProxyUrlsRef.current.add(failedUrl);
+    corsSupportRef.current.set(failedUrl, false);
+    setCorsSupport(new Map(corsSupportRef.current));
+    if (typeof window !== 'undefined') {
+      try {
+        const cacheKey = `cors-cache-${btoa(failedUrl).substring(0, 50)}`;
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            supports: false,
+            timestamp: Date.now(),
+            url: failedUrl.substring(0, 100),
+            reason,
+          }),
+        );
+      } catch {
+        // 忽略缓存写入失败
+      }
+    }
+    setPlaybackMode('proxy');
+    playbackModeRef.current = 'proxy';
+
+    try {
+      hls?.stopLoad();
+    } catch (error) {
+      console.warn('停止直连 HLS 加载失败:', error);
+    }
+
+    setPlaybackRetryKey((key) => key + 1);
   };
 
   // 切换频道
@@ -1299,37 +1355,40 @@ function LivePageClient() {
       super(config);
       const load = this.load.bind(this);
       this.load = function (context: any, config: any, callbacks: any) {
-        // 所有的请求都带一个 source 参数
+        // 只给本项目代理接口追加内部参数，避免破坏外部直播源的签名 URL。
         try {
-          const url = new URL(context.url);
-          url.searchParams.set(
-            'moontv-source',
-            currentSourceRef.current?.key || '',
+          const url = new URL(
+            context.url,
+            typeof window !== 'undefined'
+              ? window.location.href
+              : 'http://localhost',
           );
-          context.url = url.toString();
+          const isInternalProxyUrl =
+            typeof window !== 'undefined' &&
+            url.origin === window.location.origin &&
+            url.pathname.startsWith('/api/proxy/');
+
+          if (isInternalProxyUrl) {
+            url.searchParams.set(
+              'moontv-source',
+              currentSourceRef.current?.key || '',
+            );
+
+            if (
+              (context as any).type === 'manifest' ||
+              (context as any).type === 'level'
+            ) {
+              const isLiveDirectConnect =
+                localStorage.getItem('liveDirectConnect') === 'true';
+              if (isLiveDirectConnect) {
+                url.searchParams.set('allowCORS', 'true');
+              }
+            }
+
+            context.url = url.toString();
+          }
         } catch (_error) {
           // ignore
-        }
-        // 拦截manifest和level请求
-        if (
-          (context as any).type === 'manifest' ||
-          (context as any).type === 'level'
-        ) {
-          // 判断是否浏览器直连
-          const isLiveDirectConnectStr =
-            localStorage.getItem('liveDirectConnect');
-          const isLiveDirectConnect = isLiveDirectConnectStr === 'true';
-          if (isLiveDirectConnect) {
-            // 浏览器直连，使用 URL 对象处理参数
-            try {
-              const url = new URL(context.url);
-              url.searchParams.set('allowCORS', 'true');
-              context.url = url.toString();
-            } catch (_error) {
-              // 如果 URL 解析失败，回退到字符串拼接
-              context.url = context.url + '&allowCORS=true';
-            }
-          }
         }
         // 执行原始load方法
         load(context, config, callbacks);
@@ -1482,6 +1541,33 @@ function LivePageClient() {
 
     hls.on(Hls.Events.ERROR, function (event: any, data: any) {
       console.error('HLS Error:', event, data);
+
+      if (
+        playbackModeRef.current === 'direct' &&
+        [
+          Hls.ErrorDetails.FRAG_LOAD_ERROR,
+          Hls.ErrorDetails.FRAG_LOAD_TIMEOUT,
+          Hls.ErrorDetails.KEY_LOAD_ERROR,
+          Hls.ErrorDetails.KEY_LOAD_TIMEOUT,
+          Hls.ErrorDetails.LEVEL_LOAD_ERROR,
+          Hls.ErrorDetails.LEVEL_LOAD_TIMEOUT,
+        ].includes(data.details)
+      ) {
+        const failedRequestUrl =
+          data.frag?.url ||
+          data.part?.url ||
+          data.decryptdata?.uri ||
+          data.context?.url ||
+          data.url ||
+          data.response?.url ||
+          'unknown';
+        fallbackToProxyPlayback(
+          url,
+          `${data.details}: ${failedRequestUrl}`,
+          hls,
+        );
+        return;
+      }
 
       // 使用最新版本的错误详情类型
       if (data.details === Hls.ErrorDetails.KEY_LOAD_ERROR) {
@@ -1858,7 +1944,14 @@ function LivePageClient() {
       }
       cleanupPlayer();
     };
-  }, [Hls, videoUrl, currentChannel, loading, directPlaybackEnabled]);
+  }, [
+    Hls,
+    videoUrl,
+    currentChannel,
+    loading,
+    directPlaybackEnabled,
+    playbackRetryKey,
+  ]);
 
   // 统一的资源清理和生命周期管理
   useEffect(() => {
