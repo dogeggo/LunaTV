@@ -814,6 +814,8 @@ function PlayPageClient() {
 
   const artPlayerRef = useRef<any>(null);
   const artRef = useRef<HTMLDivElement | null>(null);
+  const trackedVideoElementsRef = useRef<Set<HTMLVideoElement>>(new Set());
+  const playerInitRunIdRef = useRef(0);
 
   // 播放器就绪状态
   const [playerReady, setPlayerReady] = useState(false);
@@ -1371,8 +1373,80 @@ function PlayPageClient() {
     }
   };
 
+  const trackVideoElement = (video: HTMLVideoElement | null | undefined) => {
+    if (video) {
+      trackedVideoElementsRef.current.add(video);
+    }
+  };
+
+  const stopVideoElement = (video: HTMLVideoElement | null | undefined) => {
+    if (!video) return;
+
+    try {
+      video.pause();
+    } catch (err) {
+      console.warn('暂停视频元素时出错:', err);
+    }
+
+    if (video.hls) {
+      try {
+        video.hls.stopLoad();
+        video.hls.detachMedia();
+        video.hls.destroy();
+        video.hls = null;
+        console.log('HLS实例已停止并销毁');
+      } catch (hlsError) {
+        console.warn('停止HLS实例时出错:', hlsError);
+        video.hls = null;
+      }
+    }
+
+    try {
+      Array.from(video.getElementsByTagName('source')).forEach((source) =>
+        source.remove(),
+      );
+
+      if ('srcObject' in video && video.srcObject) {
+        video.srcObject = null;
+      }
+
+      video.removeAttribute('src');
+      video.load();
+    } catch (err) {
+      console.warn('清空视频源时出错:', err);
+    }
+  };
+
+  const stopPlayerMedia = (player: any = artPlayerRef.current) => {
+    try {
+      if (player && typeof player.pause === 'function') {
+        player.pause();
+      }
+    } catch (err) {
+      console.warn('暂停播放器时出错:', err);
+    }
+
+    const playerVideo = player?.video as HTMLVideoElement | undefined;
+    trackVideoElement(playerVideo);
+    stopVideoElement(playerVideo);
+
+    trackedVideoElementsRef.current.forEach((video) => {
+      stopVideoElement(video);
+    });
+    trackedVideoElementsRef.current.clear();
+
+    if (artRef.current) {
+      artRef.current
+        .querySelectorAll('video')
+        .forEach((video) => stopVideoElement(video));
+    }
+  };
+
   // 清理播放器资源的统一函数
   const cleanupPlayer = async () => {
+    const player = artPlayerRef.current;
+    stopPlayerMedia(player);
+
     // 先清理Anime4K，避免GPU纹理错误
     await cleanupAnime4K();
 
@@ -1390,12 +1464,11 @@ function PlayPageClient() {
     // 清理弹幕状态引用
     danmuPluginStateRef.current = null;
 
-    if (artPlayerRef.current) {
+    if (player) {
       try {
         // 1. 清理弹幕插件的WebWorker
-        if (artPlayerRef.current.plugins?.artplayerPluginDanmuku) {
-          const danmukuPlugin =
-            artPlayerRef.current.plugins.artplayerPluginDanmuku;
+        if (player.plugins?.artplayerPluginDanmuku) {
+          const danmukuPlugin = player.plugins.artplayerPluginDanmuku;
 
           // 尝试获取并清理WebWorker
           if (
@@ -1413,31 +1486,39 @@ function PlayPageClient() {
         }
 
         // 2. 销毁HLS实例
-        if (artPlayerRef.current.video.hls) {
+        if (player.video?.hls) {
           try {
             // 先停止加载，避免请求中断导致的网络错误
-            artPlayerRef.current.video.hls.stopLoad();
-            artPlayerRef.current.video.hls.detachMedia();
-            artPlayerRef.current.video.hls.destroy();
+            player.video.hls.stopLoad();
+            player.video.hls.detachMedia();
+            player.video.hls.destroy();
             // 清除 video 元素上的 hls 引用
-            artPlayerRef.current.video.hls = null;
+            player.video.hls = null;
             console.log('HLS实例已销毁');
           } catch (hlsError) {
             console.warn('销毁HLS实例时出错:', hlsError);
           }
         }
 
-        // 3. 销毁ArtPlayer实例 (使用false参数避免DOM清理冲突)
-        artPlayerRef.current.destroy(false);
-        artPlayerRef.current = null;
-        setPlayerReady(false); // 重置播放器就绪状态
+        // 3. 销毁ArtPlayer实例，视频源已在 stopPlayerMedia 中同步清空
+        player.destroy(false);
+        if (artPlayerRef.current === player) {
+          artPlayerRef.current = null;
+        }
+        if (!isUnmountedRef.current) {
+          setPlayerReady(false);
+        }
 
         console.log('播放器资源已清理');
       } catch (err) {
         console.warn('清理播放器资源时出错:', err);
         // 即使出错也要确保引用被清空
-        artPlayerRef.current = null;
-        setPlayerReady(false); // 重置播放器就绪状态
+        if (artPlayerRef.current === player) {
+          artPlayerRef.current = null;
+        }
+        if (!isUnmountedRef.current) {
+          setPlayerReady(false);
+        }
       }
     }
   };
@@ -3129,9 +3210,14 @@ function PlayPageClient() {
   };
 
   useEffect(() => {
+    const initRunId = ++playerInitRunIdRef.current;
+    const isStaleInit = () =>
+      isUnmountedRef.current || playerInitRunIdRef.current !== initRunId;
+
     // 异步初始化播放器，避免SSR问题
     const initPlayer = async () => {
       if (
+        isStaleInit() ||
         !Hls ||
         !videoUrl ||
         loading ||
@@ -3275,6 +3361,13 @@ function PlayPageClient() {
           switchPromiseRef.current = switchPromise;
           await switchPromise;
 
+          if (isStaleInit()) {
+            if (isUnmountedRef.current) {
+              stopPlayerMedia();
+            }
+            return;
+          }
+
           if (artPlayerRef.current?.video) {
             ensureVideoSource(
               artPlayerRef.current.video as HTMLVideoElement,
@@ -3292,10 +3385,16 @@ function PlayPageClient() {
           isEpisodeChangingRef.current = false;
           // 如果switch失败，清理播放器并重新创建
           await cleanupPlayer();
+          if (isStaleInit()) {
+            return;
+          }
         }
       }
       if (artPlayerRef.current) {
         await cleanupPlayer();
+        if (isStaleInit()) {
+          return;
+        }
       }
 
       // 确保 DOM 容器完全清空，避免多实例冲突
@@ -3346,6 +3445,10 @@ function PlayPageClient() {
           return saved === 'true';
         };
 
+        if (isStaleInit() || !artRef.current) {
+          return;
+        }
+
         artPlayerRef.current = new Artplayer({
           container: artRef.current,
           url: videoUrl,
@@ -3386,6 +3489,13 @@ function PlayPageClient() {
           // HLS 支持配置
           customType: {
             m3u8: function (video: HTMLVideoElement, url: string) {
+              trackVideoElement(video);
+
+              if (isUnmountedRef.current) {
+                stopVideoElement(video);
+                return;
+              }
+
               if (!Hls) {
                 console.error('HLS.js 未加载');
                 return;
@@ -3574,7 +3684,8 @@ function PlayPageClient() {
                         );
                         // 延迟重试，给浏览器时间清理之前的连接
                         setTimeout(() => {
-                          if (!hls || !hls.media) return; // 如果 HLS 已被销毁则不重试
+                          if (isUnmountedRef.current || !hls || !hls.media)
+                            return; // 如果 HLS 已被销毁则不重试
                           try {
                             // 销毁旧实例并重新创建
                             hls.destroy();
@@ -3626,6 +3737,7 @@ function PlayPageClient() {
                       hls.destroy();
                       artPlayerRef.current.video.hls = null;
                     }
+                    stopPlayerMedia();
                     artPlayerRef.current.destroy(false);
                     artPlayerRef.current = null;
                   }
@@ -3968,9 +4080,24 @@ function PlayPageClient() {
             artplayerPluginLiquidGlass(),
           ],
         });
+        trackVideoElement(artPlayerRef.current.video as HTMLVideoElement);
+
+        if (isStaleInit()) {
+          stopPlayerMedia(artPlayerRef.current);
+          artPlayerRef.current.destroy(false);
+          if (artPlayerRef.current) {
+            artPlayerRef.current = null;
+          }
+          return;
+        }
 
         // 监听播放器事件
         artPlayerRef.current.on('ready', async () => {
+          if (isUnmountedRef.current) {
+            stopPlayerMedia();
+            return;
+          }
+
           setError(null);
           setPlayerReady(true); // 标记播放器已就绪
 
@@ -4804,6 +4931,10 @@ function PlayPageClient() {
     // 动态导入 ArtPlayer 并初始化
     const loadAndInit = async () => {
       try {
+        if (isStaleInit()) {
+          return;
+        }
+
         // 🚀 优先使用已预加载的模块，如果没有则重新导入
         let Artplayer = (window as any).DynamicArtplayer;
         let artplayerPluginDanmuku = (window as any)
@@ -4827,14 +4958,26 @@ function PlayPageClient() {
         } else {
           console.log('✅ 使用已预加载的播放器模块');
         }
+        if (isStaleInit()) {
+          return;
+        }
         await initPlayer();
       } catch (error) {
+        if (isStaleInit()) {
+          return;
+        }
         console.error('动态导入 ArtPlayer 失败:', error);
         setError('播放器加载失败');
       }
     };
 
     loadAndInit();
+
+    return () => {
+      if (isUnmountedRef.current) {
+        stopPlayerMedia();
+      }
+    };
   }, [Hls, videoUrl, loading, blockAdEnabled]);
 
   // 当组件卸载时清理定时器、Wake Lock 和播放器资源
